@@ -23,6 +23,8 @@ public class AppDbContext : DbContext
     public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
     public DbSet<Itiraz> Itirazlar => Set<Itiraz>();
     public DbSet<SilmeTalebi> SilmeTalepleri => Set<SilmeTalebi>();
+    public DbSet<IslemKaydi> IslemKayitlari => Set<IslemKaydi>();
+    public DbSet<AiAnalizKaydi> AiAnalizKayitlari => Set<AiAnalizKaydi>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -127,6 +129,18 @@ public class AppDbContext : DbContext
         {
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<IslemKaydi>(e =>
+        {
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.HedefKullaniciId);
+            e.Property(x => x.Eylem).HasMaxLength(100).IsRequired();
+        });
+
+        b.Entity<AiAnalizKaydi>(e =>
+        {
+            e.HasIndex(x => x.CreatedAt);
         });
     }
 }

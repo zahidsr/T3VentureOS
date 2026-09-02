@@ -24,13 +24,21 @@ import type {
   OnayBekleyenBasariDto,
   OnayBekleyenDokumanDto,
   OnayBekleyenGuncellemeDto,
+  OnayBekleyenItirazDto,
   OnayBekleyenSatisDto,
   OnayBekleyenYatirimDto,
   OnayKararRequest,
   OnayKuyruguDto,
 } from "@/lib/types"
 
-type OnayKategori = "satis" | "yatirim" | "basari" | "dokuman" | "guncelleme"
+type OnayKategori = "satis" | "yatirim" | "basari" | "dokuman" | "guncelleme" | "itiraz"
+
+const KONU_TURU_LABEL: Record<string, string> = {
+  Satis: "Satış",
+  Yatirim: "Yatırım",
+  Basari: "Başarı",
+  Dokuman: "Doküman",
+}
 
 const YATIRIM_TUR_LABEL: Record<string, string> = {
   Hibe: "Hibe",
@@ -162,6 +170,7 @@ function emptySelection(): Record<OnayKategori, Set<string>> {
     basari: new Set(),
     dokuman: new Set(),
     guncelleme: new Set(),
+    itiraz: new Set(),
   }
 }
 
@@ -314,6 +323,7 @@ export default function OnaylarIndexPage() {
   const basarilar = data?.basarilar ?? []
   const dokumanlar = data?.dokumanlar ?? []
   const guncellemeler = data?.guncellemeler ?? []
+  const itirazlar = data?.itirazlar ?? []
 
   const tabs: { value: string; label: string; count: number }[] = [
     { value: "satis", label: "Satış", count: satislar.length },
@@ -321,6 +331,7 @@ export default function OnaylarIndexPage() {
     { value: "basari", label: "Başarı", count: basarilar.length },
     { value: "dokuman", label: "Doküman", count: dokumanlar.length },
     { value: "guncelleme", label: "Profil Güncellemesi", count: guncellemeler.length },
+    { value: "itiraz", label: "İtiraz", count: itirazlar.length },
   ]
 
   return (
@@ -560,6 +571,46 @@ export default function OnaylarIndexPage() {
                     actions={actionsFor("guncelleme", g.id, g.girisimAdi)}
                     selected={selected.guncelleme.has(g.id)}
                     onSelectedChange={(checked) => toggleSelected("guncelleme", g.id, checked)}
+                  />
+                ))}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="itiraz" className="mt-4 space-y-3">
+            {itirazlar.length === 0 ? (
+              <EmptyState icon="🎉" message="Bekleyen itiraz yok." />
+            ) : (
+              <>
+                <SelectionHeader
+                  ids={itirazlar.map((i) => i.id)}
+                  selectedIds={selected.itiraz}
+                  onToggleAll={(checked) =>
+                    toggleSelectAll(
+                      "itiraz",
+                      itirazlar.map((i) => i.id),
+                      checked,
+                    )
+                  }
+                  onBulkApprove={() => handleBulkApprove("itiraz")}
+                  onBulkReject={() => openBulkReject("itiraz")}
+                  isBulkPending={bulkDecideMutation.isPending}
+                />
+                {itirazlar.map((i: OnayBekleyenItirazDto) => (
+                  <ItemCard
+                    key={i.id}
+                    girisimId={i.girisimId}
+                    girisimAdi={i.girisimAdi}
+                    createdAt={i.createdAt}
+                    fields={
+                      <>
+                        <Field label="Konu" value={KONU_TURU_LABEL[i.konuTuru] ?? i.konuTuru} />
+                        <Field label="Açıklama" value={i.aciklama} />
+                      </>
+                    }
+                    actions={actionsFor("itiraz", i.id, i.girisimAdi)}
+                    selected={selected.itiraz.has(i.id)}
+                    onSelectedChange={(checked) => toggleSelected("itiraz", i.id, checked)}
                   />
                 ))}
               </>

@@ -22,7 +22,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function RegisterPage() {
-  const { register: doRegister, user } = useAuth()
+  const { register: doRegister } = useAuth()
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -35,7 +35,7 @@ export default function RegisterPage() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null)
     try {
-      await doRegister({
+      const registeredUser = await doRegister({
         fullName: values.fullName,
         email: values.email,
         password: values.password,
@@ -43,7 +43,7 @@ export default function RegisterPage() {
         sektor: values.sektor || null,
       })
       toast.success("Kayıt başarılı, hoş geldiniz.")
-      navigate(user ? roleHomePath(user.role) : "/girisimim", { replace: true })
+      navigate(roleHomePath(registeredUser.role), { replace: true })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Kayıt başarısız.")
     }

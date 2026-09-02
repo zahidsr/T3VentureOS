@@ -13,11 +13,13 @@ public class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
     private readonly AnthropicService _ai;
+    private readonly ICurrentUserService _currentUser;
 
-    public DashboardController(DashboardService dashboard, AnthropicService ai)
+    public DashboardController(DashboardService dashboard, AnthropicService ai, ICurrentUserService currentUser)
     {
         _dashboard = dashboard;
         _ai = ai;
+        _currentUser = currentUser;
     }
 
     [HttpGet]
@@ -51,6 +53,15 @@ public class DashboardController : ControllerBase
         var prompt = DashboardService.BuildAiPrompt(stats);
         var (success, text, error) = await _ai.GenerateInsightAsync(prompt);
         if (!success) return BadRequest(new ErrorResponse(error ?? "AI analizi oluşturulamadı."));
+
+        await _dashboard.SaveAiAnalizAsync(_currentUser.UserId!.Value, text!);
         return Ok(new AiAnalizDto(text!));
+    }
+
+    [HttpGet("ai-analiz-gecmisi")]
+    public async Task<IActionResult> AiAnalizGecmisi([FromQuery] int limit = 10)
+    {
+        var list = await _dashboard.ListAiAnalizGecmisiAsync(limit);
+        return Ok(list.Select(a => new AiAnalizKaydiDto(a.Id, a.CreatedAt, a.CreatedByAdSoyad, a.Metin)).ToList());
     }
 }

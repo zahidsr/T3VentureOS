@@ -23,9 +23,14 @@ public class ProgramsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] string? ara, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
+    public async Task<IActionResult> Index(
+        [FromQuery] string? ara, [FromQuery] string? durum, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
-        var result = await _programs.ListAsync(ara, page, pageSize);
+        ProgramDurumu? parsedDurum = null;
+        if (!string.IsNullOrWhiteSpace(durum) && Enum.TryParse<ProgramDurumu>(durum, true, out var d))
+            parsedDurum = d;
+
+        var result = await _programs.ListAsync(ara, parsedDurum, page, pageSize);
         return Ok(result.ToPagedDto(p => p.ToSummaryDto()));
     }
 

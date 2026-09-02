@@ -26,7 +26,7 @@ createRoot(document.getElementById("root")!).render(
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
               <App />
-              <Toaster richColors position="top-center" />
+              <Toaster richColors position="top-center" offset={{ top: "96px" }} mobileOffset={{ top: "88px" }} />
             </AuthProvider>
           </QueryClientProvider>
         </BrowserRouter>

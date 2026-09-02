@@ -11,6 +11,7 @@ export interface UserDto {
   girisimId: string | null
   girisimAdi: string | null
   emailVerified: boolean
+  lastLoginAt: string | null
 }
 
 export interface AuthResponse {
@@ -44,6 +45,62 @@ export interface InviteUserRequest {
   fullName: string
   role: UserRole
   girisimId?: string | null
+}
+
+export interface ChangeRoleRequest {
+  role: UserRole
+  girisimId?: string | null
+}
+
+export interface ChangeGirisimRequest {
+  girisimId: string
+}
+
+export interface BulkInviteRowRequest {
+  email: string
+  fullName: string
+  role: UserRole
+  girisimAdi?: string | null
+}
+
+export interface BulkInviteRequest {
+  rows: BulkInviteRowRequest[]
+}
+
+export interface BulkInviteRowResultDto {
+  satirNo: number
+  email: string
+  basarili: boolean
+  hata: string | null
+}
+
+export interface BulkInviteResponseDto {
+  toplamSatir: number
+  basariliSayisi: number
+  hataliSayisi: number
+  sonuclar: BulkInviteRowResultDto[]
+}
+
+/** Mirrors T3VentureOS.Domain.Entities.IslemKaydi.Eylem values. */
+export type IslemEylemi =
+  | "KullaniciDavetEdildi"
+  | "DavetYenidenGonderildi"
+  | "KullaniciDevreDisiBirakildi"
+  | "KullaniciAktiflestirildi"
+  | "RolDegistirildi"
+  | "GirisimAtamasiDegistirildi"
+  | "TopluDavetTamamlandi"
+
+export interface IslemKaydiDto {
+  id: string
+  createdAt: string
+  actorAdSoyad: string
+  actorEmail: string
+  hedefKullaniciId: string | null
+  hedefAdSoyad: string | null
+  hedefEmail: string | null
+  eylem: IslemEylemi
+  detay: string | null
 }
 
 // ---------------------------------------------------------------- Programlar
@@ -315,17 +372,46 @@ export interface OnayBekleyenGuncellemeDto {
   createdAt: string
 }
 
+export type ItirazKonusuTuru = "Satis" | "Yatirim" | "Basari" | "Dokuman"
+
+export interface OnayBekleyenItirazDto {
+  id: string
+  girisimId: string
+  girisimAdi: string
+  konuTuru: ItirazKonusuTuru
+  konuId: string
+  aciklama: string
+  createdAt: string
+}
+
 export interface OnayKuyruguDto {
   satislar: OnayBekleyenSatisDto[]
   yatirimlar: OnayBekleyenYatirimDto[]
   basarilar: OnayBekleyenBasariDto[]
   dokumanlar: OnayBekleyenDokumanDto[]
   guncellemeler: OnayBekleyenGuncellemeDto[]
+  itirazlar: OnayBekleyenItirazDto[]
 }
 
 export interface OnayKararRequest {
   onayla: boolean
   not?: string | null
+}
+
+export interface SubmitItirazRequest {
+  konuTuru: ItirazKonusuTuru
+  konuId: string
+  aciklama: string
+}
+
+export interface ItirazDto {
+  id: string
+  konuTuru: ItirazKonusuTuru
+  konuId: string
+  aciklama: string
+  onayDurumu: string
+  reviewNotu: string | null
+  createdAt: string
 }
 
 // ----------------------------------------------------------------- Dashboard
@@ -348,6 +434,13 @@ export interface AylikTrendDto {
 
 export interface AiAnalizDto {
   analiz: string
+}
+
+export interface AiAnalizKaydiDto {
+  id: string
+  createdAt: string
+  createdByAdSoyad: string
+  metin: string
 }
 
 export interface DashboardStatsDto {

@@ -48,4 +48,40 @@ public class DashboardServiceTests
         Assert.Contains("Bekleyen Onay: 2", prompt);
         Assert.Contains("Yazılım: 2", prompt);
     }
+
+    [Fact]
+    public async Task SaveAiAnalizAsync_persists_a_snapshot_the_actor_and_text()
+    {
+        var db = TestDb.Create();
+        var karar = new User { Email = "karar@test.local", FullName = "Karar Verici", Role = UserRole.KararVerici };
+        db.Users.Add(karar);
+        await db.SaveChangesAsync();
+
+        var dashboard = new DashboardService(db);
+        var kayit = await dashboard.SaveAiAnalizAsync(karar.Id, "Ekosistem büyüme trendinde.");
+
+        Assert.Equal(karar.Id, kayit.CreatedById);
+        Assert.Equal("Karar Verici", kayit.CreatedByAdSoyad);
+        Assert.Equal("Ekosistem büyüme trendinde.", kayit.Metin);
+        Assert.Single(db.AiAnalizKayitlari);
+    }
+
+    [Fact]
+    public async Task ListAiAnalizGecmisiAsync_returns_newest_first_and_respects_the_limit()
+    {
+        var db = TestDb.Create();
+        var actorId = Guid.NewGuid();
+        var dashboard = new DashboardService(db);
+
+        var first = await dashboard.SaveAiAnalizAsync(actorId, "İlk analiz");
+        first.CreatedAt = DateTime.UtcNow.AddMinutes(-10);
+        var second = await dashboard.SaveAiAnalizAsync(actorId, "İkinci analiz");
+        second.CreatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        var history = await dashboard.ListAiAnalizGecmisiAsync(limit: 1);
+
+        Assert.Single(history);
+        Assert.Equal("İkinci analiz", history[0].Metin);
+    }
 }

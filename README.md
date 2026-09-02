@@ -22,7 +22,7 @@ T3VentureOS/
 │   ├── T3VentureOS.Infrastructure/ # EF Core, servisler, dosya depolama
 │   ├── T3VentureOS.Domain/         # Varlıklar ve enumlar
 │   └── T3VentureOS.Tests/          # xUnit birim + entegrasyon testleri
-├── client/                         # React + Vite frontend
+├── client/                         # React frontend
 ├── docs/                           # Mimari, veritabanı şeması, API endpoint dokümanları
 ├── T3VentureOS.slnx
 └── README.md

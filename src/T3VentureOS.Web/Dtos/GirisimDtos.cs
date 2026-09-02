@@ -4,7 +4,7 @@ namespace T3VentureOS.Web.Dtos;
 
 public record GirisimSummaryDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji,
-    int? KurulusYili, int? EkipBuyuklugu, decimal ToplamOnayliCiro, DateTime CreatedAt);
+    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, decimal ToplamOnayliCiro, DateTime CreatedAt);
 
 public record CreateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
 public record UpdateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
@@ -38,7 +38,7 @@ public record SubmitGuncellemeTalebiRequest(string Ad, string? Sektor, string? K
 public static class GirisimDtoExtensions
 {
     public static GirisimSummaryDto ToSummaryDto(this Girisim g) =>
-        new(g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.KurulusYili, g.EkipBuyuklugu, g.SatisKayitlari.Sum(s => s.Ciro), g.CreatedAt);
+        new(g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.SatisKayitlari.Sum(s => s.Ciro), g.CreatedAt);
 
     public static GirisimDetailDto ToDetailDto(this Girisim g) => new(
         g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.CreatedAt,

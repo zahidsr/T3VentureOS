@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query"
 import { KeyRound, LogOut, Mail, Menu, X } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api-client"
-import { roleHomePath } from "@/lib/role-home"
 import type { DashboardStatsDto } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { ThemeToggle } from "@/components/patterns/ThemeToggle"
+import { RoleBadge } from "@/components/patterns/RoleBadge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   DropdownMenu,
@@ -36,16 +36,6 @@ function usePendingOnayCount(role: string | undefined) {
   return data?.bekleyenOnaySayisi ?? 0
 }
 
-function roleLabel(role: string | undefined): string {
-  switch (role) {
-    case "SuperAdmin": return "Süper Admin"
-    case "ProgramYoneticisi": return "Program Yöneticisi"
-    case "StartupKullanicisi": return "Startup Kullanıcısı"
-    case "KararVerici": return "Karar Verici"
-    default: return ""
-  }
-}
-
 function navItemsForRole(role: string | undefined): NavItem[] {
   switch (role) {
     case "SuperAdmin":
@@ -54,6 +44,7 @@ function navItemsForRole(role: string | undefined): NavItem[] {
         { to: "/programlar", label: "Programlar" },
         { to: "/onaylar", label: "Onaylar" },
         { to: "/admin/kullanicilar", label: "Kullanıcılar" },
+        { to: "/admin/islem-gecmisi", label: "İşlem Geçmişi" },
       ]
     case "ProgramYoneticisi":
       return [
@@ -105,7 +96,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
   const items = navItemsForRole(user?.role)
   const pendingOnayCount = usePendingOnayCount(user?.role)
-  const logoTo = isAuthenticated && user ? roleHomePath(user.role) : "/"
+  const logoTo = "/"
 
   function handleLogout() {
     logout()
@@ -181,9 +172,7 @@ export function Navbar() {
                   <p className="text-sm font-semibold text-gray-900 truncate">{user?.fullName}</p>
                   <p className="text-xs text-gray-500 truncate">{user?.email ?? ""}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="inline-block rounded-full bg-t3-blue-light px-2 py-0.5 text-[11px] font-semibold text-t3-blue">
-                      {roleLabel(user?.role)}
-                    </span>
+                    {user && <RoleBadge role={user.role} className="text-[11px]" />}
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
                       <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Oturum açık

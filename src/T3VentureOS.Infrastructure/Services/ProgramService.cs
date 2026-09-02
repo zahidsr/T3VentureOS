@@ -16,7 +16,8 @@ public class ProgramService
         _notifications = notifications;
     }
 
-    public async Task<PagedResult<GirisimProgrami>> ListAsync(string? ara = null, int page = 1, int pageSize = PagingDefaults.DefaultPageSize)
+    public async Task<PagedResult<GirisimProgrami>> ListAsync(
+        string? ara = null, ProgramDurumu? durum = null, int page = 1, int pageSize = PagingDefaults.DefaultPageSize)
     {
         (page, pageSize) = PagingDefaults.Normalize(page, pageSize);
 
@@ -24,6 +25,8 @@ public class ProgramService
         var query = _db.Programlar.Include(p => p.Katilimlar).AsQueryable();
         if (!string.IsNullOrWhiteSpace(ara))
             query = query.Where(p => p.Name.Contains(ara));
+        if (durum is not null)
+            query = query.Where(p => p.Durum == durum);
 
         query = query.OrderByDescending(p => p.CreatedAt);
 

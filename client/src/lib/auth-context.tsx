@@ -6,8 +6,8 @@ interface AuthContextValue {
   user: UserDto | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (data: RegisterRequest) => Promise<void>
+  login: (email: string, password: string) => Promise<UserDto>
+  register: (data: RegisterRequest) => Promise<UserDto>
   refreshUser: () => Promise<void>
   logout: () => void
 }
@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.post<AuthResponse>("/auth/login", { email, password })
       setToken(res.data.accessToken)
       setUser(res.data.user)
+      return res.data.user
     } catch (error) {
       throw new Error(extractErrorMessage(error, "Giriş başarısız."))
     }
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.post<AuthResponse>("/auth/register", data)
       setToken(res.data.accessToken)
       setUser(res.data.user)
+      return res.data.user
     } catch (error) {
       throw new Error(extractErrorMessage(error, "Kayıt başarısız."))
     }

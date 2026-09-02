@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/patterns/EmptyState"
 import { Pagination } from "@/components/patterns/Pagination"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api, extractErrorMessage } from "@/lib/api-client"
@@ -22,6 +23,9 @@ const programDurumLabels: Record<ProgramDurumu, string> = {
   Tamamlandi: "Tamamlandı",
   Arsivlendi: "Arşivlendi",
 }
+
+const PROGRAM_DURUM_OPTIONS: ProgramDurumu[] = ["Taslak", "Aktif", "Tamamlandi", "Arsivlendi"]
+const ALL_DURUMLAR = "__all__"
 
 const programDurumClasses: Record<ProgramDurumu, string> = {
   Taslak: "bg-slate-100 text-slate-600 border-slate-200",
@@ -39,15 +43,20 @@ export default function ProgramlarIndexPage() {
   const { user } = useAuth()
   const canCreate = user?.role === "SuperAdmin" || user?.role === "ProgramYoneticisi"
   const [ara, setAra] = useState("")
+  const [durumFilter, setDurumFilter] = useState(ALL_DURUMLAR)
   const [page, setPage] = useState(1)
   const debouncedAra = useDebouncedValue(ara)
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["programs", debouncedAra, page],
+    queryKey: ["programs", debouncedAra, durumFilter, page],
     queryFn: async () =>
       (
         await api.get<PagedResultDto<ProgramSummaryDto>>("/programs", {
-          params: { ara: debouncedAra || undefined, page },
+          params: {
+            ara: debouncedAra || undefined,
+            durum: durumFilter === ALL_DURUMLAR ? undefined : durumFilter,
+            page,
+          },
         })
       ).data,
   })
@@ -69,8 +78,8 @@ export default function ProgramlarIndexPage() {
         }
       />
 
-      <div className="mb-6 w-full max-w-sm space-y-1.5">
-        <div className="relative">
+      <div className="mb-6 flex flex-wrap gap-3">
+        <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
           <Input
             id="ara-filter"
@@ -80,6 +89,22 @@ export default function ProgramlarIndexPage() {
             className="pl-8"
           />
         </div>
+        <Select
+          value={durumFilter}
+          onValueChange={(value) => { setDurumFilter(value ?? ALL_DURUMLAR); setPage(1) }}
+        >
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Tüm durumlar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_DURUMLAR}>Tüm durumlar</SelectItem>
+            {PROGRAM_DURUM_OPTIONS.map((d) => (
+              <SelectItem key={d} value={d}>
+                {programDurumLabels[d]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading && (

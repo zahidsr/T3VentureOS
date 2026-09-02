@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -173,6 +174,33 @@ export default function ProgramDetailsPage() {
       toast.error(extractErrorMessage(error, "Katılım durumu güncellenemedi."))
     },
   })
+
+  const [selectedKatilimIds, setSelectedKatilimIds] = useState<Set<string>>(new Set())
+  const [bulkDurum, setBulkDurum] = useState<KatilimDurumu>("DevamEdiyor")
+
+  const bulkKatilimDurumMutation = useMutation({
+    mutationFn: async ({ katilimIds, durum }: { katilimIds: string[]; durum: KatilimDurumu }) => {
+      await Promise.all(
+        katilimIds.map((katilimId) => api.put(`/programs/katilimlar/${katilimId}/durum`, { durum })),
+      )
+      return { count: katilimIds.length }
+    },
+    onSuccess: ({ count }) => {
+      toast.success(`${count} katılımcının durumu güncellendi.`)
+      setSelectedKatilimIds(new Set())
+      queryClient.invalidateQueries({ queryKey: ["programs", id] })
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Bazı katılımcılar güncellenemedi.")),
+  })
+
+  function toggleKatilimSelected(katilimId: string, checked: boolean) {
+    setSelectedKatilimIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(katilimId)
+      else next.delete(katilimId)
+      return next
+    })
+  }
 
   const [addGirisimId, setAddGirisimId] = useState("")
   const [addDonem, setAddDonem] = useState("")
@@ -380,59 +408,121 @@ export default function ProgramDetailsPage() {
               })()}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             {program.katilimcilar.length === 0 ? (
               <EmptyState icon="👥" message="Bu programa henüz katılımcı eklenmemiş." />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Girişim</TableHead>
-                    <TableHead>Dönem</TableHead>
-                    <TableHead>Durum</TableHead>
-                    <TableHead>Başlangıç</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {program.katilimcilar.map((k) => (
-                    <TableRow key={k.katilimId} className={k.durum === "Basvuru" ? "bg-amber-50/50" : undefined}>
-                      <TableCell>
-                        <Link
-                          to={`/girisimler/${k.girisimId}`}
-                          className="font-medium text-t3-navy hover:text-t3-blue hover:underline"
+              <>
+                {canWrite && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Checkbox
+                        checked={
+                          program.katilimcilar.length > 0 &&
+                          program.katilimcilar.every((k) => selectedKatilimIds.has(k.katilimId))
+                        }
+                        onCheckedChange={(checked) =>
+                          setSelectedKatilimIds(
+                            checked === true ? new Set(program.katilimcilar.map((k) => k.katilimId)) : new Set(),
+                          )
+                        }
+                      />
+                      Tümünü Seç
+                    </label>
+                    {selectedKatilimIds.size > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-t3-navy">
+                          {selectedKatilimIds.size} katılımcı seçildi
+                        </span>
+                        <Select value={bulkDurum} onValueChange={(value) => setBulkDurum(value as KatilimDurumu)}>
+                          <SelectTrigger size="sm" className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {katilimDurumOptions.map((d) => (
+                              <SelectItem key={d} value={d}>
+                                {katilimDurumLabels[d]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                          disabled={bulkKatilimDurumMutation.isPending}
+                          onClick={() =>
+                            bulkKatilimDurumMutation.mutate({
+                              katilimIds: Array.from(selectedKatilimIds),
+                              durum: bulkDurum,
+                            })
+                          }
                         >
-                          {k.girisimAdi}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{k.donem || "—"}</TableCell>
-                      <TableCell>
-                        {canWrite ? (
-                          <Select
-                            value={k.durum}
-                            onValueChange={(value) =>
-                              katilimDurumMutation.mutate({ katilimId: k.katilimId, durum: value as KatilimDurumu })
-                            }
-                          >
-                            <SelectTrigger size="sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {katilimDurumOptions.map((d) => (
-                                <SelectItem key={d} value={d}>
-                                  {katilimDurumLabels[d]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <KatilimDurumBadge durum={k.durum} />
-                        )}
-                      </TableCell>
-                      <TableCell>{formatDate(k.baslangicTarihi)}</TableCell>
+                          Uygula
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {canWrite && <TableHead className="w-10" />}
+                      <TableHead>Girişim</TableHead>
+                      <TableHead>Dönem</TableHead>
+                      <TableHead>Durum</TableHead>
+                      <TableHead>Başlangıç</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {program.katilimcilar.map((k) => (
+                      <TableRow key={k.katilimId} className={k.durum === "Basvuru" ? "bg-amber-50/50" : undefined}>
+                        {canWrite && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedKatilimIds.has(k.katilimId)}
+                              onCheckedChange={(checked) => toggleKatilimSelected(k.katilimId, checked === true)}
+                              aria-label={`${k.girisimAdi} katılımını seç`}
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <Link
+                            to={`/girisimler/${k.girisimId}`}
+                            className="font-medium text-t3-navy hover:text-t3-blue hover:underline"
+                          >
+                            {k.girisimAdi}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{k.donem || "—"}</TableCell>
+                        <TableCell>
+                          {canWrite ? (
+                            <Select
+                              value={k.durum}
+                              onValueChange={(value) =>
+                                katilimDurumMutation.mutate({ katilimId: k.katilimId, durum: value as KatilimDurumu })
+                              }
+                            >
+                              <SelectTrigger size="sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {katilimDurumOptions.map((d) => (
+                                  <SelectItem key={d} value={d}>
+                                    {katilimDurumLabels[d]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <KatilimDurumBadge durum={k.durum} />
+                          )}
+                        </TableCell>
+                        <TableCell>{formatDate(k.baslangicTarihi)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>

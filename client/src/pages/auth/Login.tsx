@@ -19,7 +19,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function LoginPage() {
-  const { login, user } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -33,10 +33,15 @@ export default function LoginPage() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null)
     try {
-      await login(values.email, values.password)
+      const loggedInUser = await login(values.email, values.password)
       toast.success("Giriş başarılı.")
+      // Startup kullanıcısının tek bir "evi" var — nereden geldiğine bakılmaksızın hep Girişimim'e düşer.
+      if (loggedInUser.role === "StartupKullanicisi") {
+        navigate(roleHomePath(loggedInUser.role), { replace: true })
+        return
+      }
       const from = (location.state as { from?: Location })?.from?.pathname
-      navigate(from || (user ? roleHomePath(user.role) : "/"), { replace: true })
+      navigate(from || roleHomePath(loggedInUser.role), { replace: true })
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Giriş başarısız.")
     }

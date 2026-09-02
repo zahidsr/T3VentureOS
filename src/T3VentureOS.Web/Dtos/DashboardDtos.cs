@@ -9,6 +9,8 @@ public record PublicStatsDto(int ToplamGirisim, int AktifProgramSayisi, decimal 
 
 public record AiAnalizDto(string Analiz);
 
+public record AiAnalizKaydiDto(Guid Id, DateTime CreatedAt, string CreatedByAdSoyad, string Metin);
+
 public record DashboardStatsDto(
     int ToplamGirisim,
     int AktifProgramSayisi,

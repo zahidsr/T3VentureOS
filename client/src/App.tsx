@@ -20,6 +20,7 @@ import ProgramDetailsPage from "@/pages/programlar/ProgramDetails"
 
 import OnaylarIndexPage from "@/pages/onaylar/OnaylarIndex"
 import KullanicilarIndexPage from "@/pages/admin/KullanicilarIndex"
+import IslemGecmisiIndexPage from "@/pages/admin/IslemGecmisiIndex"
 import GirisimimPage from "@/pages/girisimim/Girisimim"
 import RaporPage from "@/pages/rapor/Rapor"
 import ChangePasswordPage from "@/pages/account/ChangePassword"
@@ -39,9 +40,14 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/erisim-reddedildi" element={<AccessDeniedPage />} />
 
-        {/* Girişimler — SuperAdmin & Program Yöneticisi (Karar Verici read-only) */}
+        {/* Girişimler listesi — SuperAdmin & Program Yöneticisi (Karar Verici read-only) */}
         <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici"]} />}>
           <Route path="/girisimler" element={<GirisimlerIndexPage />} />
+        </Route>
+
+        {/* Girişim detayı — yöneticiler + kendi girişimini görüntüleyen StartupKullanicisi
+            (erişim backend'de GirisimErisim attribute'u ile kendi girişimiyle sınırlanır) */}
+        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici", "StartupKullanicisi"]} />}>
           <Route path="/girisimler/:id" element={<GirisimDetailsPage />} />
         </Route>
 
@@ -60,6 +66,7 @@ export default function App() {
         {/* SuperAdmin only */}
         <Route element={<ProtectedRoute roles={["SuperAdmin"]} />}>
           <Route path="/admin/kullanicilar" element={<KullanicilarIndexPage />} />
+          <Route path="/admin/islem-gecmisi" element={<IslemGecmisiIndexPage />} />
         </Route>
 
         {/* Startup Kullanıcısı */}

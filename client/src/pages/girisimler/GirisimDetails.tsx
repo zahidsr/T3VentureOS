@@ -323,6 +323,8 @@ export default function GirisimDetailsPage() {
   const [isEditing, setIsEditing] = useState(false)
 
   const canEdit = user?.role === "SuperAdmin" || user?.role === "ProgramYoneticisi"
+  const backTo = user?.role === "StartupKullanicisi" ? "/girisimim" : "/girisimler"
+  const backLabel = user?.role === "StartupKullanicisi" ? "Girişimime dön" : "Girişimlere dön"
 
   const girisimQuery = useQuery({
     queryKey: ["girisim", id],
@@ -351,7 +353,7 @@ export default function GirisimDetailsPage() {
   if (girisimQuery.isError || !girisimQuery.data) {
     return (
       <div>
-        <BackLink to="/girisimler" label="Girişimlere dön" />
+        <BackLink to={backTo} label={backLabel} />
         <EmptyState icon="⚠️" message="Girişim bulunamadı veya yüklenirken bir hata oluştu." />
       </div>
     )
@@ -361,7 +363,7 @@ export default function GirisimDetailsPage() {
 
   return (
     <div>
-      <BackLink to="/girisimler" label="Girişimlere dön" />
+      <BackLink to={backTo} label={backLabel} />
       <PageHeader
         eyebrow="Girişim Ekosistemi"
         title={girisim.ad}

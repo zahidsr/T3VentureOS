@@ -17,6 +17,7 @@ const startupUser: UserDto = {
   girisimId: "g1",
   girisimAdi: "Test Girişim",
   emailVerified: true,
+  lastLoginAt: null,
 }
 
 function renderProtected(roles?: UserDto["role"][]) {

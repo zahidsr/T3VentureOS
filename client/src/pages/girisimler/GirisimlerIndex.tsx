@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { ArrowRight, Search, SlidersHorizontal } from "lucide-react"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { LinkButton } from "@/components/patterns/LinkButton"
@@ -129,7 +129,8 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
 
 export default function GirisimlerIndexPage() {
   const { user } = useAuth()
-  const [sektor, setSektor] = useState("")
+  const [searchParams] = useSearchParams()
+  const [sektor, setSektor] = useState(searchParams.get("sektor") ?? "")
   const [programId, setProgramId] = useState(ALL_PROGRAMS)
   const [ara, setAra] = useState("")
   const [sirala, setSirala] = useState("yeni")

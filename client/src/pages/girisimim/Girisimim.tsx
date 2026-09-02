@@ -19,6 +19,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { API_URL, api, extractErrorMessage } from "@/lib/api-client"
 import type {
   AddBasariRequest,
@@ -28,11 +36,21 @@ import type {
   BasariTuru,
   GirisimDetailDto,
   GuncellemeTalebiDto,
+  ItirazDto,
+  ItirazKonusuTuru,
   KatilimDurumu,
   MessageResponse,
   SubmitGuncellemeTalebiRequest,
+  SubmitItirazRequest,
   YatirimTuru,
 } from "@/lib/types"
+
+const KONU_TURU_LABEL: Record<ItirazKonusuTuru, string> = {
+  Satis: "Satış",
+  Yatirim: "Yatırım",
+  Basari: "Başarı",
+  Dokuman: "Doküman",
+}
 
 // ---------------------------------------------------------------- helpers
 
@@ -704,6 +722,13 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
 export default function GirisimimPage() {
   const queryClient = useQueryClient()
   const [showGuncellemeForm, setShowGuncellemeForm] = useState(false)
+  const [itirazTarget, setItirazTarget] = useState<{
+    konuTuru: ItirazKonusuTuru
+    konuId: string
+    label: string
+  } | null>(null)
+  const [itirazAciklama, setItirazAciklama] = useState("")
+  const [itirazAciklamaError, setItirazAciklamaError] = useState(false)
 
   const { data: girisim, isLoading, isError, error } = useQuery({
     queryKey: ["girisimim"],
@@ -717,9 +742,64 @@ export default function GirisimimPage() {
     enabled: !!girisim?.id,
   })
 
+  const itirazlarQuery = useQuery({
+    queryKey: ["girisimim-itirazlar", girisim?.id],
+    queryFn: async () => (await api.get<ItirazDto[]>(`/girisimler/${girisim!.id}/itirazlar`)).data,
+    enabled: !!girisim?.id,
+  })
+
+  const pendingItirazKonuIds = new Set(
+    (itirazlarQuery.data ?? []).filter((i) => i.onayDurumu === "Beklemede").map((i) => i.konuId),
+  )
+
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["girisimim"] })
     queryClient.invalidateQueries({ queryKey: ["girisimim-guncelleme-talepleri"] })
+  }
+
+  const submitItirazMutation = useMutation({
+    mutationFn: async (payload: SubmitItirazRequest) =>
+      (await api.post<MessageResponse>(`/girisimler/${girisim!.id}/itiraz`, payload)).data,
+    onSuccess: (data) => {
+      toast.success(data.message)
+      queryClient.invalidateQueries({ queryKey: ["girisimim-itirazlar"] })
+      setItirazTarget(null)
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "İtiraz gönderilemedi.")),
+  })
+
+  function openItiraz(konuTuru: ItirazKonusuTuru, konuId: string, label: string) {
+    setItirazTarget({ konuTuru, konuId, label })
+    setItirazAciklama("")
+    setItirazAciklamaError(false)
+  }
+
+  function confirmItiraz() {
+    if (!itirazTarget) return
+    if (!itirazAciklama.trim()) {
+      setItirazAciklamaError(true)
+      return
+    }
+    submitItirazMutation.mutate({
+      konuTuru: itirazTarget.konuTuru,
+      konuId: itirazTarget.konuId,
+      aciklama: itirazAciklama.trim(),
+    })
+  }
+
+  function ItirazAction({ konuTuru, konuId, label }: { konuTuru: ItirazKonusuTuru; konuId: string; label: string }) {
+    if (pendingItirazKonuIds.has(konuId)) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          İtiraz İncelemede
+        </Badge>
+      )
+    }
+    return (
+      <Button size="sm" variant="outline" onClick={() => openItiraz(konuTuru, konuId, label)}>
+        İtiraz Et
+      </Button>
+    )
   }
 
   const deleteOnSuccess = { onSuccess: () => { toast.success("Kayıt silindi."); invalidate() } }
@@ -809,6 +889,7 @@ export default function GirisimimPage() {
           <TabsTrigger value="gelisim">Gelişim</TabsTrigger>
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
+          <TabsTrigger value="itirazlarim">İtirazlarım</TabsTrigger>
         </TabsList>
 
         {/* -------------------------------------------------------- Profil */}
@@ -996,17 +1077,22 @@ export default function GirisimimPage() {
                             <ReviewNotuCell notu={s.reviewNotu} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {s.onayDurumu === "Beklemede" && (
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-red-600 hover:bg-red-50"
-                                disabled={deleteSatisMutation.isPending}
-                                onClick={() => confirmDelete(deleteSatisMutation, s.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            )}
+                            <div className="flex justify-end gap-2">
+                              {s.onayDurumu === "Beklemede" && (
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:bg-red-50"
+                                  disabled={deleteSatisMutation.isPending}
+                                  onClick={() => confirmDelete(deleteSatisMutation, s.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                              {s.onayDurumu === "Reddedildi" && (
+                                <ItirazAction konuTuru="Satis" konuId={s.id} label={`${s.donem} dönemi satış kaydı`} />
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1056,17 +1142,26 @@ export default function GirisimimPage() {
                             <ReviewNotuCell notu={y.reviewNotu} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {y.onayDurumu === "Beklemede" && (
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-red-600 hover:bg-red-50"
-                                disabled={deleteYatirimMutation.isPending}
-                                onClick={() => confirmDelete(deleteYatirimMutation, y.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            )}
+                            <div className="flex justify-end gap-2">
+                              {y.onayDurumu === "Beklemede" && (
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:bg-red-50"
+                                  disabled={deleteYatirimMutation.isPending}
+                                  onClick={() => confirmDelete(deleteYatirimMutation, y.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                              {y.onayDurumu === "Reddedildi" && (
+                                <ItirazAction
+                                  konuTuru="Yatirim"
+                                  konuId={y.id}
+                                  label={`${yatirimTuruLabels[y.tur] ?? y.tur} yatırım kaydı`}
+                                />
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1117,17 +1212,22 @@ export default function GirisimimPage() {
                             <ReviewNotuCell notu={b.reviewNotu} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {b.onayDurumu === "Beklemede" && (
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-red-600 hover:bg-red-50"
-                                disabled={deleteBasariMutation.isPending}
-                                onClick={() => confirmDelete(deleteBasariMutation, b.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            )}
+                            <div className="flex justify-end gap-2">
+                              {b.onayDurumu === "Beklemede" && (
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:bg-red-50"
+                                  disabled={deleteBasariMutation.isPending}
+                                  onClick={() => confirmDelete(deleteBasariMutation, b.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                              {b.onayDurumu === "Reddedildi" && (
+                                <ItirazAction konuTuru="Basari" konuId={b.id} label={b.baslik} />
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1186,17 +1286,22 @@ export default function GirisimimPage() {
                             <ReviewNotuCell notu={d.reviewNotu} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {d.onayDurumu === "Beklemede" && (
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                className="text-red-600 hover:bg-red-50"
-                                disabled={deleteDokumanMutation.isPending}
-                                onClick={() => confirmDelete(deleteDokumanMutation, d.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            )}
+                            <div className="flex justify-end gap-2">
+                              {d.onayDurumu === "Beklemede" && (
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:bg-red-50"
+                                  disabled={deleteDokumanMutation.isPending}
+                                  onClick={() => confirmDelete(deleteDokumanMutation, d.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                              {d.onayDurumu === "Reddedildi" && (
+                                <ItirazAction konuTuru="Dokuman" konuId={d.id} label={d.baslik} />
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1207,7 +1312,77 @@ export default function GirisimimPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* -------------------------------------------------- İtirazlarım */}
+        <TabsContent value="itirazlarim" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>İtiraz Geçmişi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!itirazlarQuery.data || itirazlarQuery.data.length === 0 ? (
+                <EmptyState icon="⚖️" message="Henüz bir itiraz göndermediniz." />
+              ) : (
+                <div className="space-y-3">
+                  {itirazlarQuery.data.map((i) => (
+                    <div key={i.id} className="rounded-lg border p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-t3-navy">
+                          {KONU_TURU_LABEL[i.konuTuru] ?? i.konuTuru}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{formatDate(i.createdAt)}</span>
+                          <StatusBadge status={i.onayDurumu} />
+                        </div>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{i.aciklama}</p>
+                      {i.reviewNotu && <p className="mt-1.5 text-xs text-red-700">{i.reviewNotu}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <Dialog open={itirazTarget !== null} onOpenChange={(open) => !open && setItirazTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>İtiraz Et</DialogTitle>
+            <DialogDescription>
+              {itirazTarget?.label} reddedildi. İtirazınız yönetici onayına gönderilecek; kabul edilirse kayıt
+              tekrar onaylı duruma döner.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="itiraz-aciklama">İtiraz Açıklaması *</Label>
+            <Textarea
+              id="itiraz-aciklama"
+              placeholder="Bu kaydın neden yeniden değerlendirilmesi gerektiğini açıklayın…"
+              value={itirazAciklama}
+              onChange={(e) => {
+                setItirazAciklama(e.target.value)
+                if (e.target.value.trim()) setItirazAciklamaError(false)
+              }}
+              aria-invalid={itirazAciklamaError}
+            />
+            {itirazAciklamaError && <p className="text-xs text-red-600">İtiraz açıklaması zorunludur.</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setItirazTarget(null)}>
+              Vazgeç
+            </Button>
+            <Button
+              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              disabled={submitItirazMutation.isPending}
+              onClick={confirmItiraz}
+            >
+              {submitItirazMutation.isPending ? "Gönderiliyor…" : "İtirazı Gönder"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

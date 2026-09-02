@@ -1,4 +1,5 @@
 using T3VentureOS.Domain;
+using T3VentureOS.Domain.Entities;
 using T3VentureOS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -104,6 +105,24 @@ public class DashboardService
             Aylık Trend (son 6 ay): {trendText}
             """;
     }
+
+    /// <summary>Persists a generated AI analysis so it survives past the current browser session.</summary>
+    public async Task<AiAnalizKaydi> SaveAiAnalizAsync(Guid userId, string metin)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var kayit = new AiAnalizKaydi
+        {
+            CreatedById = userId,
+            CreatedByAdSoyad = user?.FullName ?? string.Empty,
+            Metin = metin,
+        };
+        _db.AiAnalizKayitlari.Add(kayit);
+        await _db.SaveChangesAsync();
+        return kayit;
+    }
+
+    public Task<List<AiAnalizKaydi>> ListAiAnalizGecmisiAsync(int limit = 10) =>
+        _db.AiAnalizKayitlari.OrderByDescending(a => a.CreatedAt).Take(limit).ToListAsync();
 
     private static readonly string[] AyKisaltmalari =
         { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };

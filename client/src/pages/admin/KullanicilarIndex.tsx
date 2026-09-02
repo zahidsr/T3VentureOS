@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Search } from "lucide-react"
+import { Ban, CheckCircle2, Mail, MoreVertical, Search, Upload } from "lucide-react"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -12,6 +12,7 @@ import { Pagination } from "@/components/patterns/Pagination"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
@@ -29,20 +30,70 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { RoleBadge, ROLE_LABEL } from "@/components/patterns/RoleBadge"
 import { api, extractErrorMessage } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
-import type { GirisimSummaryDto, InviteUserRequest, PagedResultDto, UserDto, UserRole } from "@/lib/types"
+import { cn } from "@/lib/utils"
+import type {
+  BulkInviteRequest,
+  BulkInviteResponseDto,
+  BulkInviteRowRequest,
+  ChangeGirisimRequest,
+  ChangeRoleRequest,
+  GirisimSummaryDto,
+  IslemKaydiDto,
+  InviteUserRequest,
+  PagedResultDto,
+  UserDto,
+  UserRole,
+} from "@/lib/types"
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  SuperAdmin: "Süper Admin",
-  ProgramYoneticisi: "Program Yöneticisi",
-  StartupKullanicisi: "Startup Kullanıcısı",
-  KararVerici: "Karar Verici",
+const EYLEM_LABEL: Record<string, string> = {
+  KullaniciDavetEdildi: "Kullanıcı davet edildi",
+  DavetYenidenGonderildi: "Davet yeniden gönderildi",
+  KullaniciDevreDisiBirakildi: "Kullanıcı devre dışı bırakıldı",
+  KullaniciAktiflestirildi: "Kullanıcı aktifleştirildi",
+  RolDegistirildi: "Rol değiştirildi",
+  GirisimAtamasiDegistirildi: "Girişim ataması değiştirildi",
+  TopluDavetTamamlandi: "Toplu davet tamamlandı",
 }
 
 const ROLE_OPTIONS: UserRole[] = ["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi", "KararVerici"]
 const ALL_ROLES = "__all__"
+
+function formatLastLogin(value: string | null): string {
+  if (!value) return "Hiç giriş yapmadı"
+  return new Date(value).toLocaleString("tr-TR")
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-50 text-blue-700",
+  "bg-violet-50 text-violet-700",
+  "bg-emerald-50 text-emerald-700",
+  "bg-amber-50 text-amber-700",
+  "bg-rose-50 text-rose-700",
+  "bg-cyan-50 text-cyan-700",
+  "bg-indigo-50 text-indigo-700",
+  "bg-teal-50 text-teal-700",
+]
+
+/** Deterministic hue from the name so each avatar gets a stable, distinct color. */
+function avatarColor(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString("tr-TR")
+}
 
 const schema = z
   .object({
@@ -60,10 +111,26 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>
 
+function parseCsv(text: string): BulkInviteRowRequest[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  const startIndex = lines[0]?.toLowerCase().startsWith("email") ? 1 : 0
+  const rows: BulkInviteRowRequest[] = []
+  for (let i = startIndex; i < lines.length; i++) {
+    const [email, fullName, role, girisimAdi] = lines[i].split(",").map((c) => c.trim())
+    if (!email) continue
+    rows.push({ email, fullName: fullName ?? "", role: (role ?? "") as UserRole, girisimAdi: girisimAdi || null })
+  }
+  return rows
+}
+
 export default function KullanicilarIndexPage() {
   const { user: currentUser } = useAuth()
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false)
+  const [bulkRows, setBulkRows] = useState<BulkInviteRowRequest[]>([])
+  const [bulkResults, setBulkResults] = useState<BulkInviteResponseDto | null>(null)
+  const [detailUser, setDetailUser] = useState<UserDto | null>(null)
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState(ALL_ROLES)
   const [page, setPage] = useState(1)
@@ -156,6 +223,36 @@ export default function KullanicilarIndexPage() {
     onError: (error) => toast.error(extractErrorMessage(error, "İşlem gerçekleştirilemedi.")),
   })
 
+  const bulkInviteMutation = useMutation({
+    mutationFn: async (rows: BulkInviteRowRequest[]) =>
+      (await api.post<BulkInviteResponseDto>("/admin/users/bulk-invite", { rows } satisfies BulkInviteRequest)).data,
+    onSuccess: (data) => {
+      setBulkResults(data)
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
+      if (data.hataliSayisi === 0) toast.success(`${data.basariliSayisi} kullanıcı davet edildi.`)
+      else toast.warning(`${data.basariliSayisi} başarılı, ${data.hataliSayisi} hatalı.`)
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Toplu davet gönderilemedi.")),
+  })
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setBulkRows(parseCsv(String(reader.result ?? "")))
+      setBulkResults(null)
+    }
+    reader.readAsText(file)
+    e.target.value = ""
+  }
+
+  function closeBulkDialog() {
+    setBulkDialogOpen(false)
+    setBulkRows([])
+    setBulkResults(null)
+  }
+
   const users = usersQuery.data?.items ?? []
 
   return (
@@ -165,9 +262,15 @@ export default function KullanicilarIndexPage() {
         title="Kullanıcılar"
         subtitle="Program yöneticileri, startup kullanıcıları ve karar vericiler için hesap davet edin."
         actions={
-          <Button className="bg-t3-blue text-white hover:bg-t3-blue-dark" onClick={() => setDialogOpen(true)}>
-            Kullanıcı Davet Et
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
+              <Upload className="size-4" />
+              Toplu Davet Et (CSV)
+            </Button>
+            <Button className="bg-t3-blue text-white hover:bg-t3-blue-dark" onClick={() => setDialogOpen(true)}>
+              Kullanıcı Davet Et
+            </Button>
+          </>
         }
       />
 
@@ -205,51 +308,112 @@ export default function KullanicilarIndexPage() {
       ) : users.length === 0 ? (
         <EmptyState icon="👥" message="Henüz kullanıcı bulunmuyor." />
       ) : (
-        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+        <div className="overflow-hidden rounded-xl shadow-sm ring-1 ring-foreground/10">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Ad Soyad</TableHead>
-                <TableHead>E-posta</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Durum</TableHead>
-                <TableHead>Girişim</TableHead>
-                <TableHead className="text-right">İşlem</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Kullanıcı
+                </TableHead>
+                <TableHead className="bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Rol
+                </TableHead>
+                <TableHead className="bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Durum
+                </TableHead>
+                <TableHead className="bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Girişim
+                </TableHead>
+                <TableHead className="bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Son Giriş
+                </TableHead>
+                <TableHead className="bg-muted/40 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  İşlem
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium text-t3-navy">{u.fullName}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>{ROLE_LABEL[u.role]}</TableCell>
+                <TableRow key={u.id} className="hover:bg-t3-blue-light/30">
+                  <TableCell className="py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={cn(
+                          "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold select-none",
+                          avatarColor(u.fullName),
+                        )}
+                      >
+                        {getInitials(u.fullName)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-t3-navy">{u.fullName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <RoleBadge role={u.role} />
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={u.status} />
                   </TableCell>
-                  <TableCell>{u.girisimAdi ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.girisimAdi ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span
+                        className={cn(
+                          "size-1.5 shrink-0 rounded-full",
+                          u.lastLoginAt ? "bg-emerald-500" : "bg-slate-300",
+                        )}
+                      />
+                      {formatLastLogin(u.lastLoginAt)}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {u.status === "Invited" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={resendInviteMutation.isPending}
-                          onClick={() => resendInviteMutation.mutate(u.id)}
-                        >
-                          Daveti Yeniden Gönder
-                        </Button>
-                      )}
-                      {u.id !== currentUser?.id && u.status !== "Invited" && (
-                        <Button
-                          size="sm"
-                          variant={u.status === "Disabled" ? "outline" : "destructive"}
-                          disabled={setDisabledMutation.isPending}
-                          onClick={() =>
-                            setDisabledMutation.mutate({ userId: u.id, disable: u.status !== "Disabled" })
-                          }
-                        >
-                          {u.status === "Disabled" ? "Aktifleştir" : "Devre Dışı Bırak"}
-                        </Button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => setDetailUser(u)}>
+                        Detay
+                      </Button>
+                      {(u.status === "Invited" || (u.id !== currentUser?.id && u.status !== "Invited")) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={<Button variant="ghost" size="icon-sm" aria-label="Daha fazla işlem" />}
+                          >
+                            <MoreVertical className="size-4" />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {u.status === "Invited" && (
+                              <DropdownMenuItem
+                                disabled={resendInviteMutation.isPending}
+                                onClick={() => resendInviteMutation.mutate(u.id)}
+                              >
+                                <Mail className="size-4" />
+                                Daveti Yeniden Gönder
+                              </DropdownMenuItem>
+                            )}
+                            {u.id !== currentUser?.id && u.status !== "Invited" && (
+                              <DropdownMenuItem
+                                variant={u.status === "Disabled" ? "default" : "destructive"}
+                                disabled={setDisabledMutation.isPending}
+                                onClick={() =>
+                                  setDisabledMutation.mutate({ userId: u.id, disable: u.status !== "Disabled" })
+                                }
+                              >
+                                {u.status === "Disabled" ? (
+                                  <>
+                                    <CheckCircle2 className="size-4" />
+                                    Aktifleştir
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="size-4" />
+                                    Devre Dışı Bırak
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </TableCell>
@@ -346,6 +510,245 @@ export default function KullanicilarIndexPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkDialogOpen} onOpenChange={(open) => (open ? setBulkDialogOpen(true) : closeBulkDialog())}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Toplu Davet Et (CSV)</DialogTitle>
+            <DialogDescription>
+              Başlıklar: <code className="rounded bg-muted px-1">email,fullName,role,girisimAdi</code>. Roller:{" "}
+              {ROLE_OPTIONS.join(", ")}. <code className="rounded bg-muted px-1">girisimAdi</code> yalnızca Startup
+              Kullanıcısı satırları için zorunludur.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input type="file" accept=".csv,text/csv" onChange={handleFileChange} />
+            {bulkRows.length > 0 && !bulkResults && (
+              <p className="text-sm text-muted-foreground">{bulkRows.length} satır okundu.</p>
+            )}
+            {bulkResults && (
+              <div className="max-h-64 overflow-y-auto rounded-lg ring-1 ring-foreground/10">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Satır</TableHead>
+                      <TableHead>E-posta</TableHead>
+                      <TableHead>Durum</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bulkResults.sonuclar.map((r) => (
+                      <TableRow key={r.satirNo}>
+                        <TableCell>{r.satirNo}</TableCell>
+                        <TableCell>{r.email}</TableCell>
+                        <TableCell>
+                          {r.basarili ? (
+                            <Badge className="bg-emerald-50 text-emerald-700">Başarılı</Badge>
+                          ) : (
+                            <Badge variant="destructive">{r.hata}</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeBulkDialog}>
+              Kapat
+            </Button>
+            <Button
+              type="button"
+              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              disabled={bulkRows.length === 0 || bulkInviteMutation.isPending}
+              onClick={() => bulkInviteMutation.mutate(bulkRows)}
+            >
+              {bulkInviteMutation.isPending ? "İçe aktarılıyor…" : `İçe Aktar (${bulkRows.length})`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={detailUser !== null} onOpenChange={(open) => !open && setDetailUser(null)}>
+        {detailUser && (
+          <UserDetailDialog
+            key={detailUser.id}
+            user={detailUser}
+            currentUserId={currentUser?.id}
+            girisimler={girisimlerQuery.data ?? []}
+          />
+        )}
+      </Dialog>
     </div>
+  )
+}
+
+function getInitials(name: string) {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  )
+}
+
+function UserDetailDialog({
+  user,
+  currentUserId,
+  girisimler,
+}: {
+  user: UserDto
+  currentUserId: string | undefined
+  girisimler: GirisimSummaryDto[]
+}) {
+  const queryClient = useQueryClient()
+  const [role, setRole] = useState<UserRole>(user.role)
+  const [girisimId, setGirisimId] = useState<string | undefined>(user.girisimId ?? undefined)
+
+  const historyQuery = useQuery({
+    queryKey: ["islem-gecmisi", "kullanici", user.id],
+    queryFn: async () =>
+      (
+        await api.get<PagedResultDto<IslemKaydiDto>>("/admin/islem-gecmisi", {
+          params: { hedefKullaniciId: user.id, pageSize: 5 },
+        })
+      ).data.items,
+  })
+
+  const roleMutation = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<UserDto>(`/admin/users/${user.id}/role`, {
+          role,
+          girisimId: role === "StartupKullanicisi" ? girisimId : null,
+        } satisfies ChangeRoleRequest)
+      ).data,
+    onSuccess: () => {
+      toast.success("Rol güncellendi.")
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
+      queryClient.invalidateQueries({ queryKey: ["islem-gecmisi", "kullanici", user.id] })
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Rol değiştirilemedi.")),
+  })
+
+  const girisimMutation = useMutation({
+    mutationFn: async () => {
+      if (!girisimId) throw new Error("Girişim seçilmelidir.")
+      return (
+        await api.post<UserDto>(`/admin/users/${user.id}/girisim`, { girisimId } satisfies ChangeGirisimRequest)
+      ).data
+    },
+    onSuccess: () => {
+      toast.success("Girişim ataması güncellendi.")
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
+      queryClient.invalidateQueries({ queryKey: ["islem-gecmisi", "kullanici", user.id] })
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Girişim ataması değiştirilemedi.")),
+  })
+
+  const roleChanged = role !== user.role
+  const girisimChanged = role === "StartupKullanicisi" && girisimId !== (user.girisimId ?? undefined)
+  const canSave = roleChanged || girisimChanged
+
+  function handleSave() {
+    if (roleChanged) roleMutation.mutate()
+    else if (girisimChanged) girisimMutation.mutate()
+  }
+
+  const isSelf = user.id === currentUserId
+  const isPending = roleMutation.isPending || girisimMutation.isPending
+
+  return (
+    <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-t3-blue text-sm font-bold text-white select-none">
+            {getInitials(user.fullName)}
+          </div>
+          <div className="min-w-0">
+            <DialogTitle className="truncate">{user.fullName}</DialogTitle>
+            <DialogDescription className="truncate">{user.email}</DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <RoleBadge role={user.role} />
+          <StatusBadge status={user.status} />
+          {isSelf && <Badge variant="secondary">Bu sizsiniz</Badge>}
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Son Giriş</Label>
+          <p className="text-sm">{formatLastLogin(user.lastLoginAt)}</p>
+        </div>
+
+        <div className="space-y-3 rounded-xl border-2 border-t3-blue/15 bg-t3-blue-light/30 p-4">
+          <p className="text-sm font-semibold text-t3-navy">Rol ve Girişim</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="detail-role">Rol</Label>
+            <Select value={role} onValueChange={(v) => v && setRole(v as UserRole)}>
+              <SelectTrigger id="detail-role" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLE_OPTIONS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABEL[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {role === "StartupKullanicisi" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="detail-girisim">Girişim</Label>
+              <Select value={girisimId ?? ""} onValueChange={(v) => v && setGirisimId(v)}>
+                <SelectTrigger id="detail-girisim" className="w-full">
+                  <SelectValue placeholder="Girişim seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {girisimler.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.ad}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button size="sm" disabled={!canSave || isPending} onClick={handleSave}>
+            {isPending ? "Kaydediliyor…" : "Kaydet"}
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">Son İşlemler</p>
+          {historyQuery.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : (historyQuery.data ?? []).length === 0 ? (
+            <p className="text-xs text-muted-foreground">Bu kullanıcıyla ilgili henüz işlem yok.</p>
+          ) : (
+            <ul className="space-y-2">
+              {historyQuery.data!.map((h) => (
+                <li key={h.id} className="rounded-lg bg-muted/40 p-2.5 text-xs">
+                  <p className="font-medium text-t3-navy">{EYLEM_LABEL[h.eylem] ?? h.eylem}</p>
+                  {h.detay && <p className="mt-0.5 text-muted-foreground">{h.detay}</p>}
+                  <p className="mt-1 text-muted-foreground">
+                    {formatDateTime(h.createdAt)} · {h.actorAdSoyad}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </DialogContent>
   )
 }
