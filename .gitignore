@@ -1,0 +1,25 @@
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+*.env.local
+*.log
+npm-debug.log*
+
+# .NET build artifacts
+**/bin/
+**/obj/
+**/*.user
+**/.vs/
+
+# Local uploads (dev file storage)
+src/T3VentureOS.Web/wwwroot/uploads/*
+!src/T3VentureOS.Web/wwwroot/uploads/.gitkeep
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store

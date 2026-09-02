@@ -1,0 +1,68 @@
+import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
+
+type Tone = "neutral" | "success" | "warning" | "danger" | "info"
+
+const toneBar: Record<Tone, string> = {
+  neutral: "before:bg-slate-300",
+  success: "before:bg-emerald-500",
+  warning: "before:bg-amber-500",
+  danger: "before:bg-red-500",
+  info: "before:bg-t3-blue",
+}
+
+const toneGlow: Record<Tone, string> = {
+  neutral: "",
+  success: "shadow-emerald-100",
+  warning: "shadow-amber-100",
+  danger: "shadow-red-100",
+  info: "shadow-blue-100",
+}
+
+const toneIconBg: Record<Tone, string> = {
+  neutral: "bg-slate-100 text-slate-400",
+  success: "bg-emerald-50 text-emerald-500",
+  warning: "bg-amber-50 text-amber-500",
+  danger: "bg-red-50 text-red-500",
+  info: "bg-t3-blue-light text-t3-blue",
+}
+
+export function StatGrid({ children }: { children: ReactNode }) {
+  return <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">{children}</div>
+}
+
+export function StatTile({
+  value,
+  label,
+  tone = "neutral",
+  icon,
+}: {
+  value: ReactNode
+  label: string
+  tone?: Tone
+  icon?: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-shadow duration-200 hover:shadow-md",
+        "before:absolute before:inset-y-0 before:left-0 before:w-1",
+        toneBar[tone],
+        toneGlow[tone],
+      )}
+    >
+      {icon && (
+        <div
+          className={cn(
+            "absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl",
+            toneIconBg[tone],
+          )}
+        >
+          {icon}
+        </div>
+      )}
+      <div className="font-heading text-3xl font-extrabold text-t3-navy">{value}</div>
+      <div className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">{label}</div>
+    </div>
+  )
+}

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/T3VentureOS.Domain/T3VentureOS.Domain.csproj" />
+    <Project Path="src/T3VentureOS.Infrastructure/T3VentureOS.Infrastructure.csproj" />
+    <Project Path="src/T3VentureOS.Web/T3VentureOS.Web.csproj" />
+    <Project Path="src/T3VentureOS.Tests/T3VentureOS.Tests.csproj" />
+  </Folder>
+</Solution>

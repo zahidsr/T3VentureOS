@@ -1,0 +1,51 @@
+using T3VentureOS.Domain.Entities;
+
+namespace T3VentureOS.Web.Dtos;
+
+public record GirisimSummaryDto(
+    Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji,
+    int? KurulusYili, int? EkipBuyuklugu, decimal ToplamOnayliCiro, DateTime CreatedAt);
+
+public record CreateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
+public record UpdateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
+
+public record ProgramKatilimOzetDto(Guid Id, Guid ProgramId, string ProgramAdi, string? Donem, string Durum, DateTime BaslangicTarihi, DateTime? BitisTarihi);
+public record GelisimAdimiDto(Guid Id, DateTime Tarih, string Baslik, string? Aciklama);
+public record SatisKaydiDto(Guid Id, string Donem, decimal Ciro, decimal? Ihracat, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record YatirimKaydiDto(Guid Id, string Tur, decimal Tutar, string ParaBirimi, DateTime Tarih, string? YatirimciAdi, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record BasariDto(Guid Id, string Tur, string Baslik, string? Aciklama, DateTime Tarih, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record DokumanDto(Guid Id, string Baslik, string DosyaAdi, string DosyaUrl, long DosyaBoyutu, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record GuncellemeTalebiDto(
+    Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
+    int? KurulusYili, int? EkipBuyuklugu, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+
+public record GirisimDetailDto(
+    Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
+    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, DateTime CreatedAt,
+    List<ProgramKatilimOzetDto> ProgramKatilimlari,
+    List<GelisimAdimiDto> GelisimAdimlari,
+    List<SatisKaydiDto> SatisKayitlari,
+    List<YatirimKaydiDto> YatirimKayitlari,
+    List<BasariDto> Basarilar,
+    List<DokumanDto> Dokumanlar);
+
+public record AddGelisimAdimiRequest(DateTime Tarih, string Baslik, string? Aciklama);
+public record AddSatisKaydiRequest(string Donem, decimal Ciro, decimal? Ihracat);
+public record AddYatirimKaydiRequest(string Tur, decimal Tutar, string ParaBirimi, DateTime Tarih, string? YatirimciAdi);
+public record AddBasariRequest(string Tur, string Baslik, string? Aciklama, DateTime Tarih);
+public record SubmitGuncellemeTalebiRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
+
+public static class GirisimDtoExtensions
+{
+    public static GirisimSummaryDto ToSummaryDto(this Girisim g) =>
+        new(g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.KurulusYili, g.EkipBuyuklugu, g.SatisKayitlari.Sum(s => s.Ciro), g.CreatedAt);
+
+    public static GirisimDetailDto ToDetailDto(this Girisim g) => new(
+        g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.CreatedAt,
+        g.ProgramKatilimlari.Select(k => new ProgramKatilimOzetDto(k.Id, k.ProgramId, k.Program?.Name ?? string.Empty, k.Donem, k.Durum.ToString(), k.BaslangicTarihi, k.BitisTarihi)).ToList(),
+        g.GelisimAdimlari.Select(a => new GelisimAdimiDto(a.Id, a.Tarih, a.Baslik, a.Aciklama)).ToList(),
+        g.SatisKayitlari.Select(s => new SatisKaydiDto(s.Id, s.Donem, s.Ciro, s.Ihracat, s.OnayDurumu.ToString(), s.ReviewNotu, s.CreatedAt)).ToList(),
+        g.YatirimKayitlari.Select(y => new YatirimKaydiDto(y.Id, y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, y.YatirimciAdi, y.OnayDurumu.ToString(), y.ReviewNotu, y.CreatedAt)).ToList(),
+        g.Basarilar.Select(b => new BasariDto(b.Id, b.Tur.ToString(), b.Baslik, b.Aciklama, b.Tarih, b.OnayDurumu.ToString(), b.ReviewNotu, b.CreatedAt)).ToList(),
+        g.Dokumanlar.Select(d => new DokumanDto(d.Id, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.DosyaBoyutu, d.OnayDurumu.ToString(), d.ReviewNotu, d.CreatedAt)).ToList());
+}

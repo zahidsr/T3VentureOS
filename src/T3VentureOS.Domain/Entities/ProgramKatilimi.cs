@@ -1,0 +1,19 @@
+namespace T3VentureOS.Domain.Entities;
+
+/// <summary>Join entity: which startup took part in which program, in which term, with what outcome.</summary>
+public class ProgramKatilimi
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid GirisimId { get; set; }
+    public Guid ProgramId { get; set; }
+    public string? Donem { get; set; }
+    public KatilimDurumu Durum { get; set; } = KatilimDurumu.Basvuru;
+    public DateTime BaslangicTarihi { get; set; } = DateTime.UtcNow;
+    public DateTime? BitisTarihi { get; set; }
+    public string? Notlar { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public Girisim? Girisim { get; set; }
+    public GirisimProgrami? Program { get; set; }
+}

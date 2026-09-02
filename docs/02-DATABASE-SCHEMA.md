@@ -1,0 +1,222 @@
+# Veritabanı Şeması — SQL Server (Entity Framework Core)
+
+> Kaynak: `src/T3VentureOS.Domain/Entities/*.cs` + `T3VentureOS.Infrastructure/Data/AppDbContext.cs`.
+> Migration'lar `T3VentureOS.Infrastructure/Data/Migrations` altında. Tek kiracılı sistem — `tenant_id`
+> kolonu ve Row-Level Security **yoktur**. Tüm PK'ler `Guid` (`uniqueidentifier`), uygulama tarafında
+> `Guid.NewGuid()` ile üretilir (DB tarafında `default gen_random_uuid()` değil).
+
+## ER Özeti
+
+```
+User 1─┬─< Girisim (CreatedBy)
+       └─(0..1)─ Girisim (StartupKullanicisi'nin bağlı olduğu girişim)
+
+Girisim 1─┬─< ProgramKatilimi >─ 1 GirisimProgrami
+          ├─< GelisimAdimi ─> User (CreatedBy)
+          ├─< SatisKaydi ─> User (SubmittedBy / ReviewedBy)
+          ├─< YatirimKaydi ─> User (SubmittedBy / ReviewedBy)
+          ├─< Basari ─> User (SubmittedBy / ReviewedBy)
+          ├─< Dokuman ─> User (SubmittedBy / ReviewedBy)
+          ├─< GirisimGuncellemeTalebi ─> User (SubmittedBy / ReviewedBy)
+          └─< Itiraz ─> User (SubmittedBy / ReviewedBy)
+
+User 1─< VerificationToken
+User 1─< Bildirim (KullaniciId) ──(0..1)─ Girisim (IlgiliGirisim)
+User 1─< SilmeTalebi (UserId, ReviewedBy)
+```
+
+---
+
+## Tablolar
+
+### Users
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| Email | nvarchar(256) | unique index |
+| PasswordHash | nvarchar | nullable (davet edilip henüz parola belirlememiş kullanıcı) |
+| FullName | nvarchar(200) | |
+| Role | int (enum) | SuperAdmin, ProgramYoneticisi, StartupKullanicisi, KararVerici — index |
+| Status | int (enum) | Invited, Active, Disabled |
+| GirisimId | uniqueidentifier fk→Girisim, nullable | yalnızca Role=StartupKullanicisi iken set edilir; FK `SetNull` |
+| LastLoginAt | datetime2 nullable | |
+| EmailVerified | bit | |
+| FailedLoginAttempts | int | |
+| LockedUntil | datetime2 nullable | |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### Girisimler (Girisim)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| Ad | nvarchar(200) | zorunlu |
+| Sektor, KisaTanim, Teknoloji, WebsiteUrl, LogoUrl | nvarchar nullable | |
+| KurulusYili, EkipBuyuklugu | int nullable | |
+| CreatedById | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### Programlar (GirisimProgrami)
+> Sınıf adı çakışmayı önlemek için `GirisimProgrami` — tablo `Programlar`.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| Name | nvarchar(200) | |
+| Description | nvarchar nullable | |
+| Durum | int (enum) | Taslak, Aktif, Tamamlandi, Arsivlendi |
+| BaslangicTarihi, BitisTarihi | datetime2 nullable | |
+| CreatedById | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### ProgramKatilimlari (ProgramKatilimi)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| ProgramId | uniqueidentifier fk→Programlar | `Restrict` |
+| Donem | nvarchar nullable | |
+| Durum | int (enum) | Basvuru, KabulEdildi, DevamEdiyor, Mezun, Ayrildi |
+| BaslangicTarihi | datetime2 | |
+| BitisTarihi | datetime2 nullable | |
+| Notlar | nvarchar nullable | |
+| CreatedAt, UpdatedAt | datetime2 | |
+| **unique index** | (GirisimId, ProgramId, Donem) | aynı girişim aynı dönemde aynı programa iki kez giremez |
+
+### GelisimAdimlari (GelisimAdimi)
+> Girişimin kronolojik zaman çizelgesindeki tek bir kilometre taşı.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade`, index |
+| Tarih | datetime2 | |
+| Baslik | nvarchar(...) | |
+| Aciklama | nvarchar nullable | |
+| CreatedById | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt | datetime2 | |
+
+### SatisKayitlari (SatisKaydi)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Donem | nvarchar | örn. "2026-Q1" |
+| Ciro | decimal(14,2) | |
+| Ihracat | decimal(14,2) nullable | |
+| OnayDurumu | int (enum) | Beklemede, Onaylandi, Reddedildi |
+| SubmittedById | uniqueidentifier fk→Users | `Restrict` |
+| ReviewedById | uniqueidentifier fk→Users nullable | `Restrict` |
+| ReviewNotu | nvarchar nullable | reddedilirse zorunlu (uygulama katmanında) |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### YatirimKayitlari (YatirimKaydi)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Tur | int (enum) | Hibe, OnTohum, Tohum, SeriA, SeriB, SeriSonrasi, Diger |
+| Tutar | decimal(14,2) | |
+| ParaBirimi | nvarchar(3) | varsayılan "TRY" |
+| Tarih | datetime2 | |
+| YatirimciAdi | nvarchar nullable | |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | SatisKaydi ile aynı desen |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### Basarilar (Basari)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Tur | int (enum) | Hibe, Odul, Sertifika, Diger |
+| Baslik | nvarchar | |
+| Aciklama | nvarchar nullable | |
+| Tarih | datetime2 | |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni |
+| CreatedAt, UpdatedAt | datetime2 | |
+
+### Dokumanlar (Dokuman)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Baslik, DosyaAdi, DosyaUrl | nvarchar | `DosyaUrl` → `/uploads/...` göreli yol |
+| DosyaBoyutu | bigint | byte cinsinden |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni |
+| CreatedAt | datetime2 | |
+
+### GirisimGuncellemeTalepleri (GirisimGuncellemeTalebi)
+> `Girisim`'in düzenlenebilir alanlarının tam bir kopyası — onaylanınca asıl kayda uygulanır.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Ad, Sektor, KisaTanim, Teknoloji, WebsiteUrl, KurulusYili, EkipBuyuklugu | — | `Girisim` ile aynı alanlar (snapshot) |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni |
+| CreatedAt | datetime2 | |
+
+### Itirazlar (Itiraz)
+> Reddedilmiş bir Satis/Yatirim/Basari/Dokuman kaydına karşı girişimin itirazı — kendi `OnayDurumu`sunu taşır.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| KonuTuru | int (enum) | Satis, Yatirim, Basari, Dokuman |
+| KonuId | uniqueidentifier | itiraz edilen kaydın id'si (polimorfik — DB'de FK değil), index |
+| Aciklama | nvarchar | girişimin itiraz gerekçesi |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni (itirazın kendi kararı) |
+| CreatedAt | datetime2 | |
+
+### Bildirimler (Bildirim)
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| KullaniciId | uniqueidentifier fk→Users | `Cascade` |
+| Tur | int (enum) | OnayKarari, ItirazSonucu, ProgramGuncellemesi, Sistem |
+| Baslik, Mesaj | nvarchar | |
+| IlgiliGirisimId | uniqueidentifier fk→Girisimler, nullable | `SetNull` — derin bağlantı hedefi |
+| Okundu | bit | |
+| CreatedAt | datetime2 | |
+| **index** | (KullaniciId, Okundu) | okunmamış sayacı sorgusu için |
+
+### SilmeTalepleri (SilmeTalebi)
+> KVKK/GDPR hesap silme talebi — onaylanırsa `User` hard-delete edilmez, anonimleştirilir (bkz. `PrivacyService`).
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| UserId | uniqueidentifier fk→Users | `Cascade` |
+| Sebep | nvarchar nullable | |
+| Durum, ReviewedById, ReviewNotu | — | ortak onay deseni |
+| CreatedAt | datetime2 | |
+
+### VerificationTokens
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| UserId | uniqueidentifier fk→Users | `Cascade` |
+| TokenHash | nvarchar | unique index — ham token asla saklanmaz |
+| Type | int (enum) | EmailVerify, PasswordReset |
+| ExpiresAt | datetime2 | |
+| UsedAt | datetime2 nullable | |
+| CreatedAt | datetime2 | |
+| **index** | (UserId, Type) | |
+
+---
+
+## İndeksler (özet)
+- `Users(Email)` unique, `Users(Role)`
+- `ProgramKatilimlari(GirisimId, ProgramId, Donem)` unique
+- `GelisimAdimlari(GirisimId)`
+- `VerificationTokens(TokenHash)` unique, `VerificationTokens(UserId, Type)`
+- `Itirazlar(KonuId)`
+- `Bildirimler(KullaniciId, Okundu)`
+
+## Silme Davranışı (DeleteBehavior)
+- `Girisim → {SatisKaydi, YatirimKaydi, Basari, Dokuman, GelisimAdimi, ProgramKatilimi, GirisimGuncellemeTalebi, Itiraz}`: **Cascade** — bir girişim silinirse alt kayıtları da silinir.
+- `User → Girisim.CreatedBy`, `GirisimProgrami.CreatedBy`, her kaydın `SubmittedBy`/`ReviewedBy`'ı (Itiraz ve SilmeTalebi dahil): **Restrict** — bir kullanıcıyı sildirmek, geçmiş kayıtları etkisiz kılmaz (önce ilişkili kayıtlar taşınmalı/silinmeli). Bu yüzden KVKK hesap silme talebi hard-delete değil, anonimleştirme olarak uygulanır.
+- `User.GirisimId` (StartupKullanicisi'nin bağlı olduğu girişim): **SetNull** — girişim silinirse kullanıcı "bağlantısız" kalır, silinmez.
+- `Bildirim.IlgiliGirisimId`: **SetNull**.
+- `ProgramKatilimi → GirisimProgrami`: **Restrict**.
+- `SilmeTalebi.UserId`, `Bildirim.KullaniciId`: **Cascade** (kullanıcıyla birlikte silinir).
