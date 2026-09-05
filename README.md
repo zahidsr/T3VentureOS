@@ -98,6 +98,7 @@ Tüm şifreler: `Passw0rd!`
 - Girişimin her sayısal verisi (ciro, ihracat, yatırım, istihdam) kendi grafiğinde: farklı birimler tek eksende ezilmesin ve eksik kalan veri boş grafiğinden görülsün
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
 - Her grafiğin altında kural tabanlı otomatik okuma (trendin yönü, yoğunlaşma riski, veri girişindeki boşluklar); aynı okumalar indirilen PDF raporuna da yazılır
+- Ekosistem Etkisi panosu: tüm girişimlerin ürettiği ciro, ihracat, çekilen yatırım ve yaratılan istihdamın dönem bazında toplamı
 - AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)
 - Girişim bazlı AI analizi: girişimciye "verilerim ne diyor" ve "nasıl geliştirebilirim", yöneticiye tekil girişim durum okuması
 - Girişimin verisinden Sequoia pitch deck şablonuna göre otomatik sunum üretimi; veri değiştiğinde sunum "güncel değil" olarak işaretlenir ve tek tıkla yenilenir, bölümler elle düzenlenebilir (düzenlenen bölüm yeniden üretimde korunur, AI metnine geri dönülebilir) ve onaylı ciro/yatırım grafikleriyle birlikte slayt başına bir sayfa PDF olarak indirilir

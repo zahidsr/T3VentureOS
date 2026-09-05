@@ -14,13 +14,15 @@ public class DashboardController : ControllerBase
     private readonly DashboardService _dashboard;
     private readonly IAiService _ai;
     private readonly GirisimSaglikService _saglik;
+    private readonly EkosistemEtkiService _etki;
     private readonly ICurrentUserService _currentUser;
 
-    public DashboardController(DashboardService dashboard, IAiService ai, GirisimSaglikService saglik, ICurrentUserService currentUser)
+    public DashboardController(DashboardService dashboard, IAiService ai, GirisimSaglikService saglik, EkosistemEtkiService etki, ICurrentUserService currentUser)
     {
         _dashboard = dashboard;
         _ai = ai;
         _saglik = saglik;
+        _etki = etki;
         _currentUser = currentUser;
     }
 
@@ -63,6 +65,17 @@ public class DashboardController : ControllerBase
             ozet.ProfiliEksikOlanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
             ozet.OneCikanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
             ozet.TumGirisimler.Select(GirisimSaglikMapper.ToDto).ToList()));
+    }
+
+    /// <summary>Ekosistemin toplam etkisi: ciro, ihracat, yatırım ve istihdamın dönem bazında birleşimi.</summary>
+    [HttpGet("etki")]
+    public async Task<IActionResult> Etki()
+    {
+        var e = await _etki.GetAsync();
+        return Ok(new EkosistemEtkisiDto(
+            e.ToplamCiro, e.ToplamIhracat, e.ToplamYatirim, e.GuncelIstihdam, e.IstihdamArtisi,
+            e.VeriGirenGirisimSayisi, e.ToplamGirisimSayisi,
+            e.Donemler.Select(d => new EtkiDonemiDto(d.Donem, d.Ciro, d.Ihracat, d.Yatirim, d.Istihdam, d.GirisimSayisi)).ToList()));
     }
 
     [HttpGet("filtre-secenekleri")]

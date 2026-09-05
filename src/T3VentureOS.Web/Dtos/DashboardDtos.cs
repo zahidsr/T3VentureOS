@@ -49,3 +49,12 @@ public record PanelOzetiDto(
     List<GirisimSaglikDto> ProfiliEksikOlanlar,
     List<GirisimSaglikDto> OneCikanlar,
     List<GirisimSaglikDto> TumGirisimler);
+
+public record EtkiDonemiDto(string Donem, decimal Ciro, decimal Ihracat, decimal Yatirim, int Istihdam, int GirisimSayisi);
+
+/// <summary>Ekosistemin toplam etkisi — girişimlerin girdiği sayısal veriler dönem bazında birleştirilmiş hâli.</summary>
+public record EkosistemEtkisiDto(
+    decimal ToplamCiro, decimal ToplamIhracat, decimal ToplamYatirim,
+    int GuncelIstihdam, int IstihdamArtisi,
+    int VeriGirenGirisimSayisi, int ToplamGirisimSayisi,
+    List<EtkiDonemiDto> Donemler);

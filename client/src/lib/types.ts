@@ -657,3 +657,24 @@ export interface GirisimAnalizDto {
   createdByAdSoyad: string
   tur: string
 }
+
+export interface EtkiDonemiDto {
+  donem: string
+  ciro: number
+  ihracat: number
+  yatirim: number
+  istihdam: number
+  girisimSayisi: number
+}
+
+/** Ekosistemin toplam etkisi — girişimlerin girdiği sayısal verilerin dönem bazında birleşimi. */
+export interface EkosistemEtkisiDto {
+  toplamCiro: number
+  toplamIhracat: number
+  toplamYatirim: number
+  guncelIstihdam: number
+  istihdamArtisi: number
+  veriGirenGirisimSayisi: number
+  toplamGirisimSayisi: number
+  donemler: EtkiDonemiDto[]
+}

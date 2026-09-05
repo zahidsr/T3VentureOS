@@ -40,6 +40,7 @@ builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<GirisimSaglikService>();
 builder.Services.AddScoped<PitchDeckService>();
 builder.Services.AddScoped<GirisimAnalizService>();
+builder.Services.AddScoped<EkosistemEtkiService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();

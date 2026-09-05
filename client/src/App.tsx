@@ -13,6 +13,7 @@ import AccessDeniedPage from "@/pages/auth/AccessDenied"
 
 import GirisimlerIndexPage from "@/pages/girisimler/GirisimlerIndex"
 import PanelPage from "@/pages/panel/Panel"
+import EkosistemEtkisiPage from "@/pages/etki/EkosistemEtkisi"
 import GirisimCreatePage from "@/pages/girisimler/GirisimCreate"
 import GirisimDetailsPage from "@/pages/girisimler/GirisimDetails"
 import GirisimKarsilastirmaPage from "@/pages/girisimler/GirisimKarsilastirma"
@@ -48,6 +49,7 @@ export default function App() {
         {/* Girişimler listesi — SuperAdmin & Program Yöneticisi */}
         <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi"]} />}>
           <Route path="/panel" element={<PanelPage />} />
+          <Route path="/etki" element={<EkosistemEtkisiPage />} />
           <Route path="/girisimler" element={<GirisimlerIndexPage />} />
           <Route path="/girisimler/karsilastirma" element={<GirisimKarsilastirmaPage />} />
         </Route>
