@@ -595,6 +595,10 @@ export interface PitchDeckBolumuDto {
   anahtar: string
   baslik: string
   icerik: string
+  /** Girişimci metni elle değiştirdiyse true; yeniden üretimde bu bölüm korunur. */
+  elleDuzenlendi: boolean
+  /** AI'ın ürettiği metin saklıysa true — "AI metnine dön" ancak o zaman anlamlı. */
+  aiMetniVar: boolean
 }
 
 export interface PitchDeckDto {

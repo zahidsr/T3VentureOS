@@ -64,6 +64,41 @@ public class PitchDeckServiceTests
     }
 
     [Fact]
+    public void Ayristir_elle_duzenlenen_bolumu_yeniden_uretimde_korur()
+    {
+        var mevcut = PitchDeckService.Ayristir("""[{"anahtar":"amac","icerik":"AI'ın ilk metni."}]""");
+        var elleYazilmis = mevcut
+            .Select(b => b.Anahtar == "amac"
+                ? b with { Icerik = "Girişimcinin yazdığı metin.", ElleDuzenlendi = true, AiIcerik = b.Icerik }
+                : b)
+            .ToList();
+
+        var yeni = PitchDeckService.Ayristir(
+            """[{"anahtar":"amac","icerik":"AI'ın yeni metni."},{"anahtar":"problem","icerik":"Yeni problem."}]""",
+            elleYazilmis);
+
+        var amac = yeni.Single(b => b.Anahtar == "amac");
+        // Girişimcinin emeği bir "yeniden üret" tıklamasıyla kaybolmamalı...
+        Assert.Equal("Girişimcinin yazdığı metin.", amac.Icerik);
+        Assert.True(amac.ElleDuzenlendi);
+        // ...ama AI'ın yeni metni geri dönebilmek için saklanmalı.
+        Assert.Equal("AI'ın yeni metni.", amac.AiIcerik);
+
+        // Elle dokunulmamış bölüm normal şekilde tazelenir.
+        Assert.Equal("Yeni problem.", yeni.Single(b => b.Anahtar == "problem").Icerik);
+    }
+
+    [Fact]
+    public void Ayristir_elle_duzenlenmemis_bolumu_ezer()
+    {
+        var mevcut = PitchDeckService.Ayristir("""[{"anahtar":"amac","icerik":"Eski metin."}]""");
+
+        var yeni = PitchDeckService.Ayristir("""[{"anahtar":"amac","icerik":"Yeni metin."}]""", mevcut);
+
+        Assert.Equal("Yeni metin.", yeni.Single(b => b.Anahtar == "amac").Icerik);
+    }
+
+    [Fact]
     public void Parmak_izi_ayni_veride_degismez()
     {
         var a = PitchDeckService.VeriParmakIziHesapla(OrnekGirisim());

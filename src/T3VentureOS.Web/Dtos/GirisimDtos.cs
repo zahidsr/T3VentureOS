@@ -63,7 +63,10 @@ public static class GirisimDtoExtensions
 }
 
 /// <summary>Sequoia şablonuna göre üretilmiş sunum taslağının tek bölümü.</summary>
-public record PitchDeckBolumuDto(string Anahtar, string Baslik, string Icerik);
+public record PitchDeckBolumuDto(string Anahtar, string Baslik, string Icerik, bool ElleDuzenlendi, bool AiMetniVar);
+
+/// <summary>Bölüm metnini elle günceller; <c>Icerik</c> boş bırakılırsa AI metnine geri dönülür.</summary>
+public record PitchDeckBolumGuncelleRequest(string? Icerik);
 
 /// <summary>
 /// Girişimin güncel sunum taslağı. <c>Guncel=false</c> ise taslak üretildikten sonra girişim

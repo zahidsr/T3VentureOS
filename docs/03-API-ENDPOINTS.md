@@ -51,6 +51,7 @@
 | GET | `/girisimler/{id}/itirazlar` | auth (kendi girişimi) | o girişime ait itirazların geçmişi |
 | GET | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin güncel Sequoia pitch deck taslağı; `guncel=false` ise taslak üretildikten sonra veri değişmiştir |
 | POST | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin verisinden AI ile sunum taslağı üretir, mevcut taslağın üzerine yazar |
+| PUT | `/girisimler/{id}/sunum-taslagi/{anahtar}` | auth (kendi girişimi) | sunum bölümünün metnini elle günceller; gövdedeki `icerik` boş bırakılırsa AI metnine geri dönülür. Elle düzenlenen bölüm yeniden üretimde korunur |
 | GET | `/girisimler/{id}/onboarding-durumu` | auth (kendi girişimi) | profil tamamlanma kontrol listesi (logo, kısa tanım, ilk satış, ilk gelişim adımı, e-posta doğrulama) |
 
 ## Onaylar (`api/onaylar`)

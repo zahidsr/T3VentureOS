@@ -419,8 +419,19 @@ public class GirisimlerController : ControllerBase
         return Ok(ToDto(sonuc!));
     }
 
+    /// <summary>Sunum bölümünün metnini girişimcinin yazdığıyla değiştirir; boş gövde AI metnine döndürür.</summary>
+    [HttpPut("{id:guid}/sunum-taslagi/{anahtar}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumBolumGuncelle(Guid id, string anahtar, PitchDeckBolumGuncelleRequest request)
+    {
+        var (ok, sonuc, hata) = await _pitchDeck.BolumGuncelleAsync(id, anahtar, request.Icerik);
+        if (!ok) return BadRequest(new ErrorResponse(hata ?? "Bölüm güncellenemedi."));
+        return Ok(ToDto(sonuc!));
+    }
+
     private static PitchDeckDto ToDto(PitchDeckSonucu s) => new(
-        s.Bolumler.Select(b => new PitchDeckBolumuDto(b.Anahtar, b.Baslik, b.Icerik)).ToList(),
+        s.Bolumler.Select(b => new PitchDeckBolumuDto(b.Anahtar, b.Baslik, b.Icerik, b.ElleDuzenlendi, b.AiIcerik is not null)).ToList(),
         s.OlusturulmaTarihi, s.OlusturanAdSoyad, s.Guncel);
 
     [HttpGet("{id:guid}/onboarding-durumu")]

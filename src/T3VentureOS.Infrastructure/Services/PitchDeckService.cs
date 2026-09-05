@@ -8,7 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace T3VentureOS.Infrastructure.Services;
 
-public record PitchDeckBolumu(string Anahtar, string Baslik, string Icerik);
+/// <summary>
+/// Sunumun tek bölümü. <paramref name="Icerik"/> ekranda görünen metindir; girişimci elle
+/// düzenlerse <paramref name="ElleDuzenlendi"/> işaretlenir ve yeniden üretimde bu bölüm korunur.
+/// AI'ın son yazdığı hâli <paramref name="AiIcerik"/>'te durur, böylece girişimci düzenlemesinden
+/// vazgeçip AI metnine dönebilir.
+/// </summary>
+public record PitchDeckBolumu(string Anahtar, string Baslik, string Icerik, bool ElleDuzenlendi = false, string? AiIcerik = null);
 
 public record PitchDeckSonucu(
     List<PitchDeckBolumu> Bolumler,
@@ -89,13 +95,14 @@ public class PitchDeckService
         if (string.IsNullOrWhiteSpace(girisim.KisaTanim))
             return (false, null, "Sunum üretebilmek için önce girişim profilindeki kısa tanımı doldurmalısın.");
 
+        var taslak = await _db.SunumTaslaklari.FirstOrDefaultAsync(t => t.GirisimId == girisimId);
+
         var (ok, metin, hata) = await _ai.GenerateInsightAsync(PromptOlustur(girisim));
         if (!ok || string.IsNullOrWhiteSpace(metin)) return (false, null, hata ?? "Sunum üretilemedi.");
 
-        var bolumler = Ayristir(metin);
+        var bolumler = Ayristir(metin, taslak is null ? null : Deserialize(taslak.IcerikJson));
         if (bolumler.Count == 0) return (false, null, "Sunum içeriği çözümlenemedi, lütfen tekrar deneyin.");
 
-        var taslak = await _db.SunumTaslaklari.FirstOrDefaultAsync(t => t.GirisimId == girisimId);
         if (taslak is null)
         {
             taslak = new SunumTaslagi { GirisimId = girisimId, OlusturanId = kullaniciId };
@@ -110,6 +117,38 @@ public class PitchDeckService
 
         var olusturan = await _db.Users.FindAsync(kullaniciId);
         return (true, new PitchDeckSonucu(bolumler, taslak.UpdatedAt, olusturan?.FullName ?? string.Empty, Guncel: true), null);
+    }
+
+    /// <summary>
+    /// Tek bir bölümün metnini girişimcinin yazdığıyla değiştirir. <paramref name="icerik"/> boşsa
+    /// düzenleme geri alınır ve AI'ın son ürettiği metne dönülür.
+    /// </summary>
+    public async Task<(bool Success, PitchDeckSonucu? Sonuc, string? Error)> BolumGuncelleAsync(
+        Guid girisimId, string anahtar, string? icerik)
+    {
+        if (!Sablon.Any(s => s.Anahtar == anahtar))
+            return (false, null, "Geçersiz sunum bölümü.");
+
+        var taslak = await _db.SunumTaslaklari.Include(t => t.Olusturan).FirstOrDefaultAsync(t => t.GirisimId == girisimId);
+        if (taslak is null) return (false, null, "Önce sunum taslağı üretilmeli.");
+
+        var bolumler = Deserialize(taslak.IcerikJson);
+        var index = bolumler.FindIndex(b => b.Anahtar == anahtar);
+        if (index < 0) return (false, null, "Bölüm bulunamadı.");
+
+        var mevcut = bolumler[index];
+        bolumler[index] = string.IsNullOrWhiteSpace(icerik)
+            ? mevcut with { Icerik = mevcut.AiIcerik ?? mevcut.Icerik, ElleDuzenlendi = false }
+            : mevcut with { Icerik = icerik.Trim(), ElleDuzenlendi = true, AiIcerik = mevcut.AiIcerik ?? mevcut.Icerik };
+
+        taslak.IcerikJson = JsonSerializer.Serialize(bolumler);
+        taslak.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        var girisim = await GirisimSorgusu(_db, girisimId);
+        return (true, new PitchDeckSonucu(
+            bolumler, taslak.UpdatedAt, taslak.Olusturan?.FullName ?? string.Empty,
+            Guncel: girisim is not null && taslak.VeriParmakIzi == VeriParmakIziHesapla(girisim)), null);
     }
 
     // ------------------------------------------------------------------ prompt
@@ -173,7 +212,7 @@ public class PitchDeckService
     /// Model bazen JSON'u kod bloğu içinde ya da önüne açıklama koyarak döndürür; ham metinden ilk
     /// JSON dizisini çekip ayrıştırırız. Eksik/uydurma bölümler şablona göre normalize edilir.
     /// </summary>
-    public static List<PitchDeckBolumu> Ayristir(string metin)
+    public static List<PitchDeckBolumu> Ayristir(string metin, IReadOnlyList<PitchDeckBolumu>? mevcut = null)
     {
         var baslangic = metin.IndexOf('[');
         var bitis = metin.LastIndexOf(']');
@@ -195,13 +234,22 @@ public class PitchDeckService
             .GroupBy(h => h.Anahtar!.Trim().ToLowerInvariant())
             .ToDictionary(grup => grup.Key, grup => grup.First().Icerik?.Trim() ?? string.Empty);
 
+        var oncekiler = (mevcut ?? []).ToDictionary(b => b.Anahtar, b => b);
+
         return Sablon
-            .Select(s => new PitchDeckBolumu(
-                s.Anahtar,
-                s.Baslik,
-                icerikler.TryGetValue(s.Anahtar, out var icerik) && !string.IsNullOrWhiteSpace(icerik)
+            .Select(s =>
+            {
+                var aiIcerik = icerikler.TryGetValue(s.Anahtar, out var icerik) && !string.IsNullOrWhiteSpace(icerik)
                     ? icerik
-                    : "Bu bölüm için sistemde yeterli veri yok."))
+                    : "Bu bölüm için sistemde yeterli veri yok.";
+
+                // Girişimcinin elle yazdığı metin yeniden üretimde ezilmez; yeni AI metni yalnızca
+                // "AI metnine dön" seçeneği için saklanır.
+                if (oncekiler.TryGetValue(s.Anahtar, out var onceki) && onceki.ElleDuzenlendi)
+                    return onceki with { Baslik = s.Baslik, AiIcerik = aiIcerik };
+
+                return new PitchDeckBolumu(s.Anahtar, s.Baslik, aiIcerik, ElleDuzenlendi: false, AiIcerik: aiIcerik);
+            })
             .ToList();
     }
 
