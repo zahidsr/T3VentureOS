@@ -93,6 +93,7 @@ Tüm şifreler: `Passw0rd!`
 - KVKK/GDPR self-servis: veri dışa aktarma ve hesap silme talebi (anonimleştirme)
 - Girişim profili tamamlanma (onboarding) kontrol listesi
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
+- Her grafiğin altında kural tabanlı otomatik okuma (trendin yönü, yoğunlaşma riski, veri girişindeki boşluklar); aynı okumalar indirilen PDF raporuna da yazılır
 - AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)
 - Girişimin verisinden Sequoia pitch deck şablonuna göre otomatik sunum üretimi; veri değiştiğinde sunum "güncel değil" olarak işaretlenir ve tek tıkla yenilenir, bölümler elle düzenlenebilir (düzenlenen bölüm yeniden üretimde korunur, AI metnine geri dönülebilir) ve onaylı ciro/yatırım grafikleriyle birlikte slayt başına bir sayfa PDF olarak indirilir
 - CSV ve Excel rapor export

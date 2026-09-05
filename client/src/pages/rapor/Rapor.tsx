@@ -23,6 +23,9 @@ import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
+import { YATIRIM_TUR_LABEL } from "@/lib/labels"
+import { aylikTrendOkumasi, sektorDagilimiOkumasi, yatirimTuruOkumasi, type Okuma } from "@/lib/rapor-okumasi"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -46,16 +49,6 @@ import type {
 } from "@/lib/types"
 
 const ALL_VALUE = "__all__"
-
-const YATIRIM_TUR_LABEL: Record<YatirimTuru, string> = {
-  Hibe: "Hibe",
-  OnTohum: "Ön Tohum",
-  Tohum: "Tohum",
-  SeriA: "Seri A",
-  SeriB: "Seri B",
-  SeriSonrasi: "Seri Sonrası",
-  Diger: "Diğer",
-}
 
 const DONUT_COLORS = ["#0078a8", "#f7941d", "#22a6d4", "#8b5cf6", "#10b981", "#d82020", "#64748b"]
 
@@ -263,7 +256,7 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
     doc.setFontSize(10)
   }
 
-  async function addChart(title: string, chart: ChartImage | null) {
+  async function addChart(title: string, chart: ChartImage | null, okuma: Okuma | null = null) {
     sectionTitle(title)
     if (!chart) {
       doc.text("Veri bulunmuyor.", margin, y)
@@ -276,7 +269,32 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
     ensureSpace(displayHeight + 10)
     // Sıkıştırmasız gömülen grafikler raporu 12 MB'a çıkarıyordu — e-postayla paylaşılamayacak kadar ağır.
     doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight, undefined, "MEDIUM")
-    y += displayHeight + 24
+    y += displayHeight + 16
+
+    // İndirilen rapor da bir sonuç bıraksın: grafiğin altına ekrandaki okumanın aynısı yazılır.
+    if (okuma) {
+      doc.setFont(PDF_FONT, "bold")
+      doc.setFontSize(10)
+      doc.setTextColor(45, 63, 71)
+      const baslikSatirlari = doc.splitTextToSize(okuma.baslik, pageWidth - margin * 2) as string[]
+      ensureSpace(baslikSatirlari.length * 13 + 6)
+      doc.text(baslikSatirlari, margin, y)
+      y += baslikSatirlari.length * 13 + 2
+
+      doc.setFont(PDF_FONT, "normal")
+      doc.setFontSize(9)
+      doc.setTextColor(100, 116, 139)
+      okuma.detaylar.forEach((detay) => {
+        const satirlar = doc.splitTextToSize(`• ${detay}`, pageWidth - margin * 2 - 10) as string[]
+        ensureSpace(satirlar.length * 12)
+        doc.text(satirlar, margin + 10, y)
+        y += satirlar.length * 12
+      })
+      doc.setTextColor(30, 41, 47)
+      doc.setFontSize(10)
+    }
+
+    y += 24
   }
 
   doc.setFont(PDF_FONT, "bold")
@@ -317,9 +335,9 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
     y += 12
   }
 
-  await addChart("Aylık Trend (Son 6 Ay)", charts.aylikTrend)
-  await addChart("Yatırım Türü Dağılımı", charts.yatirimTuru)
-  await addChart("Sektör Dağılımı", charts.sektor)
+  await addChart("Aylık Trend (Son 6 Ay)", charts.aylikTrend, aylikTrendOkumasi(stats.aylikTrend))
+  await addChart("Yatırım Türü Dağılımı", charts.yatirimTuru, yatirimTuruOkumasi(stats.yatirimTuruDagilimi))
+  await addChart("Sektör Dağılımı", charts.sektor, sektorDagilimiOkumasi(stats.sektorDagilimi))
 
   doc.save(`t3-geys-rapor-${new Date().toISOString().slice(0, 10)}.pdf`)
 }
@@ -725,6 +743,10 @@ export default function RaporPage() {
               </ResponsiveContainer>
             )}
           </CardContent>
+          {/* Okuma grafik kabının dışında: PDF/Excel'e giden görüntü yalnızca grafiği içersin. */}
+          <div className="px-6 pb-6">
+            <OkumaKutusu okuma={aylikTrendOkumasi(data.aylikTrend)} />
+          </div>
         </Card>
 
         <Card className="overflow-hidden">
@@ -765,6 +787,9 @@ export default function RaporPage() {
               </ResponsiveContainer>
             )}
           </CardContent>
+          <div className="px-6 pb-6">
+            <OkumaKutusu okuma={yatirimTuruOkumasi(data.yatirimTuruDagilimi)} />
+          </div>
         </Card>
       </div>
 
@@ -823,6 +848,9 @@ export default function RaporPage() {
             </>
           )}
         </CardContent>
+        <div className="px-6 pb-6">
+          <OkumaKutusu okuma={sektorDagilimiOkumasi(data.sektorDagilimi)} />
+        </div>
       </Card>
 
       {/* ---------------------------------------------------- Metrik Kartları */}

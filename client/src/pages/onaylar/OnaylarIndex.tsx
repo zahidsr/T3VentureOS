@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { API_URL, api, extractErrorMessage } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
+import { yatirimTuruEtiketi } from "@/lib/labels"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type {
   OnayBekleyenBasariDto,
@@ -59,16 +60,6 @@ const KONU_TURU_LABEL: Record<string, string> = {
   Yatirim: "Yatırım",
   Basari: "Başarı",
   Dokuman: "Doküman",
-}
-
-const YATIRIM_TUR_LABEL: Record<string, string> = {
-  Hibe: "Hibe",
-  OnTohum: "Ön Tohum",
-  Tohum: "Tohum",
-  SeriA: "Seri A",
-  SeriB: "Seri B",
-  SeriSonrasi: "Seri Sonrası",
-  Diger: "Diğer",
 }
 
 const BASARI_TUR_LABEL: Record<string, string> = {
@@ -539,7 +530,7 @@ export default function OnaylarIndexPage() {
                     createdAt={y.createdAt}
                     fields={
                       <>
-                        <Field label="Tür" value={YATIRIM_TUR_LABEL[y.tur] ?? y.tur} />
+                        <Field label="Tür" value={yatirimTuruEtiketi(y.tur)} />
                         <Field label="Tutar" value={`${formatNumber(y.tutar)} ${y.paraBirimi}`} />
                         <Field label="Tarih" value={formatDate(y.tarih)} />
                         <Field label="Yatırımcı" value={y.yatirimciAdi ?? "—"} />

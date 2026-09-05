@@ -8,6 +8,8 @@ import { Building2, Trash2 } from "lucide-react"
 import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
+import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
+import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -1855,6 +1857,7 @@ export default function GirisimimPage() {
                       </LineChart>
                     </ResponsiveContainer>
                   )}
+                  <OkumaKutusu okuma={aylikTrendOkumasi(raporQuery.data.aylikTrend)} />
                 </CardContent>
               </Card>
 
