@@ -19,11 +19,11 @@ public class GirisimlerController : ControllerBase
     private readonly ItirazService _itirazlar;
     private readonly OnboardingService _onboarding;
     private readonly DashboardService _dashboard;
-    private readonly AnthropicService _ai;
+    private readonly IAiService _ai;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
-        ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, AnthropicService ai)
+        ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;

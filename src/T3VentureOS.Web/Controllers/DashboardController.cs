@@ -12,10 +12,10 @@ namespace T3VentureOS.Web.Controllers;
 public class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
-    private readonly AnthropicService _ai;
+    private readonly IAiService _ai;
     private readonly ICurrentUserService _currentUser;
 
-    public DashboardController(DashboardService dashboard, AnthropicService ai, ICurrentUserService currentUser)
+    public DashboardController(DashboardService dashboard, IAiService ai, ICurrentUserService currentUser)
     {
         _dashboard = dashboard;
         _ai = ai;

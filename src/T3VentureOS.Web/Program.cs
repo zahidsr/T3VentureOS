@@ -34,12 +34,21 @@ builder.Services.AddScoped<OnayService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<ItirazService>();
+builder.Services.AddScoped<OnayOneriService>();
 builder.Services.AddScoped<PrivacyService>();
 builder.Services.AddScoped<OnboardingService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();
+// AI sağlayıcısı config ile seçilir (Ai:Provider = "Gemini" | "Anthropic"); varsayılan Gemini.
+// Her iki tipli HttpClient de kayıtlı kalır, IAiService yalnızca seçili olana çözümlenir.
 builder.Services.AddHttpClient<AnthropicService>();
+builder.Services.AddHttpClient<GeminiService>();
+var aiProvider = builder.Configuration["Ai:Provider"];
+if (string.Equals(aiProvider, "Anthropic", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddScoped<IAiService>(sp => sp.GetRequiredService<AnthropicService>());
+else
+    builder.Services.AddScoped<IAiService>(sp => sp.GetRequiredService<GeminiService>());
 
 var uploadsRoot = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
 builder.Services.AddSingleton(new FileStorageService(uploadsRoot, "/uploads"));

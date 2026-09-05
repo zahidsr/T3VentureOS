@@ -4,8 +4,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace T3VentureOS.Infrastructure.Services;
 
-/// <summary>Thin wrapper around the Anthropic Messages API — used to turn raw dashboard numbers into a Turkish narrative for Karar Verici.</summary>
-public class AnthropicService
+/// <summary>Thin wrapper around the Anthropic Messages API — the Claude-backed <see cref="IAiService"/> implementation.</summary>
+public class AnthropicService : IAiService
 {
     private readonly HttpClient _http;
     private readonly IConfiguration _config;
