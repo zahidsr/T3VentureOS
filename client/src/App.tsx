@@ -79,6 +79,7 @@ export default function App() {
         {/* Startup Kullanıcısı */}
         <Route element={<ProtectedRoute roles={["StartupKullanicisi"]} />}>
           <Route path="/girisimim" element={<GirisimimPage />} />
+          <Route path="/girisimim/:bolum" element={<GirisimimPage />} />
         </Route>
 
         {/* Rapor — SuperAdmin & Program Yöneticisi */}

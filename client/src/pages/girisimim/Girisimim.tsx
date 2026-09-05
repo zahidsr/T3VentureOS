@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import { useParams } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,7 +24,6 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
@@ -1046,7 +1046,22 @@ async function downloadSirketCv(girisim: GirisimDetailDto) {
   doc.save(`${safeName}-sirket-cv-${new Date().toISOString().slice(0, 10)}.pdf`)
 }
 
+const BOLUMLER = [
+  "profil",
+  "programlar",
+  "gelisim",
+  "finansal",
+  "basari-dokuman",
+  "itirazlarim",
+  "sunum",
+  "rapor",
+]
+
 export default function GirisimimPage() {
+  // Bölümler sekme yerine adresten geliyor; sidebar her bölüme doğrudan bağlanabilsin diye.
+  const { bolum: bolumParam } = useParams<{ bolum: string }>()
+  // Tanınmayan bir adres boş sayfa göstermesin; profile düşülür.
+  const bolum = BOLUMLER.includes(bolumParam ?? "") ? bolumParam! : "profil"
   const queryClient = useQueryClient()
   const [showGuncellemeForm, setShowGuncellemeForm] = useState(false)
   const [guncellemePrefill, setGuncellemePrefill] = useState<GuncellemeTalebiDto | undefined>(undefined)
@@ -1263,21 +1278,11 @@ export default function GirisimimPage() {
       <div className="mb-6">
         <PuanKarti girisimId={girisim.id} />
       </div>
-
-      <Tabs defaultValue="profil">
-        <TabsList>
-          <TabsTrigger value="profil">Profil</TabsTrigger>
-          <TabsTrigger value="programlar">Program Geçmişi</TabsTrigger>
-          <TabsTrigger value="gelisim">Gelişim</TabsTrigger>
-          <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
-          <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
-          <TabsTrigger value="itirazlarim">İtirazlarım</TabsTrigger>
-          <TabsTrigger value="sunum">Sunum</TabsTrigger>
-          <TabsTrigger value="rapor">Rapor</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
 
         {/* -------------------------------------------------------- Profil */}
-        <TabsContent value="profil" className="mt-4">
+        {bolum === "profil" && (
+          <div>
           <Card>
             <CardHeader>
               <CardTitle>Profil Bilgileri</CardTitle>
@@ -1394,10 +1399,12 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* --------------------------------------------------- Programlar */}
-        <TabsContent value="programlar" className="mt-4">
+        {bolum === "programlar" && (
+          <div>
           <Card>
             <CardHeader>
               <CardTitle>Program Geçmişi</CardTitle>
@@ -1428,10 +1435,12 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* ------------------------------------------------------ Gelişim */}
-        <TabsContent value="gelisim" className="mt-4">
+        {bolum === "gelisim" && (
+          <div>
           <Card>
             <CardHeader>
               <CardTitle>Gelişim Yolculuğu</CardTitle>
@@ -1457,10 +1466,12 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* --------------------------------------------------- Finansal */}
-        <TabsContent value="finansal" className="mt-4 space-y-4">
+        {bolum === "finansal" && (
+          <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Satış Kayıtları</CardTitle>
@@ -1590,10 +1601,12 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* --------------------------------------------- Başarı & Doküman */}
-        <TabsContent value="basari-dokuman" className="mt-4 space-y-4">
+        {bolum === "basari-dokuman" && (
+          <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Başarılar</CardTitle>
@@ -1736,10 +1749,12 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* -------------------------------------------------- İtirazlarım */}
-        <TabsContent value="itirazlarim" className="mt-4">
+        {bolum === "itirazlarim" && (
+          <div>
           <Card>
             <CardHeader>
               <CardTitle>İtiraz Geçmişi</CardTitle>
@@ -1768,14 +1783,18 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+          </div>
+        )}
 
         {/* -------------------------------------------------------- Sunum */}
-        <TabsContent value="sunum" className="mt-4">
+        {bolum === "sunum" && (
+          <div>
           <SunumPaneli girisim={girisim} />
-        </TabsContent>
+          </div>
+        )}
 
-        <TabsContent value="rapor" className="mt-4 space-y-4">
+        {bolum === "rapor" && (
+          <div className="space-y-4">
           <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-card px-4 py-3">
             <div className="w-40 space-y-1.5">
               <Label
@@ -1919,8 +1938,9 @@ export default function GirisimimPage() {
               </Card>
             </>
           ) : null}
-        </TabsContent>
-      </Tabs>
+          </div>
+        )}
+      </div>
 
       <Dialog open={itirazTarget !== null} onOpenChange={(open) => !open && setItirazTarget(null)}>
         <DialogContent>
