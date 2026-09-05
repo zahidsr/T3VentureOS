@@ -10,6 +10,7 @@ import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
+import { PuanKarti } from "@/components/patterns/PuanKarti"
 import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -1257,6 +1258,11 @@ export default function GirisimimPage() {
           />
         </div>
       )}
+
+      {/* Girişimciyi sisteme geri getiren kanca: puanı ve onu yükselten somut adımlar. */}
+      <div className="mb-6">
+        <PuanKarti girisimId={girisim.id} />
+      </div>
 
       <Tabs defaultValue="profil">
         <TabsList>

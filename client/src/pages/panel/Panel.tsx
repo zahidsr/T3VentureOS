@@ -11,12 +11,14 @@ import {
   Mail,
   Presentation,
   Search,
+  Trophy,
   TrendingUp,
 } from "lucide-react"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
+import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -60,12 +62,21 @@ function TamlikCubugu({ tamamlanan, toplam }: { tamamlanan: number; toplam: numb
   )
 }
 
-function GirisimSatiri({ girisim, sag }: { girisim: GirisimSaglikDto; sag?: React.ReactNode }) {
+function GirisimSatiri({
+  girisim,
+  sag,
+  sol,
+}: {
+  girisim: GirisimSaglikDto
+  sag?: React.ReactNode
+  sol?: React.ReactNode
+}) {
   return (
     <Link
       to={`/girisimler/${girisim.girisimId}`}
       className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
     >
+      {sol}
       <InitialsAvatar name={girisim.ad} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-foreground">{girisim.ad}</div>
@@ -84,6 +95,7 @@ function GirisimSatiri({ girisim, sag }: { girisim: GirisimSaglikDto; sag?: Reac
 export default function PanelPage() {
   const { user } = useAuth()
   const [arama, setArama] = useState("")
+  const [siralama, setSiralama] = useState<"puan" | "ad" | "guncellik">("puan")
   const aramaDebounced = useDebouncedValue(arama, 200)
 
   const panelQuery = useQuery({
@@ -94,13 +106,21 @@ export default function PanelPage() {
   const data = panelQuery.data
 
   const filtrelenmis = useMemo(() => {
-    const tumu = data?.tumGirisimler ?? []
     const q = aramaDebounced.trim().toLocaleLowerCase("tr")
-    if (!q) return tumu
-    return tumu.filter(
-      (g) => g.ad.toLocaleLowerCase("tr").includes(q) || (g.sektor ?? "").toLocaleLowerCase("tr").includes(q),
+    const tumu = (data?.tumGirisimler ?? []).filter(
+      (g) => !q || g.ad.toLocaleLowerCase("tr").includes(q) || (g.sektor ?? "").toLocaleLowerCase("tr").includes(q),
     )
-  }, [data, aramaDebounced])
+
+    return [...tumu].sort((a, b) => {
+      if (siralama === "ad") return a.ad.localeCompare(b.ad, "tr")
+      // Hiç veri girmemişler (gün = null) en bayat sayılır; listenin başına gelsinler.
+      if (siralama === "guncellik") {
+        return (b.guncellemeUzerindenGecenGun ?? Number.MAX_SAFE_INTEGER) -
+          (a.guncellemeUzerindenGecenGun ?? Number.MAX_SAFE_INTEGER)
+      }
+      return b.puan - a.puan || a.ad.localeCompare(b.ad, "tr")
+    })
+  }, [data, aramaDebounced, siralama])
 
   if (panelQuery.isLoading) {
     return (
@@ -248,10 +268,63 @@ export default function PanelPage() {
         </Card>
       </div>
 
+      {/* Yüksek puanın karşılığı: burada görünmek. */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="size-4 text-amber-500" />
+            Öne Çıkan Girişimler
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Profilini en eksiksiz tutan ve en çok veri giren girişimler.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="-mx-2 space-y-0.5">
+            {data.oneCikanlar.map((g, i) => (
+              <GirisimSatiri
+                key={g.girisimId}
+                girisim={g}
+                sol={
+                  <span className="w-5 text-center text-sm font-bold tabular-nums text-muted-foreground">
+                    {i + 1}
+                  </span>
+                }
+                sag={<SeviyeRozeti seviye={g.seviye} puan={g.puan} />}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="text-base">Tüm Girişimler</CardTitle>
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-muted-foreground">Sırala:</span>
+              {(
+                [
+                  ["puan", "Puan"],
+                  ["guncellik", "Güncellik"],
+                  ["ad", "Ad"],
+                ] as const
+              ).map(([deger, etiket]) => (
+                <button
+                  key={deger}
+                  type="button"
+                  onClick={() => setSiralama(deger)}
+                  className={cn(
+                    "rounded-md px-2 py-1 transition-colors",
+                    siralama === deger
+                      ? "bg-role-accent-soft font-medium text-role-accent"
+                      : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {etiket}
+                </button>
+              ))}
+            </div>
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -274,16 +347,17 @@ export default function PanelPage() {
                   key={g.girisimId}
                   girisim={g}
                   sag={
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       {g.bekleyenKayitSayisi > 0 && (
                         <Badge variant="outline" className="text-amber-600">
                           {g.bekleyenKayitSayisi} bekleyen
                         </Badge>
                       )}
+                      <GuncellikRozeti guncel={g.guncel} gun={g.guncellemeUzerindenGecenGun} />
                       <span className="hidden text-xs text-muted-foreground sm:inline">
                         {gunIfadesi(g.guncellemeUzerindenGecenGun)}
                       </span>
-                      <TamlikCubugu tamamlanan={g.tamamlananAdim} toplam={g.toplamAdim} />
+                      <SeviyeRozeti seviye={g.seviye} puan={g.puan} />
                     </div>
                   }
                 />

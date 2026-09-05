@@ -54,20 +54,15 @@ public class DashboardController : ControllerBase
     {
         var ozet = await _saglik.GetPanelOzetiAsync();
 
-        static GirisimSaglikDto ToDto(GirisimSaglik s) => new(
-            s.GirisimId, s.Ad, s.Sektor, s.LogoUrl, s.TamamlananAdim, s.ToplamAdim, s.SonVeriGirisi,
-            // Hiç veri girilmemiş girişimlerde "gün" anlamsızdır; int.MaxValue yerine null döner.
-            s.GuncellemeUzerindenGecenGun == int.MaxValue ? null : s.GuncellemeUzerindenGecenGun,
-            s.BekleyenKayitSayisi, s.IletisimVar, s.SunumVar);
-
         return Ok(new PanelOzetiDto(
             ozet.ToplamGirisim, ozet.AktifProgramSayisi, ozet.BekleyenOnaySayisi,
             ozet.ToplamOnayliCiro, ozet.ToplamOnayliYatirim, ozet.EnEskiBekleyenOnayGun,
             ozet.IletisimsizGirisimSayisi, ozet.SunumsuzGirisimSayisi,
             GirisimSaglikService.BayatlikEsigiGun,
-            ozet.UzunSuredirGuncellenmeyenler.Select(ToDto).ToList(),
-            ozet.ProfiliEksikOlanlar.Select(ToDto).ToList(),
-            ozet.TumGirisimler.Select(ToDto).ToList()));
+            ozet.UzunSuredirGuncellenmeyenler.Select(GirisimSaglikMapper.ToDto).ToList(),
+            ozet.ProfiliEksikOlanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
+            ozet.OneCikanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
+            ozet.TumGirisimler.Select(GirisimSaglikMapper.ToDto).ToList()));
     }
 
     [HttpGet("filtre-secenekleri")]

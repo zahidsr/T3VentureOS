@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace T3VentureOS.Infrastructure.Services;
 
+/// <summary>Girişimciye "şunu yaparsan şu kadar puan" diye gösterilen tek adım.</summary>
+public record SonrakiAdim(string Aciklama, int Puan);
+
 /// <summary>Bir girişimin panelde görünen sağlık kartı: profili ne kadar dolu, en son ne zaman veri girmiş, kaç kaydı onay bekliyor.</summary>
 public record GirisimSaglik(
     Guid GirisimId,
@@ -16,7 +19,11 @@ public record GirisimSaglik(
     int GuncellemeUzerindenGecenGun,
     int BekleyenKayitSayisi,
     bool IletisimVar,
-    bool SunumVar);
+    bool SunumVar,
+    int Puan,
+    GirisimSeviyesi Seviye,
+    bool Guncel,
+    List<SonrakiAdim> SonrakiAdimlar);
 
 /// <summary>Panelin tek çağrıda ihtiyaç duyduğu her şey — sayılar ve "şuna bakılması lazım" listeleri.</summary>
 public record PanelOzeti(
@@ -30,6 +37,7 @@ public record PanelOzeti(
     int SunumsuzGirisimSayisi,
     List<GirisimSaglik> UzunSuredirGuncellenmeyenler,
     List<GirisimSaglik> ProfiliEksikOlanlar,
+    List<GirisimSaglik> OneCikanlar,
     List<GirisimSaglik> TumGirisimler);
 
 /// <summary>
@@ -78,6 +86,10 @@ public class GirisimSaglikService
                            || db.SunumTaslaklari.Any(t => t.GirisimId == g.Id),
                 SatisVar = g.SatisKayitlari.Any(),
                 GelisimVar = g.GelisimAdimlari.Any(),
+                SatisSayisi = g.SatisKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                YatirimSayisi = g.YatirimKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                BasariSayisi = g.Basarilar.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                GelisimSayisi = g.GelisimAdimlari.Count(),
                 // "Son veri girişi" girişimcinin sisteme en son ne zaman dokunduğudur; profil
                 // düzenlemesi de bir veri girişidir, bu yüzden UpdatedAt de hesaba katılır.
                 SonSatis = g.SatisKayitlari.Max(x => (DateTime?)x.CreatedAt),
@@ -111,19 +123,96 @@ public class GirisimSaglikService
                     .Where(d => d.HasValue)
                     .Max();
 
+                var gecenGun = sonVeriGirisi.HasValue ? (int)(simdi - sonVeriGirisi.Value).TotalDays : int.MaxValue;
+
+                var (puan, sonrakiAdimlar) = PuanHesapla(
+                    logoVar: adimlar[0], kisaTanimVar: adimlar[1], iletisimVar: adimlar[2], sunumVar: adimlar[3],
+                    satisSayisi: g.SatisSayisi, yatirimSayisi: g.YatirimSayisi,
+                    basariSayisi: g.BasariSayisi, gelisimSayisi: g.GelisimSayisi);
+
                 return new GirisimSaglik(
                     g.Id, g.Ad, g.Sektor, g.LogoUrl,
                     TamamlananAdim: adimlar.Count(a => a),
                     ToplamAdim: adimlar.Length,
                     SonVeriGirisi: sonVeriGirisi,
-                    GuncellemeUzerindenGecenGun: sonVeriGirisi.HasValue ? (int)(simdi - sonVeriGirisi.Value).TotalDays : int.MaxValue,
+                    GuncellemeUzerindenGecenGun: gecenGun,
                     BekleyenKayitSayisi: g.BekleyenSatis + g.BekleyenYatirim + g.BekleyenBasari + g.BekleyenDokuman,
                     IletisimVar: g.IletisimVar,
-                    SunumVar: g.SunumVar);
+                    SunumVar: g.SunumVar,
+                    Puan: puan,
+                    Seviye: SeviyeBelirle(puan),
+                    Guncel: gecenGun < BayatlikEsigiGun,
+                    SonrakiAdimlar: sonrakiAdimlar);
             })
             .OrderBy(g => g.Ad)
             .ToList();
     }
+
+    // ------------------------------------------------------------------ puanlama
+
+    /// <summary>
+    /// Girişim puanı (0-100). Yalnızca girilmiş veriyi ödüllendirir; hiçbir bileşeni zamanla
+    /// erimez — girişimcinin emek verip kazandığı puan geri alınmaz. Güncellik ayrı bir işaret
+    /// olarak taşınır (bkz. <see cref="GirisimSaglik.Guncel"/>).
+    ///
+    /// Formül bilerek basit ve açıklanabilir: girişimciye "şunu yaparsan şu kadar kazanırsın"
+    /// diye gösterilebilsin. Kayıt sayıları azalan getiriyle sayılır, yoksa aynı kaydı defalarca
+    /// girmek puan kasmaya döner.
+    /// </summary>
+    public static (int Puan, List<SonrakiAdim> SonrakiAdimlar) PuanHesapla(
+        bool logoVar, bool kisaTanimVar, bool iletisimVar, bool sunumVar,
+        int satisSayisi, int yatirimSayisi, int basariSayisi, int gelisimSayisi)
+    {
+        // Profil 50 + kayıt derinliği 50 = 100. Bileşenler tam olarak toplanmalı: aksi hâlde
+        // arayüzdeki "/100" ulaşılamaz bir hedef gösterir.
+        const int KisaTanimPuani = 15;
+        const int IletisimPuani = 15;
+        const int LogoPuani = 10;
+        const int SunumPuani = 10;
+
+        var puan = 0;
+        var adimlar = new List<SonrakiAdim>();
+
+        void ProfilAdimi(bool tamam, int deger, string aciklama)
+        {
+            if (tamam) puan += deger;
+            else adimlar.Add(new SonrakiAdim(aciklama, deger));
+        }
+
+        ProfilAdimi(kisaTanimVar, KisaTanimPuani, "Girişimini bir paragrafla tanıt (kısa tanım)");
+        ProfilAdimi(iletisimVar, IletisimPuani, "İletişim muhatabını ekle");
+        ProfilAdimi(logoVar, LogoPuani, "Logonu yükle");
+        ProfilAdimi(sunumVar, SunumPuani, "Sunum taslağını oluştur");
+
+        // Kayıt derinliği: her kayıt türü kendi tavanına kadar sayılır.
+        int Derinlik(int sayi, int birimPuan, int tavanAdet, string aciklama)
+        {
+            var sayilan = Math.Min(sayi, tavanAdet);
+            if (sayilan < tavanAdet)
+            {
+                adimlar.Add(new SonrakiAdim(
+                    sayi == 0 ? aciklama : $"{aciklama} (her kayıt +{birimPuan} puan)",
+                    birimPuan));
+            }
+            return sayilan * birimPuan;
+        }
+
+        puan += Derinlik(satisSayisi, 5, 4, "Onaylı satış/ciro kaydı gir");   // 20
+        puan += Derinlik(yatirimSayisi, 6, 2, "Aldığın yatırımı kaydet");     // 12
+        puan += Derinlik(gelisimSayisi, 2, 5, "Gelişim adımı ekle");          // 10
+        puan += Derinlik(basariSayisi, 4, 2, "Ödül, hibe ya da sertifikanı ekle"); // 8
+
+        // En çok puan getiren adım başa gelsin: girişimci en verimli hamleyi görsün.
+        return (Math.Min(puan, 100), adimlar.OrderByDescending(a => a.Puan).ToList());
+    }
+
+    public static GirisimSeviyesi SeviyeBelirle(int puan) => puan switch
+    {
+        >= 85 => GirisimSeviyesi.Platin,
+        >= 65 => GirisimSeviyesi.Altin,
+        >= 40 => GirisimSeviyesi.Gumus,
+        _ => GirisimSeviyesi.Bronz,
+    };
 
     public async Task<PanelOzeti> GetPanelOzetiAsync()
     {
@@ -152,6 +241,12 @@ public class GirisimSaglikService
             ProfiliEksikOlanlar: saglik
                 .Where(s => s.TamamlananAdim < s.ToplamAdim)
                 .OrderBy(s => s.TamamlananAdim)
+                .Take(5)
+                .ToList(),
+            // Yüksek puanın karşılığı: yöneticinin panelinde görünür olmak.
+            OneCikanlar: saglik
+                .OrderByDescending(s => s.Puan)
+                .ThenBy(s => s.Ad)
                 .Take(5)
                 .ToList(),
             TumGirisimler: saglik);

@@ -447,10 +447,7 @@ public class GirisimlerController : ControllerBase
         var s = await _saglik.GetAsync(id);
         if (s is null) return NotFound();
 
-        return Ok(new GirisimSaglikDto(
-            s.GirisimId, s.Ad, s.Sektor, s.LogoUrl, s.TamamlananAdim, s.ToplamAdim, s.SonVeriGirisi,
-            s.GuncellemeUzerindenGecenGun == int.MaxValue ? null : s.GuncellemeUzerindenGecenGun,
-            s.BekleyenKayitSayisi, s.IletisimVar, s.SunumVar));
+        return Ok(GirisimSaglikMapper.ToDto(s));
     }
 
     /// <summary>Girişimin güncel sunum taslağı — yoksa 404.</summary>

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, Clock, FileText, Mail, Phone, Presentation, User } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
 import { API_URL, api } from "@/lib/api-client"
 import type { GirisimDetailDto, GirisimSaglikDto, PitchDeckDto } from "@/lib/types"
 import { isAxiosError } from "axios"
@@ -62,6 +63,10 @@ export function GirisimKunyesi({ girisim }: { girisim: GirisimDetailDto }) {
         <KunyeBolumu baslik="Durum">
           {durum ? (
             <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <SeviyeRozeti seviye={durum.seviye} puan={durum.puan} />
+                <GuncellikRozeti guncel={durum.guncel} gun={durum.guncellemeUzerindenGecenGun} />
+              </div>
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">
                   <div

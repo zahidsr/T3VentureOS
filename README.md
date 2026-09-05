@@ -92,6 +92,9 @@ Tüm şifreler: `Passw0rd!`
 - Uygulama içi bildirimler: onay/itiraz kararları ve program güncellemeleri
 - KVKK/GDPR self-servis: veri dışa aktarma ve hesap silme talebi (anonimleştirme)
 - Girişim profili tamamlanma (onboarding) kontrol listesi
+- Girişim puanı (0-100) ve seviye rozeti (Bronz/Gümüş/Altın/Platin): profil tamlığı ve girilen kayıt derinliğinden hesaplanır, yalnızca artar; güncellik ayrı bir işaret olarak taşınır
+- Puanın karşılığı görünürlük: yönetici panelinde "Öne Çıkan Girişimler" vitrini ve puana/güncelliğe göre sıralanabilir girişim listesi
+- Girişimciye "puanını yükseltmek için" somut adımlar, en çok puan getirenden başlayarak
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
 - Her grafiğin altında kural tabanlı otomatik okuma (trendin yönü, yoğunlaşma riski, veri girişindeki boşluklar); aynı okumalar indirilen PDF raporuna da yazılır
 - AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)

@@ -37,3 +37,9 @@ public enum OneriTavsiyesi { Onay, Ret, Cekince }
 /// tutulur; tür alanı hangisinin listeleneceğini ayırır.
 /// </summary>
 public enum AiAnalizTuru { Ekosistem, GirisimDurumu, GirisimGelisim }
+
+/// <summary>
+/// Girişim puanının seviye karşılığı. Puan yalnızca artar (girilen veri geri alınmaz), bu yüzden
+/// seviye de düşmez — güncellik ayrı bir işaret olarak taşınır, bkz. GirisimSaglik.Guncel.
+/// </summary>
+public enum GirisimSeviyesi { Bronz, Gumus, Altin, Platin }

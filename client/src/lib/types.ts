@@ -560,6 +560,14 @@ export interface GirisimKarsilastirmaFiltreParams {
 }
 
 /** Panelde bir girişimin "ne durumda" kartı. */
+export type GirisimSeviyesi = "Bronz" | "Gumus" | "Altin" | "Platin"
+
+/** Girişimciye "şunu yaparsan şu kadar puan" diye gösterilen tek adım. */
+export interface SonrakiAdimDto {
+  aciklama: string
+  puan: number
+}
+
 export interface GirisimSaglikDto {
   girisimId: string
   ad: string
@@ -573,6 +581,12 @@ export interface GirisimSaglikDto {
   bekleyenKayitSayisi: number
   iletisimVar: boolean
   sunumVar: boolean
+  /** 0-100; yalnızca artar, zamanla erimez. */
+  puan: number
+  seviye: GirisimSeviyesi
+  /** Güncellik puandan bağımsız ayrı bir işarettir. */
+  guncel: boolean
+  sonrakiAdimlar: SonrakiAdimDto[]
 }
 
 export interface PanelOzetiDto {
@@ -587,6 +601,7 @@ export interface PanelOzetiDto {
   bayatlikEsigiGun: number
   uzunSuredirGuncellenmeyenler: GirisimSaglikDto[]
   profiliEksikOlanlar: GirisimSaglikDto[]
+  oneCikanlar: GirisimSaglikDto[]
   tumGirisimler: GirisimSaglikDto[]
 }
 

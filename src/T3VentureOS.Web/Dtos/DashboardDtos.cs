@@ -26,10 +26,13 @@ public record DashboardStatsDto(
     List<AylikTrendDto> AylikTrend);
 
 /// <summary>Panelde bir girişimin "ne durumda" kartı.</summary>
+public record SonrakiAdimDto(string Aciklama, int Puan);
+
 public record GirisimSaglikDto(
     Guid GirisimId, string Ad, string? Sektor, string? LogoUrl,
     int TamamlananAdim, int ToplamAdim, DateTime? SonVeriGirisi,
-    int? GuncellemeUzerindenGecenGun, int BekleyenKayitSayisi, bool IletisimVar, bool SunumVar);
+    int? GuncellemeUzerindenGecenGun, int BekleyenKayitSayisi, bool IletisimVar, bool SunumVar,
+    int Puan, string Seviye, bool Guncel, List<SonrakiAdimDto> SonrakiAdimlar);
 
 /// <summary>SuperAdmin panelinin tek çağrıda ihtiyaç duyduğu her şey.</summary>
 public record PanelOzetiDto(
@@ -44,4 +47,5 @@ public record PanelOzetiDto(
     int BayatlikEsigiGun,
     List<GirisimSaglikDto> UzunSuredirGuncellenmeyenler,
     List<GirisimSaglikDto> ProfiliEksikOlanlar,
+    List<GirisimSaglikDto> OneCikanlar,
     List<GirisimSaglikDto> TumGirisimler);
