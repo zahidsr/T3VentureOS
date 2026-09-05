@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from "react"
+import { useRef, useState, type FormEvent } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
+import { ImagePlus } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -18,8 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { api, extractErrorMessage } from "@/lib/api-client"
+import { API_URL, api, extractErrorMessage } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
+import { programIlerlemesi } from "@/lib/program-progress"
 import { cn } from "@/lib/utils"
 import type {
   AddKatilimRequest,
@@ -97,6 +99,79 @@ const editSchema = z.object({
 })
 
 type EditFormValues = z.infer<typeof editSchema>
+
+// -------------------------------------------------------------------- kapak fotoğrafı
+
+function kapakSrcFor(program: ProgramDetailDto) {
+  return program.kapakGorseliUrl ? `${API_URL.replace(/\/api\/?$/, "")}${program.kapakGorseliUrl}` : null
+}
+
+function KapakGorseliSection({
+  program,
+  canEdit,
+  onUpdated,
+}: {
+  program: ProgramDetailDto
+  canEdit: boolean
+  onUpdated: (updated: ProgramDetailDto) => void
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const kapakMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      return (await api.post<ProgramDetailDto>(`/programs/${program.id}/kapak`, formData)).data
+    },
+    onSuccess: (data) => {
+      toast.success("Kapak fotoğrafı güncellendi.")
+      onUpdated(data)
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Kapak fotoğrafı yüklenemedi.")),
+  })
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) kapakMutation.mutate(file)
+    e.target.value = ""
+  }
+
+  const kapakSrc = kapakSrcFor(program)
+  const ilerleme = program.durum === "Aktif" ? programIlerlemesi(program.baslangicTarihi, program.bitisTarihi) : null
+
+  return (
+    <div className="relative mb-6 h-40 overflow-hidden rounded-2xl border bg-gradient-to-br from-t3-navy to-t3-navy-soft sm:h-56">
+      {kapakSrc && <img src={kapakSrc} alt="" className="absolute inset-0 size-full object-cover" />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+
+      {ilerleme && (
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-3">
+          <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/20">
+            <div className="h-full rounded-full bg-white" style={{ width: `${ilerleme.yuzde}%` }} />
+          </div>
+          <p className="mt-1 text-xs font-medium text-white/80">{ilerleme.durumText}</p>
+        </div>
+      )}
+
+      {canEdit && (
+        <div className="absolute right-4 top-4">
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1.5 border-white/40 bg-white/90 text-t3-navy backdrop-blur hover:bg-white"
+            onClick={() => fileRef.current?.click()}
+            disabled={kapakMutation.isPending}
+          >
+            <ImagePlus className="size-3.5" />
+            {kapakMutation.isPending ? "Yükleniyor…" : kapakSrc ? "Kapak Fotoğrafını Değiştir" : "Kapak Fotoğrafı Ekle"}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProgramDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -271,6 +346,11 @@ export default function ProgramDetailsPage() {
   return (
     <div>
       <BackLink to="/programlar" label="Programlara dön" />
+      <KapakGorseliSection
+        program={program}
+        canEdit={canWrite}
+        onUpdated={(updated) => queryClient.setQueryData(["programs", id], updated)}
+      />
       <PageHeader
         eyebrow="T3 Girişim Ekosistemi"
         title={program.name}

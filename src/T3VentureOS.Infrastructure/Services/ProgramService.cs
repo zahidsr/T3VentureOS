@@ -63,6 +63,16 @@ public class ProgramService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<bool> UpdateKapakGorseliAsync(Guid programId, string kapakGorseliUrl)
+    {
+        var program = await _db.Programlar.FirstOrDefaultAsync(p => p.Id == programId);
+        if (program is null) return false;
+        program.KapakGorseliUrl = kapakGorseliUrl;
+        program.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
     /// <summary>Self-service application: a StartupKullanicisi applies its own Girisim to a program.</summary>
     public async Task<(bool Success, string? Error)> ApplyAsync(Guid programId, Guid girisimId)
     {

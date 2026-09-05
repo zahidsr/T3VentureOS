@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowRight, CalendarRange, ChevronLeft, ChevronRight, Users } from "lucide-react"
-import { api } from "@/lib/api-client"
+import { API_URL, api } from "@/lib/api-client"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { cn } from "@/lib/utils"
 import type { ProgramSummaryDto } from "@/lib/types"
@@ -11,6 +11,10 @@ const AUTO_ADVANCE_MS = 5500
 function formatDate(value: string | null) {
   if (!value) return null
   return new Date(value).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
+}
+
+function kapakSrcFor(kapakGorseliUrl: string | null) {
+  return kapakGorseliUrl ? `${API_URL.replace(/\/api\/?$/, "")}${kapakGorseliUrl}` : null
 }
 
 export function ProgramsCarousel() {
@@ -92,42 +96,63 @@ export function ProgramsCarousel() {
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {programs!.map((p) => (
-            <article key={p.id} className="w-full shrink-0 px-8 py-10 sm:px-12 sm:py-14">
-              <div className="mx-auto flex max-w-3xl flex-col items-start gap-5">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Başvurulara açık
-                </span>
-                <h3 className="font-heading text-2xl font-extrabold text-t3-navy sm:text-3xl">{p.name}</h3>
-                {p.description && (
-                  <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    {p.description}
-                  </p>
+          {programs!.map((p) => {
+            const kapakSrc = kapakSrcFor(p.kapakGorseliUrl)
+            return (
+              <article key={p.id} className="relative w-full shrink-0 overflow-hidden px-8 py-10 sm:px-12 sm:py-14">
+                {kapakSrc && (
+                  <>
+                    <img src={kapakSrc} alt="" className="absolute inset-0 size-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/10" />
+                  </>
                 )}
-                <div className="flex flex-wrap items-center gap-5 text-sm text-gray-500">
-                  {formatDate(p.baslangicTarihi) && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarRange className="size-4 text-t3-blue" />
-                      {formatDate(p.baslangicTarihi)}
-                      {formatDate(p.bitisTarihi) ? ` – ${formatDate(p.bitisTarihi)}` : ""}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="size-4 text-t3-blue" />
-                    {p.katilimciSayisi} girişim katılıyor
+                <div className={cn("relative mx-auto flex max-w-3xl flex-col items-start gap-5", kapakSrc && "text-white")}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                      kapakSrc ? "bg-white/15 text-white backdrop-blur" : "bg-emerald-50 text-emerald-700",
+                    )}
+                  >
+                    <span className={cn("size-1.5 rounded-full animate-pulse", kapakSrc ? "bg-emerald-300" : "bg-emerald-500")} />
+                    Başvurulara açık
                   </span>
+                  <h3 className={cn("font-heading text-2xl font-extrabold sm:text-3xl", kapakSrc ? "text-white" : "text-t3-navy")}>
+                    {p.name}
+                  </h3>
+                  {p.description && (
+                    <p
+                      className={cn(
+                        "line-clamp-3 text-sm leading-relaxed sm:text-base",
+                        kapakSrc ? "text-white/85" : "text-muted-foreground",
+                      )}
+                    >
+                      {p.description}
+                    </p>
+                  )}
+                  <div className={cn("flex flex-wrap items-center gap-5 text-sm", kapakSrc ? "text-white/80" : "text-gray-500")}>
+                    {formatDate(p.baslangicTarihi) && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarRange className={cn("size-4", kapakSrc ? "text-white" : "text-t3-blue")} />
+                        {formatDate(p.baslangicTarihi)}
+                        {formatDate(p.bitisTarihi) ? ` – ${formatDate(p.bitisTarihi)}` : ""}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className={cn("size-4", kapakSrc ? "text-white" : "text-t3-blue")} />
+                      {p.katilimciSayisi} girişim katılıyor
+                    </span>
+                  </div>
+                  <LinkButton
+                    to="/register"
+                    className="group mt-1 gap-2 bg-t3-blue text-white hover:bg-t3-blue-dark shadow-md shadow-t3-blue/20"
+                  >
+                    Girişiminizle katılın
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                  </LinkButton>
                 </div>
-                <LinkButton
-                  to="/register"
-                  className="group mt-1 gap-2 bg-t3-blue text-white hover:bg-t3-blue-dark shadow-md shadow-t3-blue/20"
-                >
-                  Girişiminizle katılın
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </LinkButton>
-              </div>
-            </article>
-          ))}
+              </article>
+            )
+          })}
         </div>
 
         {count > 1 && (

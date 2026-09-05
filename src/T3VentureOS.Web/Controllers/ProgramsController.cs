@@ -15,11 +15,13 @@ public class ProgramsController : ControllerBase
 {
     private readonly ProgramService _programs;
     private readonly ICurrentUserService _currentUser;
+    private readonly FileStorageService _files;
 
-    public ProgramsController(ProgramService programs, ICurrentUserService currentUser)
+    public ProgramsController(ProgramService programs, ICurrentUserService currentUser, FileStorageService files)
     {
         _programs = programs;
         _currentUser = currentUser;
+        _files = files;
     }
 
     [HttpGet]
@@ -82,6 +84,23 @@ public class ProgramsController : ControllerBase
         await _programs.UpdateAsync(program);
 
         return Ok(program.ToDetailDto());
+    }
+
+    [HttpPost("{id:guid}/kapak")]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
+    [RequestSizeLimit(5_000_000)]
+    public async Task<IActionResult> UploadKapakGorseli(Guid id, [FromForm] IFormFile file)
+    {
+        if (file.Length == 0) return BadRequest(new ErrorResponse("Dosya boş olamaz."));
+
+        await using var stream = file.OpenReadStream();
+        var (url, _) = await _files.SaveAsync(stream, file.FileName);
+
+        var ok = await _programs.UpdateKapakGorseliAsync(id, url);
+        if (!ok) return NotFound();
+
+        var full = await _programs.GetAsync(id);
+        return Ok(full!.ToDetailDto());
     }
 
     /// <summary>Self-service: a StartupKullanicisi applies its own Girisim to this program.</summary>

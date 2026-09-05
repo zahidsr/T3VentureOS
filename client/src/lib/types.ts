@@ -90,6 +90,12 @@ export type IslemEylemi =
   | "RolDegistirildi"
   | "GirisimAtamasiDegistirildi"
   | "TopluDavetTamamlandi"
+  | "SatisKaydiKararVerildi"
+  | "YatirimKaydiKararVerildi"
+  | "BasariKaydiKararVerildi"
+  | "DokumanKararVerildi"
+  | "GuncellemeTalebiKararVerildi"
+  | "ItirazKararVerildi"
 
 export interface IslemKaydiDto {
   id: string
@@ -112,6 +118,7 @@ export interface ProgramSummaryDto {
   id: string
   name: string
   description: string | null
+  kapakGorseliUrl: string | null
   durum: ProgramDurumu
   baslangicTarihi: string | null
   bitisTarihi: string | null
@@ -131,6 +138,7 @@ export interface ProgramDetailDto {
   id: string
   name: string
   description: string | null
+  kapakGorseliUrl: string | null
   durum: ProgramDurumu
   baslangicTarihi: string | null
   bitisTarihi: string | null

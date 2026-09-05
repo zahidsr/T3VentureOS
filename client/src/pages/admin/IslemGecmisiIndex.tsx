@@ -16,6 +16,12 @@ const EYLEM_LABEL: Record<string, string> = {
   RolDegistirildi: "Rol değiştirildi",
   GirisimAtamasiDegistirildi: "Girişim ataması değiştirildi",
   TopluDavetTamamlandi: "Toplu davet tamamlandı",
+  SatisKaydiKararVerildi: "Satış kaydı karara bağlandı",
+  YatirimKaydiKararVerildi: "Yatırım kaydı karara bağlandı",
+  BasariKaydiKararVerildi: "Başarı kaydı karara bağlandı",
+  DokumanKararVerildi: "Doküman karara bağlandı",
+  GuncellemeTalebiKararVerildi: "Güncelleme talebi karara bağlandı",
+  ItirazKararVerildi: "İtiraz karara bağlandı",
 }
 
 function formatDateTime(value: string): string {

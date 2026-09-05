@@ -6,6 +6,7 @@ public class GirisimProgrami
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? KapakGorseliUrl { get; set; }
     public ProgramDurumu Durum { get; set; } = ProgramDurumu.Taslak;
     public DateTime? BaslangicTarihi { get; set; }
     public DateTime? BitisTarihi { get; set; }

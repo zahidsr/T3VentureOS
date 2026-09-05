@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { api, extractErrorMessage } from "@/lib/api-client"
+import { API_URL, api, extractErrorMessage } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { programIlerlemesi } from "@/lib/program-progress"
 import { cn } from "@/lib/utils"
 import type { PagedResultDto, ProgramDurumu, ProgramSummaryDto } from "@/lib/types"
 
@@ -37,6 +37,75 @@ const programDurumClasses: Record<ProgramDurumu, string> = {
 function formatDate(value: string | null) {
   if (!value) return "—"
   return new Date(value).toLocaleDateString("tr-TR")
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function kapakSrcFor(kapakGorseliUrl: string | null) {
+  return kapakGorseliUrl ? `${API_URL.replace(/\/api\/?$/, "")}${kapakGorseliUrl}` : null
+}
+
+function ProgramCard({ p }: { p: ProgramSummaryDto }) {
+  const kapakSrc = kapakSrcFor(p.kapakGorseliUrl)
+  const ilerleme = p.durum === "Aktif" ? programIlerlemesi(p.baslangicTarihi, p.bitisTarihi) : null
+
+  return (
+    <Link
+      to={`/programlar/${p.id}`}
+      className="group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors duration-150 hover:border-t3-blue/30"
+    >
+      <div className="relative h-32 shrink-0 overflow-hidden bg-gradient-to-br from-t3-navy to-t3-navy-soft">
+        {kapakSrc ? (
+          <img src={kapakSrc} alt="" className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full items-center justify-center">
+            <span className="font-heading text-xl font-extrabold text-white/30">{getInitials(p.name)}</span>
+          </div>
+        )}
+        <div className="absolute right-3 top-3">
+          <Badge variant="outline" className={cn("border font-semibold", programDurumClasses[p.durum])}>
+            {programDurumLabels[p.durum]}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <p className="font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-t3-blue">
+          {p.name}
+        </p>
+        {p.description ? (
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{p.description}</p>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground/50 italic">Açıklama girilmemiş</p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {formatDate(p.baslangicTarihi)} – {formatDate(p.bitisTarihi)}
+          </span>
+          <span className="text-border">·</span>
+          <span>{p.katilimciSayisi} katılımcı</span>
+        </div>
+
+        {ilerleme && (
+          <div className="mt-3">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-t3-blue" style={{ width: `${ilerleme.yuzde}%` }} />
+            </div>
+            <p className="mt-1 text-[11px] font-medium text-muted-foreground">{ilerleme.durumText}</p>
+          </div>
+        )}
+      </div>
+    </Link>
+  )
 }
 
 export default function ProgramlarIndexPage() {
@@ -108,10 +177,10 @@ export default function ProgramlarIndexPage() {
       </div>
 
       {isLoading && (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-2xl" />
+          ))}
         </div>
       )}
 
@@ -140,40 +209,10 @@ export default function ProgramlarIndexPage() {
 
       {!isLoading && !isError && programlar.length > 0 && (
         <>
-          <div className="overflow-hidden rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Program</TableHead>
-                  <TableHead>Durum</TableHead>
-                  <TableHead>Başlangıç</TableHead>
-                  <TableHead>Bitiş</TableHead>
-                  <TableHead>Katılımcı</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {programlar.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      <Link
-                        to={`/programlar/${p.id}`}
-                        className="font-medium text-t3-navy hover:text-t3-blue hover:underline"
-                      >
-                        {p.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={cn("font-semibold", programDurumClasses[p.durum])}>
-                        {programDurumLabels[p.durum]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(p.baslangicTarihi)}</TableCell>
-                    <TableCell>{formatDate(p.bitisTarihi)}</TableCell>
-                    <TableCell>{p.katilimciSayisi} katılımcı</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {programlar.map((p) => (
+              <ProgramCard key={p.id} p={p} />
+            ))}
           </div>
           <Pagination page={data?.page ?? 1} totalPages={data?.totalPages ?? 1} onPageChange={setPage} />
         </>
