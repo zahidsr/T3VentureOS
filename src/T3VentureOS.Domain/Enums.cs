@@ -22,3 +22,12 @@ public enum BildirimTuru { OnayKarari, ItirazSonucu, ProgramGuncellemesi, Sistem
 
 /// <summary>Which of the four onay-durumu-bearing record types an Itiraz targets.</summary>
 public enum ItirazKonusuTuru { Satis, Yatirim, Basari, Dokuman }
+
+/// <summary>
+/// Every record type that can sit in the onay kuyruğu — a superset of <see cref="ItirazKonusuTuru"/>,
+/// since a ProgramYoneticisi may also recommend on güncelleme talepleri and itirazlar.
+/// </summary>
+public enum OnayKonusuTuru { Satis, Yatirim, Basari, Dokuman, Guncelleme, Itiraz }
+
+/// <summary>A ProgramYoneticisi's recommendation to the deciding SuperAdmin.</summary>
+public enum OneriTavsiyesi { Onay, Ret, Cekince }

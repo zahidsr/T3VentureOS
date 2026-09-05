@@ -13,6 +13,14 @@ public record OnayKuyruguDto(
     List<OnayBekleyenBasariDto> Basarilar,
     List<OnayBekleyenDokumanDto> Dokumanlar,
     List<OnayBekleyenGuncellemeDto> Guncellemeler,
-    List<OnayBekleyenItirazDto> Itirazlar);
+    List<OnayBekleyenItirazDto> Itirazlar,
+    List<OnayOnerisiDto> Oneriler);
+
+/// <summary>Bir kayda bırakılmış ProgramYoneticisi önerisi — kararı SuperAdmin verir.</summary>
+public record OnayOnerisiDto(
+    Guid Id, string KonuTuru, Guid KonuId, string Tavsiye, string? Not,
+    string OneriVerenAdSoyad, DateTime CreatedAt, DateTime? UpdatedAt);
 
 public record OnayKararRequest(bool Onayla, string? Not);
+
+public record OnayOnerisiRequest(string KonuTuru, Guid KonuId, string Tavsiye, string? Not);

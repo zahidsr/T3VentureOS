@@ -414,6 +414,30 @@ export interface OnayBekleyenItirazDto {
   createdAt: string
 }
 
+/** Onay kuyruğundaki her kayıt türü — öneriler bunların hepsine bırakılabilir. */
+export type OnayKonusuTuru = "Satis" | "Yatirim" | "Basari" | "Dokuman" | "Guncelleme" | "Itiraz"
+
+/** ProgramYoneticisi'nin bağlayıcı olmayan tavsiyesi; kararı SuperAdmin verir. */
+export type OneriTavsiyesi = "Onay" | "Ret" | "Cekince"
+
+export interface OnayOnerisiDto {
+  id: string
+  konuTuru: OnayKonusuTuru
+  konuId: string
+  tavsiye: OneriTavsiyesi
+  not: string | null
+  oneriVerenAdSoyad: string
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface OnayOnerisiRequest {
+  konuTuru: OnayKonusuTuru
+  konuId: string
+  tavsiye: OneriTavsiyesi
+  not?: string
+}
+
 export interface OnayKuyruguDto {
   satislar: OnayBekleyenSatisDto[]
   yatirimlar: OnayBekleyenYatirimDto[]
@@ -421,6 +445,7 @@ export interface OnayKuyruguDto {
   dokumanlar: OnayBekleyenDokumanDto[]
   guncellemeler: OnayBekleyenGuncellemeDto[]
   itirazlar: OnayBekleyenItirazDto[]
+  oneriler: OnayOnerisiDto[]
 }
 
 export interface OnayKararRequest {

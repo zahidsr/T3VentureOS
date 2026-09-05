@@ -36,7 +36,7 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 | Email | nvarchar(256) | unique index |
 | PasswordHash | nvarchar | nullable (davet edilip henüz parola belirlememiş kullanıcı) |
 | FullName | nvarchar(200) | |
-| Role | int (enum) | SuperAdmin, ProgramYoneticisi, StartupKullanicisi, KararVerici — index |
+| Role | int (enum) | SuperAdmin, ProgramYoneticisi, StartupKullanicisi — index |
 | Status | int (enum) | Invited, Active, Disabled |
 | GirisimId | uniqueidentifier fk→Girisim, nullable | yalnızca Role=StartupKullanicisi iken set edilir; FK `SetNull` |
 | LastLoginAt | datetime2 nullable | |
@@ -168,6 +168,21 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 | OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni (itirazın kendi kararı) |
 | CreatedAt | datetime2 | |
 
+### Onay Önerileri (OnayOnerisi)
+> ProgramYoneticisi'nin bekleyen bir kayda bıraktığı bağlayıcı olmayan tavsiye; kararı SuperAdmin verir. `Itiraz` ile aynı polimorfik (KonuTuru, KonuId) desenini kullanır.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| KonuTuru | int (enum) | Satis, Yatirim, Basari, Dokuman, Guncelleme, Itiraz |
+| KonuId | uniqueidentifier | önerinin bağlandığı bekleyen kaydın id'si (polimorfik — DB'de FK değil) |
+| Tavsiye | int (enum) | Onay, Ret, Cekince |
+| Not | nvarchar(1000) | Ret ve Çekince için zorunlu (API doğrulaması) |
+| OneriVerenId | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt, UpdatedAt | datetime2 | UpdatedAt yalnızca öneri güncellenmişse dolu |
+
+Benzersiz index: `(KonuTuru, KonuId, OneriVerenId)` — bir kullanıcının bir kayıtta tek bir güncel önerisi olur.
+
 ### Bildirimler (Bildirim)
 | kolon | tip | not |
 |---|---|---|
@@ -211,6 +226,7 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 - `GelisimAdimlari(GirisimId)`
 - `VerificationTokens(TokenHash)` unique, `VerificationTokens(UserId, Type)`
 - `Itirazlar(KonuId)`
+- `OnayOnerileri(KonuTuru, KonuId, OneriVerenId)` — unique
 - `Bildirimler(KullaniciId, Okundu)`
 
 ## Silme Davranışı (DeleteBehavior)

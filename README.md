@@ -10,7 +10,7 @@ T3 Vakfı girişimcilik ekosistemi için kurumsal, çok kiracılı (multi-tenant
 | Veritabanı | SQL Server (LocalDB üzerinde geliştirme) |
 | Frontend | React + Vite + TypeScript + Tailwind CSS + shadcn/ui |
 | Auth & Session | JWT (access) + HttpOnly cookie (refresh) + ASP.NET Core Identity `PasswordHasher` (PBKDF2-HMAC-SHA256) |
-| Raporlama & AI | Recharts + Anthropic Claude API |
+| Raporlama & AI | Recharts + Google Gemini API (`IAiService` ile sağlayıcı değiştirilebilir; Anthropic Claude de desteklenir) |
 | Dışa Aktarım | CSV, Excel (XLSX) |
 
 ## Proje Yapısı
@@ -30,8 +30,8 @@ T3VentureOS/
 
 ## Roller
 
-- **SuperAdmin** — Sistem genelinde tüm girişim, program, kullanıcı ve onay yönetimi
-- **ProgramYoneticisi** — Hızlandırma programları oluşturur, girişimleri programa ekler, bekleyen kayıtları onaylar
+- **SuperAdmin** — Sistem genelinde tüm girişim, program, kullanıcı yönetimi ve **tüm onay/red kararları**
+- **ProgramYoneticisi** — Hızlandırma programları oluşturur, girişimleri programa ekler, onay kuyruğunu inceleyip öneri bırakır (karar yetkisi yoktur)
 - **KararVerici** — Ekosistem raporlarını ve girişim detaylarını inceler, AI destekli analizleri görüntüler
 - **StartupKullanicisi** — Kendi girişiminin profilini günceller, satış/yatırım/başarı/doküman kaydı girer
 
@@ -43,7 +43,7 @@ T3VentureOS/
 cd src/T3VentureOS.Web
 dotnet restore
 dotnet user-secrets set "Jwt:Key" "<en az 32 karakterlik rastgele bir gizli anahtar>"  # zorunlu
-dotnet user-secrets set "Anthropic:ApiKey" "<sk-ant-...>"  # isteğe bağlı
+dotnet user-secrets set "Gemini:ApiKey" "<AIza...>"  # AI analizleri için (isteğe bağlı)
 dotnet run --urls "http://localhost:5215"
 ```
 
@@ -86,12 +86,12 @@ Tüm şifreler: `Passw0rd!`
 
 - Girişim kartları ve detaylı profil yönetimi
 - Hızlandırma programları ve programa katılım süreçleri
-- Onay akışlı satış, yatırım, başarı ve doküman kayıtları
+- Onay akışlı satış, yatırım, başarı ve doküman kayıtları (karar SuperAdmin'de; ProgramYoneticisi onay/ret/çekince önerisi bırakır)
 - İtiraz (appeal) akışı: reddedilen kayıtlara itiraz, itiraz onaylanırsa kayıt tekrar onaylı duruma döner
 - Uygulama içi bildirimler: onay/itiraz kararları ve program güncellemeleri
 - KVKK/GDPR self-servis: veri dışa aktarma ve hesap silme talebi (anonimleştirme)
 - Girişim profili tamamlanma (onboarding) kontrol listesi
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
-- AI destekli ekosistem analizi (Anthropic Claude API)
+- AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)
 - CSV ve Excel rapor export
 - T3 Vakfı kurumsal renkleriyle tutarlı UI/UX

@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<VerificationToken> VerificationTokens => Set<VerificationToken>();
     public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
     public DbSet<Itiraz> Itirazlar => Set<Itiraz>();
+    public DbSet<OnayOnerisi> OnayOnerileri => Set<OnayOnerisi>();
     public DbSet<SilmeTalebi> SilmeTalepleri => Set<SilmeTalebi>();
     public DbSet<IslemKaydi> IslemKayitlari => Set<IslemKaydi>();
     public DbSet<AiAnalizKaydi> AiAnalizKayitlari => Set<AiAnalizKaydi>();
@@ -131,6 +132,14 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.Girisim).WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<OnayOnerisi>(e =>
+        {
+            // One standing recommendation per reviewer per record — a second submission updates it.
+            e.HasIndex(x => new { x.KonuTuru, x.KonuId, x.OneriVerenId }).IsUnique();
+            e.Property(x => x.Not).HasMaxLength(1000);
+            e.HasOne(x => x.OneriVeren).WithMany().HasForeignKey(x => x.OneriVerenId).OnDelete(DeleteBehavior.Restrict);
         });
 
         b.Entity<SilmeTalebi>(e =>

@@ -52,17 +52,19 @@
 | GET | `/girisimler/{id}/onboarding-durumu` | auth (kendi girişimi) | profil tamamlanma kontrol listesi (logo, kısa tanım, ilk satış, ilk gelişim adımı, e-posta doğrulama) |
 
 ## Onaylar (`api/onaylar`)
-> Tüm uç noktalar `SuperAdmin, ProgramYoneticisi` ile sınırlıdır.
+> Kuyruğu görme ve öneri bırakma `SuperAdmin, ProgramYoneticisi` ile sınırlıdır; **onay/ret kararı yalnızca `SuperAdmin`e açıktır** (ProgramYoneticisi için `403`).
+> Bir kayıt karara bağlandığında üzerindeki öneriler silinir.
 
-| Metod | Yol | Açıklama |
-|---|---|---|
-| GET | `/onaylar` | bekleyen satış/yatırım/başarı/doküman/güncelleme/itiraz kayıtlarının tek bir kuyruk halinde listesi |
-| POST | `/onaylar/satis/{id}` | satış kaydı için onay/ret kararı (ret → not zorunlu) |
-| POST | `/onaylar/yatirim/{id}` | yatırım kaydı için onay/ret kararı |
-| POST | `/onaylar/basari/{id}` | başarı kaydı için onay/ret kararı |
-| POST | `/onaylar/dokuman/{id}` | doküman için onay/ret kararı |
-| POST | `/onaylar/guncelleme/{id}` | profil güncelleme talebi için onay/ret kararı (onaylanırsa alanlar `Girisim`'e uygulanır) |
-| POST | `/onaylar/itiraz/{id}` | itiraz için onay/ret kararı (kabul edilirse hedef kayıt tekrar `Onaylandi` olur) |
+| Metod | Yol | Yetki | Açıklama |
+|---|---|---|---|
+| GET | `/onaylar` | SuperAdmin, ProgramYoneticisi | bekleyen satış/yatırım/başarı/doküman/güncelleme/itiraz kayıtlarının tek bir kuyruk halinde listesi + bu kayıtlara bırakılmış öneriler |
+| POST | `/onaylar/oneri` | SuperAdmin, ProgramYoneticisi | bekleyen bir kayda bağlayıcı olmayan öneri bırakır (`Onay`/`Ret`/`Cekince`; Ret ve Çekince için gerekçe zorunlu). Aynı kullanıcının o kayıttaki önceki önerisini günceller |
+| POST | `/onaylar/satis/{id}` | SuperAdmin | satış kaydı için onay/ret kararı (ret → not zorunlu) |
+| POST | `/onaylar/yatirim/{id}` | SuperAdmin | yatırım kaydı için onay/ret kararı |
+| POST | `/onaylar/basari/{id}` | SuperAdmin | başarı kaydı için onay/ret kararı |
+| POST | `/onaylar/dokuman/{id}` | SuperAdmin | doküman için onay/ret kararı |
+| POST | `/onaylar/guncelleme/{id}` | SuperAdmin | profil güncelleme talebi için onay/ret kararı (onaylanırsa alanlar `Girisim`'e uygulanır) |
+| POST | `/onaylar/itiraz/{id}` | SuperAdmin | itiraz için onay/ret kararı (kabul edilirse hedef kayıt tekrar `Onaylandi` olur) |
 
 ## Programlar (`api/programs`)
 | Metod | Yol | Yetki | Açıklama |

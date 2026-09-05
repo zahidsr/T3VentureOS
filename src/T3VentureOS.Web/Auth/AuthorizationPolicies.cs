@@ -19,6 +19,12 @@ public static class AuthorizationPolicies
     /// <summary>Girişim veri kayıtları (satış/yatırım/başarı/doküman/gelişim adımı): girişimin kendisi ya da bir yönetici.</summary>
     public const string GirisimVeriGirisiErisimi = nameof(GirisimVeriGirisiErisimi);
 
+    /// <summary>
+    /// Onay/red kararı verme: yalnızca SuperAdmin. ProgramYoneticisi kuyruğu görür ve öneri bırakır
+    /// (bkz. <see cref="YoneticiErisimi"/>) ama nihai kararı veremez.
+    /// </summary>
+    public const string OnayKararErisimi = nameof(OnayKararErisimi);
+
     /// <summary>Sistem geneli kullanıcı yönetimi: yalnızca SuperAdmin.</summary>
     public const string SistemYonetimiErisimi = nameof(SistemYonetimiErisimi);
 
@@ -31,6 +37,8 @@ public static class AuthorizationPolicies
 
         options.AddPolicy(GirisimVeriGirisiErisimi, p => p.RequireRole(
             UserRole.StartupKullanicisi.ToString(), UserRole.SuperAdmin.ToString(), UserRole.ProgramYoneticisi.ToString()));
+
+        options.AddPolicy(OnayKararErisimi, p => p.RequireRole(UserRole.SuperAdmin.ToString()));
 
         options.AddPolicy(SistemYonetimiErisimi, p => p.RequireRole(UserRole.SuperAdmin.ToString()));
     }

@@ -20,6 +20,7 @@ public static class IslemEylemleri
     public const string DokumanKararVerildi = "DokumanKararVerildi";
     public const string GuncellemeTalebiKararVerildi = "GuncellemeTalebiKararVerildi";
     public const string ItirazKararVerildi = "ItirazKararVerildi";
+    public const string OnayOnerisiVerildi = "OnayOnerisiVerildi";
 }
 
 /// <summary>SuperAdmin'lerin kullanıcı yönetimi üzerinde yaptığı işlemlerin (audit trail) kaydı.</summary>

@@ -20,6 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { API_URL, api, extractErrorMessage } from "@/lib/api-client"
+import { useAuth } from "@/lib/auth-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type {
   OnayBekleyenBasariDto,
   OnayBekleyenDokumanDto,
@@ -28,10 +30,29 @@ import type {
   OnayBekleyenSatisDto,
   OnayBekleyenYatirimDto,
   OnayKararRequest,
+  OnayKonusuTuru,
   OnayKuyruguDto,
+  OnayOnerisiDto,
+  OnayOnerisiRequest,
+  OneriTavsiyesi,
 } from "@/lib/types"
 
 type OnayKategori = "satis" | "yatirim" | "basari" | "dokuman" | "guncelleme" | "itiraz"
+
+const KATEGORI_KONU_TURU: Record<OnayKategori, OnayKonusuTuru> = {
+  satis: "Satis",
+  yatirim: "Yatirim",
+  basari: "Basari",
+  dokuman: "Dokuman",
+  guncelleme: "Guncelleme",
+  itiraz: "Itiraz",
+}
+
+const TAVSIYE_LABEL: Record<OneriTavsiyesi, string> = {
+  Onay: "Onay önerisi",
+  Ret: "Ret önerisi",
+  Cekince: "Çekince",
+}
 
 const KONU_TURU_LABEL: Record<string, string> = {
   Satis: "Satış",
@@ -84,6 +105,8 @@ function ItemCard({
   createdAt,
   fields,
   actions,
+  oneriler,
+  selectable,
   selected,
   onSelectedChange,
 }: {
@@ -92,18 +115,22 @@ function ItemCard({
   createdAt: string
   fields: ReactNode
   actions: ReactNode
+  oneriler: OnayOnerisiDto[]
+  selectable: boolean
   selected: boolean
   onSelectedChange: (checked: boolean) => void
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
-        <Checkbox
-          checked={selected}
-          onCheckedChange={(checked) => onSelectedChange(checked === true)}
-          aria-label={`${girisimAdi} kaydını seç`}
-          className="mt-1"
-        />
+        {selectable && (
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(checked) => onSelectedChange(checked === true)}
+            aria-label={`${girisimAdi} kaydını seç`}
+            className="mt-1"
+          />
+        )}
         <div className="space-y-1.5">
           <Link
             to={`/girisimler/${girisimId}`}
@@ -113,6 +140,17 @@ function ItemCard({
           </Link>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">{fields}</div>
           <div className="text-xs text-muted-foreground">Gönderim: {formatDate(createdAt)}</div>
+          {oneriler.length > 0 && (
+            <ul className="space-y-1 pt-1">
+              {oneriler.map((o) => (
+                <li key={o.id} className="flex flex-wrap items-baseline gap-2 text-xs">
+                  <Badge variant={o.tavsiye === "Onay" ? "default" : "outline"}>{TAVSIYE_LABEL[o.tavsiye]}</Badge>
+                  <span className="font-medium text-foreground">{o.oneriVerenAdSoyad}</span>
+                  {o.not && <span className="text-muted-foreground">{o.not}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
       <div className="flex shrink-0 gap-2">{actions}</div>
@@ -127,6 +165,7 @@ function SelectionHeader({
   onBulkApprove,
   onBulkReject,
   isBulkPending,
+  canDecide,
 }: {
   ids: string[]
   selectedIds: Set<string>
@@ -134,7 +173,11 @@ function SelectionHeader({
   onBulkApprove: () => void
   onBulkReject: () => void
   isBulkPending: boolean
+  canDecide: boolean
 }) {
+  // Onay/red yalnızca SuperAdmin'de; ProgramYoneticisi için toplu seçim anlamsız.
+  if (!canDecide) return null
+
   const count = selectedIds.size
   const allSelected = ids.length > 0 && ids.every((id) => selectedIds.has(id))
   return (
@@ -176,6 +219,18 @@ function emptySelection(): Record<OnayKategori, Set<string>> {
 
 export default function OnaylarIndexPage() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  // Karar yetkisi (madde 3) yalnızca SuperAdmin'de; ProgramYoneticisi öneri bırakır.
+  const canDecide = user?.role === "SuperAdmin"
+
+  const [oneriTarget, setOneriTarget] = useState<{
+    kategori: OnayKategori
+    id: string
+    girisimAdi: string
+  } | null>(null)
+  const [oneriTavsiye, setOneriTavsiye] = useState<OneriTavsiyesi>("Onay")
+  const [oneriNot, setOneriNot] = useState("")
+  const [oneriNotError, setOneriNotError] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<{
     kategori: OnayKategori
     ids: string[]
@@ -201,6 +256,18 @@ export default function OnaylarIndexPage() {
   const onaylarQuery = useQuery({
     queryKey: ["onaylar"],
     queryFn: async () => (await api.get<OnayKuyruguDto>("/onaylar")).data,
+  })
+
+  const oneriMutation = useMutation({
+    mutationFn: async (body: OnayOnerisiRequest) => (await api.post("/onaylar/oneri", body)).data,
+    onSuccess: () => {
+      toast.success("Öneriniz kaydedildi.")
+      queryClient.invalidateQueries({ queryKey: ["onaylar"] })
+      setOneriTarget(null)
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error, "Öneri kaydedilemedi."))
+    },
   })
 
   const kararMutation = useMutation({
@@ -294,7 +361,42 @@ export default function OnaylarIndexPage() {
     }
   }
 
+  function onerilerFor(kategori: OnayKategori, id: string): OnayOnerisiDto[] {
+    const konuTuru = KATEGORI_KONU_TURU[kategori]
+    return (onaylarQuery.data?.oneriler ?? []).filter((o) => o.konuTuru === konuTuru && o.konuId === id)
+  }
+
+  function openOneri(kategori: OnayKategori, id: string, girisimAdi: string) {
+    const mevcut = onerilerFor(kategori, id).find((o) => o.oneriVerenAdSoyad === user?.fullName)
+    setOneriTavsiye(mevcut?.tavsiye ?? "Onay")
+    setOneriNot(mevcut?.not ?? "")
+    setOneriNotError(false)
+    setOneriTarget({ kategori, id, girisimAdi })
+  }
+
+  function submitOneri() {
+    if (!oneriTarget) return
+    // Gerekçesiz bir ret/çekince, kararı verecek SuperAdmin'e hiçbir şey anlatmaz.
+    if (oneriTavsiye !== "Onay" && !oneriNot.trim()) {
+      setOneriNotError(true)
+      return
+    }
+    oneriMutation.mutate({
+      konuTuru: KATEGORI_KONU_TURU[oneriTarget.kategori],
+      konuId: oneriTarget.id,
+      tavsiye: oneriTavsiye,
+      not: oneriNot.trim() || undefined,
+    })
+  }
+
   function actionsFor(kategori: OnayKategori, id: string, girisimAdi: string) {
+    if (!canDecide) {
+      return (
+        <Button size="sm" variant="outline" onClick={() => openOneri(kategori, id, girisimAdi)}>
+          Öneri Bırak
+        </Button>
+      )
+    }
     return (
       <>
         <Button
@@ -339,7 +441,11 @@ export default function OnaylarIndexPage() {
       <PageHeader
         eyebrow="Onay Kuyruğu"
         title="Onaylar"
-        subtitle="Girişimlerin gönderdiği veriler burada yönetici onayına sunulur."
+        subtitle={
+          canDecide
+            ? "Girişimlerin gönderdiği veriler burada onayınıza sunulur."
+            : "Girişimlerin gönderdiği verileri inceleyip SuperAdmin'e öneri bırakabilirsiniz; nihai kararı SuperAdmin verir."
+        }
       />
 
       {onaylarQuery.isLoading ? (
@@ -379,6 +485,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("satis")}
                   onBulkReject={() => openBulkReject("satis")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {satislar.map((s: OnayBekleyenSatisDto) => (
                   <ItemCard
@@ -394,6 +501,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("satis", s.id, s.girisimAdi)}
+                    oneriler={onerilerFor("satis", s.id)}
+                    selectable={canDecide}
                     selected={selected.satis.has(s.id)}
                     onSelectedChange={(checked) => toggleSelected("satis", s.id, checked)}
                   />
@@ -420,6 +529,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("yatirim")}
                   onBulkReject={() => openBulkReject("yatirim")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {yatirimlar.map((y: OnayBekleyenYatirimDto) => (
                   <ItemCard
@@ -436,6 +546,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("yatirim", y.id, y.girisimAdi)}
+                    oneriler={onerilerFor("yatirim", y.id)}
+                    selectable={canDecide}
                     selected={selected.yatirim.has(y.id)}
                     onSelectedChange={(checked) => toggleSelected("yatirim", y.id, checked)}
                   />
@@ -462,6 +574,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("basari")}
                   onBulkReject={() => openBulkReject("basari")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {basarilar.map((b: OnayBekleyenBasariDto) => (
                   <ItemCard
@@ -477,6 +590,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("basari", b.id, b.girisimAdi)}
+                    oneriler={onerilerFor("basari", b.id)}
+                    selectable={canDecide}
                     selected={selected.basari.has(b.id)}
                     onSelectedChange={(checked) => toggleSelected("basari", b.id, checked)}
                   />
@@ -503,6 +618,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("dokuman")}
                   onBulkReject={() => openBulkReject("dokuman")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {dokumanlar.map((d: OnayBekleyenDokumanDto) => (
                   <ItemCard
@@ -529,6 +645,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("dokuman", d.id, d.girisimAdi)}
+                    oneriler={onerilerFor("dokuman", d.id)}
+                    selectable={canDecide}
                     selected={selected.dokuman.has(d.id)}
                     onSelectedChange={(checked) => toggleSelected("dokuman", d.id, checked)}
                   />
@@ -555,6 +673,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("guncelleme")}
                   onBulkReject={() => openBulkReject("guncelleme")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {guncellemeler.map((g: OnayBekleyenGuncellemeDto) => (
                   <ItemCard
@@ -569,6 +688,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("guncelleme", g.id, g.girisimAdi)}
+                    oneriler={onerilerFor("guncelleme", g.id)}
+                    selectable={canDecide}
                     selected={selected.guncelleme.has(g.id)}
                     onSelectedChange={(checked) => toggleSelected("guncelleme", g.id, checked)}
                   />
@@ -595,6 +716,7 @@ export default function OnaylarIndexPage() {
                   onBulkApprove={() => handleBulkApprove("itiraz")}
                   onBulkReject={() => openBulkReject("itiraz")}
                   isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
                 />
                 {itirazlar.map((i: OnayBekleyenItirazDto) => (
                   <ItemCard
@@ -609,6 +731,8 @@ export default function OnaylarIndexPage() {
                       </>
                     }
                     actions={actionsFor("itiraz", i.id, i.girisimAdi)}
+                    oneriler={onerilerFor("itiraz", i.id)}
+                    selectable={canDecide}
                     selected={selected.itiraz.has(i.id)}
                     onSelectedChange={(checked) => toggleSelected("itiraz", i.id, checked)}
                   />
@@ -618,6 +742,60 @@ export default function OnaylarIndexPage() {
           </TabsContent>
         </Tabs>
       )}
+
+      <Dialog open={oneriTarget !== null} onOpenChange={(open) => !open && setOneriTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Öneri Bırak</DialogTitle>
+            <DialogDescription>
+              {oneriTarget?.girisimAdi} kaydı için görüşünüz SuperAdmin'e iletilir. Öneri bağlayıcı değildir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="oneri-tavsiye">Öneriniz</Label>
+              <Select value={oneriTavsiye} onValueChange={(v) => setOneriTavsiye(v as OneriTavsiyesi)}>
+                <SelectTrigger id="oneri-tavsiye">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Onay">Onay önerisi</SelectItem>
+                  <SelectItem value="Ret">Ret önerisi</SelectItem>
+                  <SelectItem value="Cekince">Çekince</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="oneri-not">Gerekçe {oneriTavsiye === "Onay" ? "(isteğe bağlı)" : "*"}</Label>
+              <Textarea
+                id="oneri-not"
+                value={oneriNot}
+                onChange={(e) => {
+                  setOneriNot(e.target.value)
+                  setOneriNotError(false)
+                }}
+                placeholder="Görüşünüzü yazın…"
+                rows={4}
+              />
+              {oneriNotError && (
+                <p className="text-xs text-red-600">Ret ve çekince önerileri için gerekçe zorunludur.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOneriTarget(null)}>
+              Vazgeç
+            </Button>
+            <Button
+              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              disabled={oneriMutation.isPending}
+              onClick={submitOneri}
+            >
+              Öneriyi Kaydet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={rejectTarget !== null}
