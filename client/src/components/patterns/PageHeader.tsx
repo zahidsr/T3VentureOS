@@ -14,14 +14,14 @@ export function PageHeader({
   return (
     <div className="relative mb-8 flex flex-wrap items-end justify-between gap-4 pb-6">
       {/* gradient accent bar */}
-      <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-t3-blue/40 via-border to-transparent" />
+      <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-role-accent/40 via-border to-transparent" />
 
       <div className="flex items-start gap-4">
         {/* left accent line */}
-        <div className="mt-1.5 hidden h-8 w-1 shrink-0 rounded-full bg-gradient-to-b from-t3-blue to-t3-blue/20 sm:block" />
+        <div className="mt-1.5 hidden h-8 w-1 shrink-0 rounded-full bg-gradient-to-b from-role-accent to-role-accent/20 sm:block" />
         <div>
           {eyebrow && (
-            <span className="mb-1.5 block text-xs font-bold tracking-widest text-t3-blue uppercase">
+            <span className="mb-1.5 block text-xs font-bold tracking-widest text-role-accent uppercase">
               {eyebrow}
             </span>
           )}

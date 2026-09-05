@@ -558,3 +558,34 @@ export interface GirisimKarsilastirmaFiltreParams {
   yatirimMin?: number
   yatirimMax?: number
 }
+
+/** Panelde bir girişimin "ne durumda" kartı. */
+export interface GirisimSaglikDto {
+  girisimId: string
+  ad: string
+  sektor: string | null
+  logoUrl: string | null
+  tamamlananAdim: number
+  toplamAdim: number
+  sonVeriGirisi: string | null
+  /** Hiç veri girilmemişse null. */
+  guncellemeUzerindenGecenGun: number | null
+  bekleyenKayitSayisi: number
+  iletisimVar: boolean
+  sunumVar: boolean
+}
+
+export interface PanelOzetiDto {
+  toplamGirisim: number
+  aktifProgramSayisi: number
+  bekleyenOnaySayisi: number
+  toplamOnayliCiro: number
+  toplamOnayliYatirim: number
+  enEskiBekleyenOnayGun: number
+  iletisimsizGirisimSayisi: number
+  sunumsuzGirisimSayisi: number
+  bayatlikEsigiGun: number
+  uzunSuredirGuncellenmeyenler: GirisimSaglikDto[]
+  profiliEksikOlanlar: GirisimSaglikDto[]
+  tumGirisimler: GirisimSaglikDto[]
+}

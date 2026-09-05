@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { BarChart2, Building2, CheckSquare2, GitCompareArrows, History, Layers, Rocket, Users } from "lucide-react"
+import { BarChart2, Building2, CheckSquare2, GitCompareArrows, History, LayoutDashboard, Layers, Rocket, Users } from "lucide-react"
 import type { UserRole } from "@/lib/types"
 
 export interface NavItem {
@@ -14,6 +14,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { to: "/panel", label: "Genel Bakış", icon: LayoutDashboard, roles: ["SuperAdmin", "ProgramYoneticisi"] },
   { to: "/girisimler", label: "Girişimler", icon: Building2, roles: ["SuperAdmin", "ProgramYoneticisi"], end: true },
   { to: "/girisimler/karsilastirma", label: "Rakip Karşılaştırma", icon: GitCompareArrows, roles: ["SuperAdmin", "ProgramYoneticisi"] },
   { to: "/programlar", label: "Programlar", icon: Layers, roles: ["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi"] },

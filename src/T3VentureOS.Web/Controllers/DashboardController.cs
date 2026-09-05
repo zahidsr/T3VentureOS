@@ -13,12 +13,14 @@ public class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
     private readonly IAiService _ai;
+    private readonly GirisimSaglikService _saglik;
     private readonly ICurrentUserService _currentUser;
 
-    public DashboardController(DashboardService dashboard, IAiService ai, ICurrentUserService currentUser)
+    public DashboardController(DashboardService dashboard, IAiService ai, GirisimSaglikService saglik, ICurrentUserService currentUser)
     {
         _dashboard = dashboard;
         _ai = ai;
+        _saglik = saglik;
         _currentUser = currentUser;
     }
 
@@ -41,6 +43,31 @@ public class DashboardController : ControllerBase
             stats.SektorDagilimi.Select(s => new SektorSayisiDto(s.Sektor, s.Sayi)).ToList(),
             stats.YatirimTuruDagilimi.Select(y => new YatirimTuruDagilimiDto(y.Tur, y.ToplamTutar)).ToList(),
             stats.AylikTrend.Select(a => new AylikTrendDto(a.Ay, a.Ciro, a.Yatirim)).ToList()));
+    }
+
+    /// <summary>
+    /// SuperAdmin panelinin veri kaynağı: sayılar + "şuna bakılması lazım" listeleri. Tek çağrıda
+    /// döner, çünkü panel açılışında altı ayrı istek atmak ilk boyamayı geciktirir.
+    /// </summary>
+    [HttpGet("panel")]
+    public async Task<IActionResult> Panel()
+    {
+        var ozet = await _saglik.GetPanelOzetiAsync();
+
+        static GirisimSaglikDto ToDto(GirisimSaglik s) => new(
+            s.GirisimId, s.Ad, s.Sektor, s.LogoUrl, s.TamamlananAdim, s.ToplamAdim, s.SonVeriGirisi,
+            // Hiç veri girilmemiş girişimlerde "gün" anlamsızdır; int.MaxValue yerine null döner.
+            s.GuncellemeUzerindenGecenGun == int.MaxValue ? null : s.GuncellemeUzerindenGecenGun,
+            s.BekleyenKayitSayisi, s.IletisimVar, s.SunumVar);
+
+        return Ok(new PanelOzetiDto(
+            ozet.ToplamGirisim, ozet.AktifProgramSayisi, ozet.BekleyenOnaySayisi,
+            ozet.ToplamOnayliCiro, ozet.ToplamOnayliYatirim, ozet.EnEskiBekleyenOnayGun,
+            ozet.IletisimsizGirisimSayisi, ozet.SunumsuzGirisimSayisi,
+            GirisimSaglikService.BayatlikEsigiGun,
+            ozet.UzunSuredirGuncellenmeyenler.Select(ToDto).ToList(),
+            ozet.ProfiliEksikOlanlar.Select(ToDto).ToList(),
+            ozet.TumGirisimler.Select(ToDto).ToList()));
     }
 
     [HttpGet("filtre-secenekleri")]

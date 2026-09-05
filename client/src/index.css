@@ -46,6 +46,9 @@
     --color-t3-orange: var(--t3-orange);
     --color-t3-orange-dark: var(--t3-orange-dark);
     --color-t3-red: var(--t3-red);
+    --color-role-accent: var(--role-accent);
+    --color-role-accent-dark: var(--role-accent-dark);
+    --color-role-accent-soft: var(--role-accent-soft);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -66,6 +69,14 @@
     --t3-orange: #f7941d;
     --t3-orange-dark: #d97a0a;
     --t3-red: #d82020;
+
+    /* Rol vurgu rengi: hangi paneldeyken hangi renk. Varsayılan kurumsal mavidir; kabuk
+       (AppShellAuthenticated) kök öğeye data-role yazar ve aşağıdaki bloklar devreye girer.
+       Amaç kullanıcının hangi panelde olduğunu bir bakışta ayırt etmesi — palete yeni renk
+       eklenmez, mevcut kurumsal renkler rol başına dağıtılır. */
+    --role-accent: var(--t3-blue);
+    --role-accent-dark: var(--t3-blue-dark);
+    --role-accent-soft: var(--t3-blue-light);
 
     --background: #ffffff;
     --foreground: #191830;
@@ -99,6 +110,30 @@
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: rgba(255, 255, 255, 0.12);
     --sidebar-ring: var(--t3-blue);
+}
+
+/* SuperAdmin kurumsal maviyi korur (varsayılan). Program yöneticisi operasyonel turuncu,
+   girişimci ise büyümeyi çağrıştıran yeşil ile ayrışır. */
+:root[data-role="ProgramYoneticisi"] {
+    --role-accent: var(--t3-orange-dark);
+    --role-accent-dark: #b8650a;
+    --role-accent-soft: #fdf1e0;
+}
+
+:root[data-role="StartupKullanicisi"] {
+    --role-accent: #1a7f5a;
+    --role-accent-dark: #126043;
+    --role-accent-soft: #e6f4ef;
+}
+
+.dark:root[data-role="ProgramYoneticisi"],
+.dark :root[data-role="ProgramYoneticisi"] {
+    --role-accent-soft: rgba(247, 148, 29, 0.16);
+}
+
+.dark:root[data-role="StartupKullanicisi"],
+.dark :root[data-role="StartupKullanicisi"] {
+    --role-accent-soft: rgba(26, 127, 90, 0.18);
 }
 
 .dark {

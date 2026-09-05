@@ -37,6 +37,7 @@ builder.Services.AddScoped<ItirazService>();
 builder.Services.AddScoped<OnayOneriService>();
 builder.Services.AddScoped<PrivacyService>();
 builder.Services.AddScoped<OnboardingService>();
+builder.Services.AddScoped<GirisimSaglikService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();

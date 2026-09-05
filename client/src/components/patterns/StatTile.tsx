@@ -8,7 +8,7 @@ const toneBar: Record<Tone, string> = {
   success: "before:bg-emerald-500",
   warning: "before:bg-amber-500",
   danger: "before:bg-red-500",
-  info: "before:bg-t3-blue",
+  info: "before:bg-role-accent",
 }
 
 const toneIconBg: Record<Tone, string> = {
@@ -16,7 +16,7 @@ const toneIconBg: Record<Tone, string> = {
   success: "bg-emerald-50 text-emerald-500",
   warning: "bg-amber-50 text-amber-500",
   danger: "bg-red-50 text-red-500",
-  info: "bg-t3-blue-light text-t3-blue",
+  info: "bg-role-accent-soft text-role-accent",
 }
 
 export function StatGrid({ children }: { children: ReactNode }) {

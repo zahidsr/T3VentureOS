@@ -3,9 +3,9 @@ import type { UserRole } from "@/lib/types"
 export function roleHomePath(role: UserRole): string {
   switch (role) {
     case "SuperAdmin":
-      return "/girisimler"
+      return "/panel"
     case "ProgramYoneticisi":
-      return "/girisimler"
+      return "/panel"
     case "StartupKullanicisi":
       return "/girisimim"
   }

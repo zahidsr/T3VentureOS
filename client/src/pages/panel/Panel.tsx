@@ -1,0 +1,297 @@
+import { useMemo, useState } from "react"
+import { Link } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import {
+  AlertTriangle,
+  Banknote,
+  Building2,
+  CheckSquare2,
+  Clock,
+  Layers,
+  Mail,
+  Presentation,
+  Search,
+  TrendingUp,
+} from "lucide-react"
+import { PageHeader } from "@/components/patterns/PageHeader"
+import { StatGrid, StatTile } from "@/components/patterns/StatTile"
+import { EmptyState } from "@/components/patterns/EmptyState"
+import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { LinkButton } from "@/components/patterns/LinkButton"
+import { Skeleton } from "@/components/ui/skeleton"
+import { api } from "@/lib/api-client"
+import { useAuth } from "@/lib/auth-context"
+import { useDebouncedValue } from "@/lib/use-debounced-value"
+import type { GirisimSaglikDto, PanelOzetiDto } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+function formatCompactCurrency(value: number) {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} Mlr ₺`
+  if (value >= 1_000_000) return `${(value / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} Mn ₺`
+  if (value >= 1_000) return `${(value / 1_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} B ₺`
+  return `${value.toLocaleString("tr-TR")} ₺`
+}
+
+/** "17 gün önce" gibi bir ifade, ham tarihten daha hızlı okunur — panelin derdi hız. */
+function gunIfadesi(gun: number | null) {
+  if (gun === null) return "hiç veri girilmemiş"
+  if (gun <= 0) return "bugün"
+  if (gun === 1) return "dün"
+  return `${gun} gün önce`
+}
+
+function TamlikCubugu({ tamamlanan, toplam }: { tamamlanan: number; toplam: number }) {
+  const yuzde = Math.round((tamamlanan / toplam) * 100)
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn("h-full rounded-full", yuzde >= 80 ? "bg-emerald-500" : yuzde >= 50 ? "bg-amber-500" : "bg-red-500")}
+          style={{ width: `${yuzde}%` }}
+        />
+      </div>
+      <span className="text-xs tabular-nums text-muted-foreground">
+        {tamamlanan}/{toplam}
+      </span>
+    </div>
+  )
+}
+
+function GirisimSatiri({ girisim, sag }: { girisim: GirisimSaglikDto; sag?: React.ReactNode }) {
+  return (
+    <Link
+      to={`/girisimler/${girisim.girisimId}`}
+      className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
+    >
+      <InitialsAvatar name={girisim.ad} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium text-foreground">{girisim.ad}</div>
+        <div className="truncate text-xs text-muted-foreground">{girisim.sektor ?? "Sektör girilmemiş"}</div>
+      </div>
+      <div className="shrink-0 text-right">{sag}</div>
+    </Link>
+  )
+}
+
+/**
+ * Yöneticinin giriş ekranı. Amaç, "şu girişim ne durumda" sorusunu tek bakışta cevaplamak:
+ * önce sayılar, sonra doğrudan eyleme çağıran listeler (bekleyen onay, bayatlamış kayıt, eksik
+ * profil), en altta da her girişimi bulup açabileceğin arama.
+ */
+export default function PanelPage() {
+  const { user } = useAuth()
+  const [arama, setArama] = useState("")
+  const aramaDebounced = useDebouncedValue(arama, 200)
+
+  const panelQuery = useQuery({
+    queryKey: ["panel"],
+    queryFn: async () => (await api.get<PanelOzetiDto>("/dashboard/panel")).data,
+  })
+
+  const data = panelQuery.data
+
+  const filtrelenmis = useMemo(() => {
+    const tumu = data?.tumGirisimler ?? []
+    const q = aramaDebounced.trim().toLocaleLowerCase("tr")
+    if (!q) return tumu
+    return tumu.filter(
+      (g) => g.ad.toLocaleLowerCase("tr").includes(q) || (g.sektor ?? "").toLocaleLowerCase("tr").includes(q),
+    )
+  }, [data, aramaDebounced])
+
+  if (panelQuery.isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-24 w-full" />
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+        <Skeleton className="h-72 w-full" />
+      </div>
+    )
+  }
+
+  if (!data) {
+    return <EmptyState icon="⚠️" message="Panel verisi yüklenemedi." />
+  }
+
+  const bekleyenUyari = data.bekleyenOnaySayisi > 0
+  const bayatSayisi = data.uzunSuredirGuncellenmeyenler.length
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Genel Bakış"
+        title={user?.fullName ? `Merhaba, ${user.fullName}` : "Genel Bakış"}
+        subtitle="Ekosistemin güncel durumu ve bugün ilgilenmen gereken kayıtlar."
+      />
+
+      <StatGrid>
+        <StatTile value={data.toplamGirisim} label="Girişim" tone="info" icon={<Building2 className="size-4" />} />
+        <StatTile value={data.aktifProgramSayisi} label="Aktif Program" tone="neutral" icon={<Layers className="size-4" />} />
+        <StatTile
+          value={data.bekleyenOnaySayisi}
+          label="Bekleyen Onay"
+          tone={bekleyenUyari ? "warning" : "success"}
+          icon={<CheckSquare2 className="size-4" />}
+        />
+        <StatTile
+          value={formatCompactCurrency(data.toplamOnayliCiro)}
+          label="Onaylı Ciro"
+          tone="success"
+          icon={<TrendingUp className="size-4" />}
+        />
+        <StatTile
+          value={formatCompactCurrency(data.toplamOnayliYatirim)}
+          label="Onaylı Yatırım"
+          tone="success"
+          icon={<Banknote className="size-4" />}
+        />
+      </StatGrid>
+
+      {/* Sayılar durumu anlatır ama iş çıkarmaz; asıl değer bu üç listede. */}
+      <div className="grid items-start gap-5 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="size-4 text-amber-500" />
+              Onay Bekleyenler
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {data.bekleyenOnaySayisi === 0 ? (
+              <p className="text-sm text-muted-foreground">Kuyruk temiz, bekleyen kayıt yok.</p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{data.bekleyenOnaySayisi} kayıt</span> karar bekliyor.
+                  En eskisi <span className="font-semibold text-foreground">{data.enEskiBekleyenOnayGun} gündür</span>{" "}
+                  kuyrukta.
+                </p>
+                <LinkButton to="/onaylar" size="sm" className="bg-role-accent text-white hover:bg-role-accent-dark">
+                  Onay kuyruğunu aç
+                </LinkButton>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="size-4 text-muted-foreground" />
+              Uzun Süredir Güncellenmeyenler
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bayatSayisi === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Tüm girişimler son {data.bayatlikEsigiGun} gün içinde veri girmiş.
+              </p>
+            ) : (
+              <div className="-mx-2 space-y-0.5">
+                {data.uzunSuredirGuncellenmeyenler.map((g) => (
+                  <GirisimSatiri
+                    key={g.girisimId}
+                    girisim={g}
+                    sag={
+                      <span className="text-xs font-medium text-amber-600">
+                        {gunIfadesi(g.guncellemeUzerindenGecenGun)}
+                      </span>
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="size-4 text-muted-foreground" />
+              Profili Eksik Girişimler
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {data.profiliEksikOlanlar.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tüm profiller tamam.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="outline" className="gap-1">
+                    <Mail className="size-3" />
+                    {data.iletisimsizGirisimSayisi} iletişim kişisi yok
+                  </Badge>
+                  <Badge variant="outline" className="gap-1">
+                    <Presentation className="size-3" />
+                    {data.sunumsuzGirisimSayisi} sunum yok
+                  </Badge>
+                </div>
+                <div className="-mx-2 space-y-0.5">
+                  {data.profiliEksikOlanlar.map((g) => (
+                    <GirisimSatiri
+                      key={g.girisimId}
+                      girisim={g}
+                      sag={<TamlikCubugu tamamlanan={g.tamamlananAdim} toplam={g.toplamAdim} />}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-base">Tüm Girişimler</CardTitle>
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={arama}
+                onChange={(e) => setArama(e.target.value)}
+                placeholder="Girişim ya da sektör ara…"
+                className="pl-9"
+                aria-label="Girişim ara"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filtrelenmis.length === 0 ? (
+            <EmptyState icon="🔍" message="Aramaya uyan girişim yok." />
+          ) : (
+            <div className="-mx-2 divide-y divide-border/60">
+              {filtrelenmis.map((g) => (
+                <GirisimSatiri
+                  key={g.girisimId}
+                  girisim={g}
+                  sag={
+                    <div className="flex items-center gap-4">
+                      {g.bekleyenKayitSayisi > 0 && (
+                        <Badge variant="outline" className="text-amber-600">
+                          {g.bekleyenKayitSayisi} bekleyen
+                        </Badge>
+                      )}
+                      <span className="hidden text-xs text-muted-foreground sm:inline">
+                        {gunIfadesi(g.guncellemeUzerindenGecenGun)}
+                      </span>
+                      <TamlikCubugu tamamlanan={g.tamamlananAdim} toplam={g.toplamAdim} />
+                    </div>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

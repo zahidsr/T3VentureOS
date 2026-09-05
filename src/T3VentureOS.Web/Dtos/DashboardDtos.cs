@@ -24,3 +24,24 @@ public record DashboardStatsDto(
     List<SektorSayisiDto> SektorDagilimi,
     List<YatirimTuruDagilimiDto> YatirimTuruDagilimi,
     List<AylikTrendDto> AylikTrend);
+
+/// <summary>Panelde bir girişimin "ne durumda" kartı.</summary>
+public record GirisimSaglikDto(
+    Guid GirisimId, string Ad, string? Sektor, string? LogoUrl,
+    int TamamlananAdim, int ToplamAdim, DateTime? SonVeriGirisi,
+    int? GuncellemeUzerindenGecenGun, int BekleyenKayitSayisi, bool IletisimVar, bool SunumVar);
+
+/// <summary>SuperAdmin panelinin tek çağrıda ihtiyaç duyduğu her şey.</summary>
+public record PanelOzetiDto(
+    int ToplamGirisim,
+    int AktifProgramSayisi,
+    int BekleyenOnaySayisi,
+    decimal ToplamOnayliCiro,
+    decimal ToplamOnayliYatirim,
+    int EnEskiBekleyenOnayGun,
+    int IletisimsizGirisimSayisi,
+    int SunumsuzGirisimSayisi,
+    int BayatlikEsigiGun,
+    List<GirisimSaglikDto> UzunSuredirGuncellenmeyenler,
+    List<GirisimSaglikDto> ProfiliEksikOlanlar,
+    List<GirisimSaglikDto> TumGirisimler);
