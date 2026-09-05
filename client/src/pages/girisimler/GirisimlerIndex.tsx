@@ -19,6 +19,7 @@ import {
 import { API_URL, api } from "@/lib/api-client"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import type { GirisimSummaryDto, PagedResultDto, ProgramSummaryDto } from "@/lib/types"
+import { SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
 
 const ALL_PROGRAMS = "__all__"
 
@@ -72,7 +73,7 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
   return (
     <Link
       to={`/girisimler/${g.id}`}
-      className="group flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-colors duration-150 hover:border-t3-blue/30"
+      className="group flex flex-col rounded-2xl border bg-card p-5 transition-colors duration-150 hover:border-t3-blue/30"
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
@@ -130,11 +131,15 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
           Detay <ArrowRight className="size-3" />
         </span>
       </div>
-      {formatCiro(g.toplamOnayliCiro) && (
-        <div className="mt-2.5 inline-flex w-fit items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-          {formatCiro(g.toplamOnayliCiro)} onaylı ciro
-        </div>
-      )}
+      {/* Puan rozeti panelde vardı, listede yoktu; aynı bilgi her yerde aynı biçimde görünsün. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        {formatCiro(g.toplamOnayliCiro) && (
+          <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+            {formatCiro(g.toplamOnayliCiro)} onaylı ciro
+          </span>
+        )}
+        <SeviyeRozeti seviye={g.seviye} puan={g.puan} />
+      </div>
     </Link>
   )
 }
@@ -191,7 +196,7 @@ export default function GirisimlerIndexPage() {
       />
 
       {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border bg-card px-5 py-4 shadow-sm">
+      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border bg-card px-5 py-4">
         <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground mt-7" />
         <div className="w-64 space-y-1.5">
           <Label htmlFor="ara-filter" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -227,7 +232,15 @@ export default function GirisimlerIndexPage() {
           <Label htmlFor="program-filter" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Program
           </Label>
-          <Select value={programId} onValueChange={(value) => { setProgramId(value ?? ALL_PROGRAMS); setPage(1) }}>
+          {/* Base UI, items verilmezse seçili değerin ham hâlini basar ("__all__"); etiketler burada da tanımlanır. */}
+          <Select
+            items={{
+              [ALL_PROGRAMS]: "Tüm programlar",
+              ...Object.fromEntries((programsQuery.data?.items ?? []).map((p) => [p.id, p.name])),
+            }}
+            value={programId}
+            onValueChange={(value) => { setProgramId(value ?? ALL_PROGRAMS); setPage(1) }}
+          >
             <SelectTrigger id="program-filter" className="w-full">
               <SelectValue placeholder="Tüm programlar" />
             </SelectTrigger>
@@ -245,7 +258,11 @@ export default function GirisimlerIndexPage() {
           <Label htmlFor="sirala-filter" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Sırala
           </Label>
-          <Select value={sirala} onValueChange={(value) => { setSirala(value ?? "yeni"); setPage(1) }}>
+          <Select
+            items={Object.fromEntries(SORT_OPTIONS.map((o) => [o.value, o.label]))}
+            value={sirala}
+            onValueChange={(value) => { setSirala(value ?? "yeni"); setPage(1) }}
+          >
             <SelectTrigger id="sirala-filter" className="w-full">
               <SelectValue />
             </SelectTrigger>

@@ -60,7 +60,7 @@ function ProgramCard({ p }: { p: ProgramSummaryDto }) {
   return (
     <Link
       to={`/programlar/${p.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors duration-150 hover:border-t3-blue/30"
+      className="group flex flex-col overflow-hidden rounded-2xl border bg-card transition-colors duration-150 hover:border-t3-blue/30"
     >
       <div className="relative h-32 shrink-0 overflow-hidden bg-gradient-to-br from-t3-navy to-t3-navy-soft">
         {kapakSrc ? (

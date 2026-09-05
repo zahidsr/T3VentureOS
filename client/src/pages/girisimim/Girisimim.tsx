@@ -438,7 +438,7 @@ function AddYatirimForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
             control={control}
             name="tur"
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+              <Select items={yatirimTuruLabels} value={field.value ?? ""} onValueChange={field.onChange}>
                 <SelectTrigger id="y-tur" className="w-full">
                   <SelectValue placeholder="Seçin" />
                 </SelectTrigger>
@@ -539,7 +539,7 @@ function AddBasariForm({ girisimId, onAdded }: { girisimId: string; onAdded: () 
             control={control}
             name="tur"
             render={({ field }) => (
-              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+              <Select items={basariTuruLabels} value={field.value ?? ""} onValueChange={field.onChange}>
                 <SelectTrigger id="b-tur" className="w-full">
                   <SelectValue placeholder="Seçin" />
                 </SelectTrigger>
@@ -848,7 +848,7 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="d-tur">Tür</Label>
-          <Select value={tur} onValueChange={(value) => setTur((value as DokumanTuru) ?? "Genel")}>
+          <Select items={{ Genel: "Genel", Sunum: "Tanıtım Sunumu" }} value={tur} onValueChange={(value) => setTur((value as DokumanTuru) ?? "Genel")}>
             <SelectTrigger id="d-tur" className="w-full">
               <SelectValue />
             </SelectTrigger>

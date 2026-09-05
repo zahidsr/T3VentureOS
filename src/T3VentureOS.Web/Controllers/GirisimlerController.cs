@@ -48,7 +48,12 @@ public class GirisimlerController : ControllerBase
         [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
     {
         var result = await _girisimler.ListAsync(sektor, programId, ara, sirala, page, pageSize);
-        return Ok(result.ToPagedDto(g => g.ToSummaryDto()));
+
+        // Puan/seviye ayrı hesaplanıyor; yalnızca bu sayfadaki girişimler için çekilir.
+        var saglikMap = (await _saglik.GetTumSaglikAsync(result.Items.Select(g => g.Id).ToList()))
+            .ToDictionary(s => s.GirisimId);
+
+        return Ok(result.ToPagedDto(g => g.ToSummaryDto(saglikMap.GetValueOrDefault(g.Id))));
     }
 
     [HttpGet("benim")]

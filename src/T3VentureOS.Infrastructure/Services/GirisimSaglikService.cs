@@ -62,14 +62,14 @@ public class GirisimSaglikService
 
     /// <summary>Tek bir girişimin sağlık kartı — girişim künyesinde kullanılır.</summary>
     public async Task<GirisimSaglik?> GetAsync(Guid girisimId) =>
-        (await GetTumSaglikAsync(girisimId)).FirstOrDefault();
+        (await GetTumSaglikAsync([girisimId])).FirstOrDefault();
 
-    /// <param name="girisimId">Verilirse yalnızca o girişim hesaplanır; null ise tümü.</param>
-    public async Task<List<GirisimSaglik>> GetTumSaglikAsync(Guid? girisimId = null)
+    /// <param name="girisimIds">Verilirse yalnızca bu girişimler hesaplanır; null ise tümü.</param>
+    public async Task<List<GirisimSaglik>> GetTumSaglikAsync(IReadOnlyCollection<Guid>? girisimIds = null)
     {
         var db = _db;
         var girisimler = await _db.Girisimler
-            .Where(g => girisimId == null || g.Id == girisimId)
+            .Where(g => girisimIds == null || girisimIds.Contains(g.Id))
             .Select(g => new
             {
                 g.Id,

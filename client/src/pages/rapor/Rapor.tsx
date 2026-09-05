@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
+import { AiMetni } from "@/components/patterns/AiMetni"
 import { YATIRIM_TUR_LABEL } from "@/lib/labels"
 import { aylikTrendOkumasi, sektorDagilimiOkumasi, yatirimTuruOkumasi, type Okuma } from "@/lib/rapor-okumasi"
 import { Input } from "@/components/ui/input"
@@ -511,7 +512,7 @@ export default function RaporPage() {
       />
 
       {/* ---------------------------------------------------- Filtreler */}
-      <div className="flex flex-wrap items-end gap-4 rounded-2xl border bg-card px-5 py-4 shadow-sm">
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border bg-card px-5 py-4">
         <div className="w-40 space-y-1.5">
           <Label htmlFor="rapor-baslangic" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Başlangıç
@@ -533,7 +534,12 @@ export default function RaporPage() {
           <Label htmlFor="rapor-sektor-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Sektör
           </Label>
-          <Select value={sektorFiltre} onValueChange={(value) => setSektorFiltre(value ?? ALL_VALUE)}>
+          {/* Base UI, items verilmezse seçili değerin ham hâlini basar ("__all__"). */}
+          <Select
+            items={{ [ALL_VALUE]: "Tüm sektörler", ...Object.fromEntries((filtreSecenekleri?.sektorler ?? []).map((s) => [s, s])) }}
+            value={sektorFiltre}
+            onValueChange={(value) => setSektorFiltre(value ?? ALL_VALUE)}
+          >
             <SelectTrigger id="rapor-sektor-filter" className="w-full">
               <SelectValue placeholder="Tüm sektörler" />
             </SelectTrigger>
@@ -551,7 +557,11 @@ export default function RaporPage() {
           <Label htmlFor="rapor-program-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Program
           </Label>
-          <Select value={programFiltre} onValueChange={(value) => setProgramFiltre(value ?? ALL_VALUE)}>
+          <Select
+            items={{ [ALL_VALUE]: "Tüm programlar", ...Object.fromEntries((filtreSecenekleri?.programlar ?? []).map((p) => [p.id, p.ad])) }}
+            value={programFiltre}
+            onValueChange={(value) => setProgramFiltre(value ?? ALL_VALUE)}
+          >
             <SelectTrigger id="rapor-program-filter" className="w-full">
               <SelectValue placeholder="Tüm programlar" />
             </SelectTrigger>
@@ -569,7 +579,11 @@ export default function RaporPage() {
           <Label htmlFor="rapor-girisim-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Girişim
           </Label>
-          <Select value={girisimFiltre} onValueChange={(value) => setGirisimFiltre(value ?? ALL_VALUE)}>
+          <Select
+            items={{ [ALL_VALUE]: "Tüm girişimler", ...Object.fromEntries((filtreSecenekleri?.girisimler ?? []).map((g) => [g.id, g.ad])) }}
+            value={girisimFiltre}
+            onValueChange={(value) => setGirisimFiltre(value ?? ALL_VALUE)}
+          >
             <SelectTrigger id="rapor-girisim-filter" className="w-full">
               <SelectValue placeholder="Tüm girişimler" />
             </SelectTrigger>
@@ -628,18 +642,16 @@ export default function RaporPage() {
       </div>
 
       {/* ---------------------------------------------------- AI Analizi */}
-      <Card className="overflow-hidden border-t3-blue/20">
-        <CardHeader className="border-b bg-muted/40 pb-4">
+      <Card>
+        <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-t3-blue text-white">
-                <Sparkles className="size-4" />
-              </div>
-              <CardTitle className="text-base">AI Analizi</CardTitle>
-            </div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="size-4 text-role-accent" />
+              AI Analizi
+            </CardTitle>
             <Button
               size="sm"
-              className="gap-1.5 bg-t3-blue text-white hover:bg-t3-blue-dark"
+              className="gap-1.5 bg-role-accent text-white hover:bg-role-accent-dark"
               disabled={aiMutation.isPending}
               onClick={() => aiMutation.mutate()}
             >
@@ -671,7 +683,7 @@ export default function RaporPage() {
             </div>
           ) : displayedAnaliz ? (
             <>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{displayedAnaliz}</p>
+              <AiMetni metin={displayedAnaliz} />
               {aiHistory.length > 1 && (
                 <div className="mt-5 border-t pt-4">
                   <p className="mb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
@@ -712,13 +724,11 @@ export default function RaporPage() {
       {/* ---------------------------------------------------- Aylık Trend + Yatırım Türü Dağılımı */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="overflow-hidden">
-          <CardHeader className="border-b bg-muted/30 pb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-t3-blue-light">
-                <LineChartIcon className="size-4 text-t3-blue" />
-              </div>
-              <CardTitle className="text-base">Aylık Trend (Son 6 Ay)</CardTitle>
-            </div>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <LineChartIcon className="size-4 text-muted-foreground" />
+              Aylık Trend (Son 6 Ay)
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-6" ref={trendChartRef}>
             {data.aylikTrend.every((a) => a.ciro === 0 && a.yatirim === 0) ? (
@@ -750,13 +760,11 @@ export default function RaporPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardHeader className="border-b bg-muted/30 pb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-t3-blue-light">
-                <PieChartIcon className="size-4 text-t3-blue" />
-              </div>
-              <CardTitle className="text-base">Yatırım Türü Dağılımı</CardTitle>
-            </div>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PieChartIcon className="size-4 text-muted-foreground" />
+              Yatırım Türü Dağılımı
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-6" ref={yatirimChartRef}>
             {data.yatirimTuruDagilimi.length === 0 ? (
@@ -795,14 +803,12 @@ export default function RaporPage() {
 
       {/* ---------------------------------------------------- Sektör Dağılımı */}
       <Card className="overflow-hidden">
-        <CardHeader className="border-b bg-muted/30 pb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-t3-blue-light">
-              <BarChart2 className="size-4 text-t3-blue" />
-            </div>
-            <CardTitle className="text-base">Sektör Dağılımı</CardTitle>
-          </div>
-        </CardHeader>
+        <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart2 className="size-4 text-muted-foreground" />
+              Sektör Dağılımı
+            </CardTitle>
+          </CardHeader>
         <CardContent className="pt-6" ref={sektorChartRef}>
           {data.sektorDagilimi.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

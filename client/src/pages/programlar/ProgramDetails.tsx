@@ -410,7 +410,7 @@ export default function ProgramDetailsPage() {
                     control={editControl}
                     name="durum"
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select items={programDurumLabels} value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger id="edit-durum" className="w-full">
                           <SelectValue placeholder="Durum seçin" />
                         </SelectTrigger>
@@ -514,7 +514,7 @@ export default function ProgramDetailsPage() {
                         <span className="text-sm font-medium text-t3-navy">
                           {selectedKatilimIds.size} katılımcı seçildi
                         </span>
-                        <Select value={bulkDurum} onValueChange={(value) => setBulkDurum(value as KatilimDurumu)}>
+                        <Select items={katilimDurumLabels} value={bulkDurum} onValueChange={(value) => setBulkDurum(value as KatilimDurumu)}>
                           <SelectTrigger size="sm" className="w-40">
                             <SelectValue />
                           </SelectTrigger>
@@ -616,7 +616,7 @@ export default function ProgramDetailsPage() {
               <form onSubmit={handleAddSubmit} className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
                 <div className="space-y-1.5">
                   <Label htmlFor="add-girisim">Girişim</Label>
-                  <Select value={addGirisimId} onValueChange={(v) => setAddGirisimId(v ?? "")}>
+                  <Select items={Object.fromEntries((girisimlerQuery.data ?? []).map((g) => [g.id, g.ad]))} value={addGirisimId} onValueChange={(v) => setAddGirisimId(v ?? "")}>
                     <SelectTrigger id="add-girisim" className="w-full">
                       <SelectValue placeholder="Girişim seçin" />
                     </SelectTrigger>
@@ -642,7 +642,7 @@ export default function ProgramDetailsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="add-durum">Durum</Label>
-                  <Select value={addDurum} onValueChange={(value) => setAddDurum(value as KatilimDurumu)}>
+                  <Select items={katilimDurumLabels} value={addDurum} onValueChange={(value) => setAddDurum(value as KatilimDurumu)}>
                     <SelectTrigger id="add-durum" className="w-full">
                       <SelectValue />
                     </SelectTrigger>

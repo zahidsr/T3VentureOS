@@ -7,22 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, extractErrorMessage } from "@/lib/api-client"
 import type { GirisimAnalizDto } from "@/lib/types"
+import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 
 export type AnalizTuru = "durum" | "gelisim"
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })
-}
-
-/**
- * AI metni madde işaretli düz metin döndürüyor; markdown motoru kurmak yerine satırları listeye
- * çeviriyoruz. Model kalın vurgu için ** kullanabildiğinden bu işaretler temizlenir.
- */
-function maddelereAyir(metin: string): string[] {
-  return metin
-    .split("\n")
-    .map((satir) => satir.trim().replace(/^[*\-•]\s*/, "").replace(/\*\*/g, ""))
-    .filter(Boolean)
 }
 
 /**
@@ -98,7 +88,7 @@ export function GirisimAnalizPaneli({
         ) : analiz ? (
           <div className="space-y-3">
             <ul className="space-y-2">
-              {maddelereAyir(analiz.metin).map((madde, i) => (
+              {aiMaddeleriniAyir(analiz.metin).map((madde, i) => (
                 <li key={i} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
                   <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-role-accent" />
                   <span>{madde}</span>

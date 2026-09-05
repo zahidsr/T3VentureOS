@@ -183,6 +183,9 @@ export interface GirisimSummaryDto {
   logoUrl: string | null
   toplamOnayliCiro: number
   createdAt: string
+  puan: number
+  seviye: GirisimSeviyesi
+  guncel: boolean
 }
 
 export interface CreateGirisimRequest {

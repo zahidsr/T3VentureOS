@@ -37,6 +37,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api, extractErrorMessage } from "@/lib/api-client"
 import { captureChartPng, type ChartImage } from "@/lib/chart-export"
+import { AiMetni } from "@/components/patterns/AiMetni"
 import type { AiAnalizDto, DashboardFiltreSecenekleriDto, GirisimKarsilastirmaDto } from "@/lib/types"
 
 const ALL_SEKTOR = "__all__"
@@ -425,7 +426,11 @@ export default function GirisimKarsilastirmaPage() {
           <Label htmlFor="k-sektor" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Sektör
           </Label>
-          <Select value={sektor} onValueChange={(value) => setSektor(value ?? ALL_SEKTOR)}>
+          <Select
+            items={{ [ALL_SEKTOR]: "Tüm sektörler", ...Object.fromEntries((filtreSecenekleriQuery.data?.sektorler ?? []).map((s) => [s, s])) }}
+            value={sektor}
+            onValueChange={(value) => setSektor(value ?? ALL_SEKTOR)}
+          >
             <SelectTrigger id="k-sektor" className="w-full">
               <SelectValue placeholder="Tüm sektörler" />
             </SelectTrigger>
@@ -722,7 +727,7 @@ export default function GirisimKarsilastirmaPage() {
                   </div>
                 </div>
               ) : aiAnaliziMutation.data ? (
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{aiAnaliziMutation.data.analiz}</p>
+                <AiMetni metin={aiAnaliziMutation.data.analiz} />
               ) : (
                 <p className="text-sm text-muted-foreground">
                   SWOT-benzeri değerlendirme, göreli pazar konumlandırması ve büyüme trendi yorumu içeren bir özet için

@@ -73,6 +73,11 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString("tr-TR")
 }
 
+/** Onay kuyruğundaki tutarlar da diğer ekranlardaki gibi para birimiyle gösterilir. */
+function formatTutar(value: number) {
+  return `₺${value.toLocaleString("tr-TR")}`
+}
+
 function formatNumber(value: number) {
   return value.toLocaleString("tr-TR")
 }
@@ -112,7 +117,7 @@ function ItemCard({
   onSelectedChange: (checked: boolean) => void
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
         {selectable && (
           <Checkbox
@@ -487,8 +492,8 @@ export default function OnaylarIndexPage() {
                     fields={
                       <>
                         <Field label="Dönem" value={s.donem} />
-                        <Field label="Ciro" value={formatNumber(s.ciro)} />
-                        <Field label="İhracat" value={s.ihracat != null ? formatNumber(s.ihracat) : "—"} />
+                        <Field label="Ciro" value={formatTutar(s.ciro)} />
+                        <Field label="İhracat" value={s.ihracat != null ? formatTutar(s.ihracat) : "—"} />
                       </>
                     }
                     actions={actionsFor("satis", s.id, s.girisimAdi)}
@@ -745,7 +750,7 @@ export default function OnaylarIndexPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="oneri-tavsiye">Öneriniz</Label>
-              <Select value={oneriTavsiye} onValueChange={(v) => setOneriTavsiye(v as OneriTavsiyesi)}>
+              <Select items={TAVSIYE_LABEL} value={oneriTavsiye} onValueChange={(v) => setOneriTavsiye(v as OneriTavsiyesi)}>
                 <SelectTrigger id="oneri-tavsiye">
                   <SelectValue />
                 </SelectTrigger>

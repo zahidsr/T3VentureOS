@@ -284,7 +284,12 @@ export default function KullanicilarIndexPage() {
             className="pl-9"
           />
         </div>
-        <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value ?? ALL_ROLES)}>
+        {/* Base UI, items verilmezse ham enum adını basar. */}
+        <Select
+          items={{ [ALL_ROLES]: "Tüm roller", ...ROLE_LABEL }}
+          value={roleFilter}
+          onValueChange={(value) => setRoleFilter(value ?? ALL_ROLES)}
+        >
           <SelectTrigger className="w-56">
             <SelectValue placeholder="Tüm roller" />
           </SelectTrigger>
@@ -308,7 +313,7 @@ export default function KullanicilarIndexPage() {
       ) : users.length === 0 ? (
         <EmptyState icon="👥" message="Henüz kullanıcı bulunmuyor." />
       ) : (
-        <div className="overflow-hidden rounded-xl shadow-sm ring-1 ring-foreground/10">
+        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -455,7 +460,7 @@ export default function KullanicilarIndexPage() {
                 control={control}
                 name="role"
                 render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? undefined)}>
+                  <Select items={ROLE_LABEL} value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? undefined)}>
                     <SelectTrigger id="invite-role" className="w-full">
                       <SelectValue placeholder="Rol seçin" />
                     </SelectTrigger>
@@ -478,7 +483,11 @@ export default function KullanicilarIndexPage() {
                   control={control}
                   name="girisimId"
                   render={({ field }) => (
-                    <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? undefined)}>
+                    <Select
+                      items={Object.fromEntries((girisimlerQuery.data ?? []).map((g) => [g.id, g.ad]))}
+                      value={field.value ?? ""}
+                      onValueChange={(value) => field.onChange(value ?? undefined)}
+                    >
                       <SelectTrigger id="invite-girisim" className="w-full">
                         <SelectValue placeholder="Girişim seçin" />
                       </SelectTrigger>
@@ -693,7 +702,7 @@ function UserDetailDialog({
           <p className="text-sm font-semibold text-t3-navy">Rol ve Girişim</p>
           <div className="space-y-1.5">
             <Label htmlFor="detail-role">Rol</Label>
-            <Select value={role} onValueChange={(v) => v && setRole(v as UserRole)}>
+            <Select items={ROLE_LABEL} value={role} onValueChange={(v) => v && setRole(v as UserRole)}>
               <SelectTrigger id="detail-role" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -709,7 +718,7 @@ function UserDetailDialog({
           {role === "StartupKullanicisi" && (
             <div className="space-y-1.5">
               <Label htmlFor="detail-girisim">Girişim</Label>
-              <Select value={girisimId ?? ""} onValueChange={(v) => v && setGirisimId(v)}>
+              <Select items={Object.fromEntries(girisimler.map((g) => [g.id, g.ad]))} value={girisimId ?? ""} onValueChange={(v) => v && setGirisimId(v)}>
                 <SelectTrigger id="detail-girisim" className="w-full">
                   <SelectValue placeholder="Girişim seçin" />
                 </SelectTrigger>
