@@ -85,6 +85,7 @@ Tüm şifreler: `Passw0rd!`
 ## Özellikler
 
 - Girişim kartları ve detaylı profil yönetimi
+- Girişim künyesi: yöneticiler girişim detayının üstünde durumu, iletişim muhatabını (tıklanabilir telefon/e-posta) ve sunumu tek bakışta görür
 - Hızlandırma programları ve programa katılım süreçleri
 - Onay akışlı satış, yatırım, başarı ve doküman kayıtları (karar SuperAdmin'de; ProgramYoneticisi onay/ret/çekince önerisi bırakır)
 - İtiraz (appeal) akışı: reddedilen kayıtlara itiraz, itiraz onaylanırsa kayıt tekrar onaylı duruma döner

@@ -52,9 +52,16 @@ public class GirisimSaglikService
         _db = db;
     }
 
-    public async Task<List<GirisimSaglik>> GetTumSaglikAsync()
+    /// <summary>Tek bir girişimin sağlık kartı — girişim künyesinde kullanılır.</summary>
+    public async Task<GirisimSaglik?> GetAsync(Guid girisimId) =>
+        (await GetTumSaglikAsync(girisimId)).FirstOrDefault();
+
+    /// <param name="girisimId">Verilirse yalnızca o girişim hesaplanır; null ise tümü.</param>
+    public async Task<List<GirisimSaglik>> GetTumSaglikAsync(Guid? girisimId = null)
     {
+        var db = _db;
         var girisimler = await _db.Girisimler
+            .Where(g => girisimId == null || g.Id == girisimId)
             .Select(g => new
             {
                 g.Id,
@@ -64,7 +71,11 @@ public class GirisimSaglikService
                 g.KisaTanim,
                 g.UpdatedAt,
                 IletisimVar = g.Contact != null,
-                SunumVar = g.Dokumanlar.Any(d => d.Tur == DokumanTuru.Sunum),
+                // "Tanıtım sunumu var mı": ya girişimci bir sunum dosyası yüklemiştir ya da
+                // sistemde üretilmiş bir sunum taslağı vardır — ikisi de yöneticinin
+                // "bu takım kimdi" sorusunu cevaplar.
+                SunumVar = g.Dokumanlar.Any(d => d.Tur == DokumanTuru.Sunum)
+                           || db.SunumTaslaklari.Any(t => t.GirisimId == g.Id),
                 SatisVar = g.SatisKayitlari.Any(),
                 GelisimVar = g.GelisimAdimlari.Any(),
                 // "Son veri girişi" girişimcinin sisteme en son ne zaman dokunduğudur; profil

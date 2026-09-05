@@ -21,11 +21,12 @@ public class GirisimlerController : ControllerBase
     private readonly DashboardService _dashboard;
     private readonly IAiService _ai;
     private readonly PitchDeckService _pitchDeck;
+    private readonly GirisimSaglikService _saglik;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -35,6 +36,7 @@ public class GirisimlerController : ControllerBase
         _dashboard = dashboard;
         _ai = ai;
         _pitchDeck = pitchDeck;
+        _saglik = saglik;
     }
 
     [HttpGet]
@@ -392,6 +394,21 @@ public class GirisimlerController : ControllerBase
         var list = await _itirazlar.ListForGirisimAsync(id);
         return Ok(list.Select(i => new ItirazDto(
             i.Id, i.KonuTuru.ToString(), i.KonuId, i.Aciklama, i.OnayDurumu.ToString(), i.ReviewNotu, i.CreatedAt)).ToList());
+    }
+
+    /// <summary>Girişimin künyesi için durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı.</summary>
+    [HttpGet("{id:guid}/durum")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> Durum(Guid id)
+    {
+        var s = await _saglik.GetAsync(id);
+        if (s is null) return NotFound();
+
+        return Ok(new GirisimSaglikDto(
+            s.GirisimId, s.Ad, s.Sektor, s.LogoUrl, s.TamamlananAdim, s.ToplamAdim, s.SonVeriGirisi,
+            s.GuncellemeUzerindenGecenGun == int.MaxValue ? null : s.GuncellemeUzerindenGecenGun,
+            s.BekleyenKayitSayisi, s.IletisimVar, s.SunumVar));
     }
 
     /// <summary>Girişimin güncel sunum taslağı — yoksa 404.</summary>

@@ -67,6 +67,35 @@ public class GirisimSaglikServiceTests
     }
 
     [Fact]
+    public async Task Uretilmis_sunum_taslagi_da_sunum_sayilir()
+    {
+        var db = TestDb.Create();
+        var girisim = YeniGirisim();
+        db.Girisimler.Add(girisim);
+        // Dosya yüklenmemiş ama sistemde üretilmiş bir sunum taslağı var.
+        db.SunumTaslaklari.Add(new SunumTaslagi { GirisimId = girisim.Id, OlusturanId = Guid.NewGuid() });
+        await db.SaveChangesAsync();
+
+        var saglik = Assert.Single(await new GirisimSaglikService(db).GetTumSaglikAsync());
+
+        Assert.True(saglik.SunumVar);
+    }
+
+    [Fact]
+    public async Task GetAsync_yalnizca_istenen_girisimi_doner()
+    {
+        var db = TestDb.Create();
+        var hedef = YeniGirisim("Hedef");
+        db.Girisimler.AddRange(hedef, YeniGirisim("Diğer"));
+        await db.SaveChangesAsync();
+
+        var saglik = await new GirisimSaglikService(db).GetAsync(hedef.Id);
+
+        Assert.NotNull(saglik);
+        Assert.Equal("Hedef", saglik!.Ad);
+    }
+
+    [Fact]
     public async Task Son_veri_girisi_en_yeni_kayittan_hesaplanir()
     {
         var db = TestDb.Create();

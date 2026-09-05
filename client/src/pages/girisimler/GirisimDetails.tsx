@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useSearchParams } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,6 +9,8 @@ import { Building2 } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { PageHeader } from "@/components/patterns/PageHeader"
+import { GirisimKunyesi } from "@/components/patterns/GirisimKunyesi"
+import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
@@ -325,9 +327,25 @@ function LogoUploadSection({
 
 export default function GirisimDetailsPage() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
+
+  // Sekme adreste tutulur: künyedeki "Sunumu görüntüle" bağlantısı doğrudan o sekmeyi açabilsin
+  // ve yönetici bağlantıyı paylaştığında karşı taraf aynı yere düşsün.
+  const aktifSekme = searchParams.get("sekme") ?? "profil"
+  function setAktifSekme(sekme: string) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (sekme === "profil") next.delete("sekme")
+        else next.set("sekme", sekme)
+        return next
+      },
+      { replace: true },
+    )
+  }
 
   const canEdit = user?.role === "SuperAdmin" || user?.role === "ProgramYoneticisi"
   const backTo = user?.role === "StartupKullanicisi" ? "/girisimim" : "/girisimler"
@@ -395,13 +413,17 @@ export default function GirisimDetailsPage() {
         }
       />
 
-      <Tabs defaultValue="profil">
+      {/* Yöneticinin ilk baktığı yer: kim, ne durumda, kime ulaşırım. */}
+      {canEdit && <GirisimKunyesi girisim={girisim} />}
+
+      <Tabs value={aktifSekme} onValueChange={setAktifSekme}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="programlar">Program Geçmişi</TabsTrigger>
           <TabsTrigger value="gelisim">Gelişim Yolculuğu</TabsTrigger>
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
+          <TabsTrigger value="sunum">Sunum</TabsTrigger>
         </TabsList>
 
         {/* -------------------------------------------------------- Profil */}
@@ -747,6 +769,11 @@ export default function GirisimDetailsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Yönetici sunumu görüntüler ve indirir; üretmek ve düzenlemek girişimcinin işi. */}
+        <TabsContent value="sunum" className="mt-4">
+          <SunumPaneli girisim={girisim} duzenlenebilir={false} />
         </TabsContent>
       </Tabs>
     </div>

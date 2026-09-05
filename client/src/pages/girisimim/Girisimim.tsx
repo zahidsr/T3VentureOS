@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Building2, Trash2 } from "lucide-react"
 import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
-import { SunumSekmesi } from "@/pages/girisimim/SunumSekmesi"
+import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -1763,7 +1763,7 @@ export default function GirisimimPage() {
 
         {/* -------------------------------------------------------- Sunum */}
         <TabsContent value="sunum" className="mt-4">
-          <SunumSekmesi girisim={girisim} />
+          <SunumPaneli girisim={girisim} />
         </TabsContent>
 
         <TabsContent value="rapor" className="mt-4 space-y-4">

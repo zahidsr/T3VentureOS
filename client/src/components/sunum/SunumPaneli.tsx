@@ -163,9 +163,11 @@ function BolumKarti({
   onKaydet,
   onSifirla,
   kaydediliyor,
+  duzenlenebilir,
 }: {
   bolum: PitchDeckBolumuDto
   index: number
+  duzenlenebilir: boolean
   onKaydet: (icerik: string) => void
   onSifirla: () => void
   kaydediliyor: boolean
@@ -205,7 +207,7 @@ function BolumKarti({
                 Elle düzenlendi
               </Badge>
             )}
-            {!duzenleniyor && (
+            {duzenlenebilir && !duzenleniyor && (
               <Button variant="ghost" size="icon" onClick={baslaDuzenleme} aria-label={`${bolum.baslik} bölümünü düzenle`}>
                 <Pencil className="size-4" />
               </Button>
@@ -253,7 +255,14 @@ function BolumKarti({
  * işaretlenir; girişimci tek tıkla yeniden üretir. Elle düzenlenen bölümler yeniden üretimde
  * korunur — girişimcinin emeği bir "yenile" tıklamasıyla kaybolmasın.
  */
-export function SunumSekmesi({ girisim }: { girisim: GirisimDetailDto }) {
+export function SunumPaneli({
+  girisim,
+  duzenlenebilir = true,
+}: {
+  girisim: GirisimDetailDto
+  /** Yönetici tarafında sunum salt okunur gösterilir: üretim ve düzenleme girişimcinin işidir. */
+  duzenlenebilir?: boolean
+}) {
   const queryClient = useQueryClient()
   const grafikKaplari = useRef<(HTMLDivElement | null)[]>([])
   const [pdfHazirlaniyor, setPdfHazirlaniyor] = useState(false)
@@ -318,6 +327,15 @@ export function SunumSekmesi({ girisim }: { girisim: GirisimDetailDto }) {
   if (deckQuery.isLoading) return <Skeleton className="h-72 w-full" />
 
   if (!deck) {
+    if (!duzenlenebilir) {
+      return (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Bu girişim henüz sunum taslağı oluşturmamış.
+          </CardContent>
+        </Card>
+      )
+    }
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
@@ -359,18 +377,20 @@ export function SunumSekmesi({ girisim }: { girisim: GirisimDetailDto }) {
             <Download className="mr-2 size-4" />
             {pdfHazirlaniyor ? "Hazırlanıyor…" : "PDF indir"}
           </Button>
-          <Button
-            className="bg-role-accent text-white hover:bg-role-accent-dark"
-            disabled={uretMutation.isPending}
-            onClick={() => uretMutation.mutate()}
-          >
-            <RefreshCw className="mr-2 size-4" />
-            {uretMutation.isPending ? "Yenileniyor…" : "Yeniden üret"}
-          </Button>
+          {duzenlenebilir && (
+            <Button
+              className="bg-role-accent text-white hover:bg-role-accent-dark"
+              disabled={uretMutation.isPending}
+              onClick={() => uretMutation.mutate()}
+            >
+              <RefreshCw className="mr-2 size-4" />
+              {uretMutation.isPending ? "Yenileniyor…" : "Yeniden üret"}
+            </Button>
+          )}
         </div>
       </div>
 
-      {!deck.guncel && (
+      {!deck.guncel && duzenlenebilir && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <div>
@@ -389,6 +409,7 @@ export function SunumSekmesi({ girisim }: { girisim: GirisimDetailDto }) {
             key={bolum.anahtar}
             bolum={bolum}
             index={index}
+            duzenlenebilir={duzenlenebilir}
             kaydediliyor={bolumMutation.isPending}
             onKaydet={(icerik) => bolumMutation.mutate({ anahtar: bolum.anahtar, icerik })}
             onSifirla={() => bolumMutation.mutate({ anahtar: bolum.anahtar, icerik: null })}

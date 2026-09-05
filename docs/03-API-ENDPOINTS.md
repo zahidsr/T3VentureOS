@@ -49,6 +49,7 @@
 | GET | `/girisimler/{id}/guncelleme-talepleri` | auth (kendi girişimi) | o girişime ait güncelleme taleplerinin geçmişi |
 | POST | `/girisimler/{id}/itiraz` | StartupKullanicisi | reddedilmiş bir satış/yatırım/başarı/doküman kaydına itiraz gönderir |
 | GET | `/girisimler/{id}/itirazlar` | auth (kendi girişimi) | o girişime ait itirazların geçmişi |
+| GET | `/girisimler/{id}/durum` | auth (kendi girişimi) | girişim künyesinin durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı |
 | GET | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin güncel Sequoia pitch deck taslağı; `guncel=false` ise taslak üretildikten sonra veri değişmiştir |
 | POST | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin verisinden AI ile sunum taslağı üretir, mevcut taslağın üzerine yazar |
 | PUT | `/girisimler/{id}/sunum-taslagi/{anahtar}` | auth (kendi girişimi) | sunum bölümünün metnini elle günceller; gövdedeki `icerik` boş bırakılırsa AI metnine geri dönülür. Elle düzenlenen bölüm yeniden üretimde korunur |
