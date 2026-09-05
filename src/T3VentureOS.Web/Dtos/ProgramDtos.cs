@@ -23,3 +23,15 @@ public static class ProgramDtoExtensions
         p.Id, p.Name, p.Description, p.KapakGorseliUrl, p.Durum.ToString(), p.BaslangicTarihi, p.BitisTarihi,
         p.Katilimlar.Select(k => new ProgramKatilimciDto(k.Id, k.GirisimId, k.Girisim?.Ad ?? string.Empty, k.Donem, k.Durum.ToString(), k.BaslangicTarihi)).ToList());
 }
+
+public record KohortSatiriDto(
+    Guid GirisimId, string Ad, string? Sektor, string KatilimDurumu, DateTime KatilimBaslangici,
+    decimal ProgramOncesiCiro, decimal ProgramSirasindaCiro,
+    int ProgramBasindaCalisan, int GuncelCalisan,
+    decimal ProgramSirasindaYatirim, int Puan, string Seviye, int? GuncellemeUzerindenGecenGun);
+
+/// <summary>Programın kohortu: katılan girişimlerin program başlangıcından bugüne değişimi.</summary>
+public record ProgramKohortuDto(
+    Guid ProgramId, string ProgramAdi, DateTime? BaslangicTarihi, DateTime? BitisTarihi,
+    int GirisimSayisi, decimal ToplamProgramSirasindaCiro, decimal ToplamProgramSirasindaYatirim,
+    int ToplamIstihdamArtisi, int VeriGirmeyenGirisimSayisi, List<KohortSatiriDto> Satirlar);

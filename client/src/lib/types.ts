@@ -678,3 +678,33 @@ export interface EkosistemEtkisiDto {
   toplamGirisimSayisi: number
   donemler: EtkiDonemiDto[]
 }
+
+export interface KohortSatiriDto {
+  girisimId: string
+  ad: string
+  sektor: string | null
+  katilimDurumu: string
+  katilimBaslangici: string
+  programOncesiCiro: number
+  programSirasindaCiro: number
+  programBasindaCalisan: number
+  guncelCalisan: number
+  programSirasindaYatirim: number
+  puan: number
+  seviye: GirisimSeviyesi
+  guncellemeUzerindenGecenGun?: number | null
+}
+
+/** Programın kohortu: katılan girişimlerin program başlangıcından bugüne değişimi. */
+export interface ProgramKohortuDto {
+  programId: string
+  programAdi: string
+  baslangicTarihi: string | null
+  bitisTarihi: string | null
+  girisimSayisi: number
+  toplamProgramSirasindaCiro: number
+  toplamProgramSirasindaYatirim: number
+  toplamIstihdamArtisi: number
+  veriGirmeyenGirisimSayisi: number
+  satirlar: KohortSatiriDto[]
+}

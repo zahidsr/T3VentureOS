@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { ImagePlus } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
 import { PageHeader } from "@/components/patterns/PageHeader"
+import { ProgramKohortu } from "@/components/patterns/ProgramKohortu"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -386,6 +387,9 @@ export default function ProgramDetailsPage() {
       />
 
       <div className="space-y-6">
+        {/* Yöneticinin "bu program ne yaptı" sorusu, program bilgilerinin hemen üstünde. */}
+        {canWrite && <ProgramKohortu programId={program.id} />}
+
         <Card>
           <CardHeader>
             <CardTitle>Program Bilgileri</CardTitle>

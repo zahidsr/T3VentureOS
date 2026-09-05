@@ -14,12 +14,14 @@ namespace T3VentureOS.Web.Controllers;
 public class ProgramsController : ControllerBase
 {
     private readonly ProgramService _programs;
+    private readonly ProgramKohortService _kohort;
     private readonly ICurrentUserService _currentUser;
     private readonly FileStorageService _files;
 
-    public ProgramsController(ProgramService programs, ICurrentUserService currentUser, FileStorageService files)
+    public ProgramsController(ProgramService programs, ProgramKohortService kohort, ICurrentUserService currentUser, FileStorageService files)
     {
         _programs = programs;
+        _kohort = kohort;
         _currentUser = currentUser;
         _files = files;
     }
@@ -45,6 +47,27 @@ public class ProgramsController : ControllerBase
         return Ok(programs.Select(p => p.ToSummaryDto()).ToList());
     }
 
+
+    /// <summary>
+    /// Programın kohortu: katılan girişimlerin program başlangıcından bugüne ciro, yatırım ve
+    /// istihdam değişimi. Program yöneticisinin "bu program ne yaptı" sorusunun cevabı.
+    /// </summary>
+    [HttpGet("{id:guid}/kohort")]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
+    public async Task<IActionResult> Kohort(Guid id)
+    {
+        var k = await _kohort.GetAsync(id);
+        if (k is null) return NotFound();
+
+        return Ok(new ProgramKohortuDto(
+            k.ProgramId, k.ProgramAdi, k.BaslangicTarihi, k.BitisTarihi, k.GirisimSayisi,
+            k.ToplamProgramSirasindaCiro, k.ToplamProgramSirasindaYatirim, k.ToplamIstihdamArtisi,
+            k.VeriGirmeyenGirisimSayisi,
+            k.Satirlar.Select(s => new KohortSatiriDto(
+                s.GirisimId, s.Ad, s.Sektor, s.KatilimDurumu, s.KatilimBaslangici,
+                s.ProgramOncesiCiro, s.ProgramSirasindaCiro, s.ProgramBasindaCalisan, s.GuncelCalisan,
+                s.ProgramSirasindaYatirim, s.Puan, s.Seviye.ToString(), s.GuncellemeUzerindenGecenGun)).ToList()));
+    }
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id)
     {

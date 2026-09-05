@@ -78,6 +78,7 @@
 ## Programlar (`api/programs`)
 | Metod | Yol | Yetki | Açıklama |
 |---|---|---|---|
+| GET | `/programs/{id}/kohort` | SuperAdmin, ProgramYoneticisi | programın kohortu: katılan girişimlerin program başlangıcından bugüne ciro, yatırım ve istihdam değişimi + hiç veri girmeyenlerin sayısı |
 | GET | `/programs` | auth | sayfalanmış program listesi (arama filtreli) |
 | GET | `/programs/aktif` | **anonim** | ana sayfanın aktif-programlar bölümü için |
 | GET | `/programs/{id}` | auth | program detayı + katılımcılar |

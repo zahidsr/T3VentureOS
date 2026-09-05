@@ -87,6 +87,7 @@ Tüm şifreler: `Passw0rd!`
 - Girişim kartları ve detaylı profil yönetimi
 - Girişim künyesi: yöneticiler girişim detayının üstünde durumu, iletişim muhatabını (tıklanabilir telefon/e-posta) ve sunumu tek bakışta görür
 - Hızlandırma programları ve programa katılım süreçleri
+- Program etkisi (kohort) panosu: bir programa katılan girişimlerin program başlangıcından bugüne ürettiği ciro, çektiği yatırım ve yarattığı istihdam
 - Onay akışlı satış, yatırım, istihdam, başarı ve doküman kayıtları (karar SuperAdmin'de; ProgramYoneticisi onay/ret/çekince önerisi bırakır)
 - İtiraz (appeal) akışı: reddedilen kayıtlara itiraz, itiraz onaylanırsa kayıt tekrar onaylı duruma döner
 - Uygulama içi bildirimler: onay/itiraz kararları ve program güncellemeleri
