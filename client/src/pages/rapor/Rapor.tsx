@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { AiMetni } from "@/components/patterns/AiMetni"
+import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 import { YATIRIM_TUR_LABEL } from "@/lib/labels"
 import { aylikTrendOkumasi, sektorDagilimiOkumasi, yatirimTuruOkumasi, type Okuma } from "@/lib/rapor-okumasi"
 import { Input } from "@/components/ui/input"
@@ -327,11 +328,11 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
 
   if (aiAnalizMetni) {
     sectionTitle("AI Analizi")
-    const lines = doc.splitTextToSize(aiAnalizMetni, pageWidth - margin * 2) as string[]
-    lines.forEach((line) => {
-      ensureSpace(14)
-      doc.text(line, margin, y)
-      y += 14
+    aiMaddeleriniAyir(aiAnalizMetni).forEach((madde) => {
+      const satirlar = doc.splitTextToSize(`• ${madde}`, pageWidth - margin * 2 - 10) as string[]
+      ensureSpace(satirlar.length * 14)
+      doc.text(satirlar, margin + 10, y)
+      y += satirlar.length * 14 + 4
     })
     y += 12
   }

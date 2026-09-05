@@ -3,6 +3,8 @@ import { ArrowRight, Trophy } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
+import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
+import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api-client"
 import type { GirisimSaglikDto, GirisimSeviyesi } from "@/lib/types"
 
@@ -26,6 +28,7 @@ const SEVIYE_ADI: Record<GirisimSeviyesi, string> = {
  * dönmek için bir sebep bulsun.
  */
 export function PuanKarti({ girisimId }: { girisimId: string }) {
+  const { user } = useAuth()
   const durumQuery = useQuery({
     queryKey: ["girisim-durum", girisimId],
     queryFn: async () => (await api.get<GirisimSaglikDto>(`/girisimler/${girisimId}/durum`)).data,
@@ -58,7 +61,10 @@ export function PuanKarti({ girisimId }: { girisimId: string }) {
               </p>
             </div>
           </div>
-          <SeviyeRozeti seviye={durum.seviye} />
+          <div className="flex flex-col items-end gap-1">
+            <SeviyeRozeti seviye={durum.seviye} />
+            <SeviyeAciklamasi rol={user?.role} />
+          </div>
         </div>
 
         <div className="h-2 overflow-hidden rounded-full bg-muted">

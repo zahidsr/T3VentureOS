@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { api, extractErrorMessage } from "@/lib/api-client"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { captureChartPng, type ChartImage } from "@/lib/chart-export"
+import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 import type { GirisimDetailDto, PitchDeckBolumuDto, PitchDeckDto } from "@/lib/types"
 
 /** Slaytların kurumsal paleti — grafik serileri ve PDF vurguları aynı renkleri kullanır. */
@@ -132,7 +133,8 @@ async function downloadDeckPdf(girisim: GirisimDetailDto, deck: PitchDeckDto, gr
     doc.setFont(PDF_FONT, "normal")
     doc.setFontSize(14)
     doc.setTextColor(30, 41, 47)
-    const lines = doc.splitTextToSize(bolum.icerik, pageWidth - margin * 2) as string[]
+    const temizIcerik = aiMaddeleriniAyir(bolum.icerik).join("\n")
+    const lines = doc.splitTextToSize(temizIcerik, pageWidth - margin * 2) as string[]
     doc.text(lines, margin, margin + 96, { lineHeightFactor: 1.5 })
   })
 

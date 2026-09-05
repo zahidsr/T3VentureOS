@@ -4,6 +4,8 @@ import { AlertTriangle, Clock, FileText, Mail, Phone, Presentation, User } from 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
+import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
+import { useAuth } from "@/lib/auth-context"
 import { API_URL, api } from "@/lib/api-client"
 import type { GirisimDetailDto, GirisimSaglikDto, PitchDeckDto } from "@/lib/types"
 import { isAxiosError } from "axios"
@@ -34,6 +36,7 @@ function KunyeBolumu({ baslik, children }: { baslik: string; children: React.Rea
  * girişim detayının en üstünde duran künye. Sunum, iletişim muhatabı ve güncellik tek satırda.
  */
 export function GirisimKunyesi({ girisim }: { girisim: GirisimDetailDto }) {
+  const { user } = useAuth()
   const durumQuery = useQuery({
     queryKey: ["girisim-durum", girisim.id],
     queryFn: async () => (await api.get<GirisimSaglikDto>(`/girisimler/${girisim.id}/durum`)).data,
@@ -66,6 +69,7 @@ export function GirisimKunyesi({ girisim }: { girisim: GirisimDetailDto }) {
               <div className="flex flex-wrap items-center gap-2">
                 <SeviyeRozeti seviye={durum.seviye} puan={durum.puan} />
                 <GuncellikRozeti guncel={durum.guncel} gun={durum.guncellemeUzerindenGecenGun} />
+                <SeviyeAciklamasi rol={user?.role} />
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted">

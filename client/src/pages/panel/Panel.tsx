@@ -19,6 +19,7 @@ import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
 import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
+import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -275,9 +276,12 @@ export default function PanelPage() {
             <Trophy className="size-4 text-amber-500" />
             Öne Çıkan Girişimler
           </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Profilini en eksiksiz tutan ve en çok veri giren girişimler.
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              Profilini en eksiksiz tutan ve en çok veri giren girişimler.
+            </p>
+            <SeviyeAciklamasi rol={user?.role} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="-mx-2 space-y-0.5">

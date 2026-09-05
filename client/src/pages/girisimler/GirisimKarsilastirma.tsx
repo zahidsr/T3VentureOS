@@ -38,6 +38,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { api, extractErrorMessage } from "@/lib/api-client"
 import { captureChartPng, type ChartImage } from "@/lib/chart-export"
 import { AiMetni } from "@/components/patterns/AiMetni"
+import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 import type { AiAnalizDto, DashboardFiltreSecenekleriDto, GirisimKarsilastirmaDto } from "@/lib/types"
 
 const ALL_SEKTOR = "__all__"
@@ -226,11 +227,13 @@ async function downloadRakipAnaliziPdf(
 
   if (aiAnalizMetni) {
     sectionTitle("AI Destekli Rakip Analizi")
-    const lines = doc.splitTextToSize(aiAnalizMetni, pageWidth - margin * 2) as string[]
-    lines.forEach((line) => {
-      ensureSpace(14)
-      doc.text(line, margin, y)
-      y += 14
+    // AI metni markdown yıldızlarıyla geliyor; PDF'e ham basılmasın diye ekrandakiyle aynı
+    // temizlikten geçirilip madde madde yazılır.
+    aiMaddeleriniAyir(aiAnalizMetni).forEach((madde) => {
+      const satirlar = doc.splitTextToSize(`• ${madde}`, pageWidth - margin * 2 - 10) as string[]
+      ensureSpace(satirlar.length * 14)
+      doc.text(satirlar, margin + 10, y)
+      y += satirlar.length * 14 + 4
     })
     y += 12
   }

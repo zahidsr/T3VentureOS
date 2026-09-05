@@ -73,72 +73,53 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
   return (
     <Link
       to={`/girisimler/${g.id}`}
-      className="group flex flex-col rounded-2xl border bg-card p-5 transition-colors duration-150 hover:border-t3-blue/30"
+      // Kartlar eşit yükseklikte olsun: açıklaması kısa olan kart, uzun olanın yanında
+      // yamuk durmasın diye alt bilgi flex ile en alta itilir.
+      className="group flex h-full flex-col rounded-2xl border bg-card p-5 transition-colors duration-150 hover:border-role-accent/40"
     >
-      {/* Header row */}
       <div className="flex items-start gap-3">
         {logoSrc ? (
-          <img
-            src={logoSrc}
-            alt={`${g.ad} logosu`}
-            className="size-11 shrink-0 rounded-xl border object-cover"
-          />
+          <img src={logoSrc} alt={`${g.ad} logosu`} className="size-11 shrink-0 rounded-xl border object-cover" />
         ) : (
-          <div
-            className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${color}`}
-          >
+          <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${color}`}>
             {getInitials(g.ad)}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-t3-blue">
+          <p className="truncate font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-role-accent">
             {g.ad}
           </p>
-          {g.kisaTanim ? (
-            <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {g.kisaTanim}
-            </p>
-          ) : (
-            <p className="mt-0.5 text-xs text-muted-foreground/50 italic">Açıklama girilmemiş</p>
-          )}
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {[g.sektor, g.kurulusYili ? `Kuruluş ${g.kurulusYili}` : null, g.ekipBuyuklugu ? `${g.ekipBuyuklugu} kişi` : null]
+              .filter(Boolean)
+              .join(" · ") || "Bilgi girilmemiş"}
+          </p>
         </div>
       </div>
 
-      {/* Tags */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {g.sektor && (
-          <span className="inline-flex items-center rounded-full bg-t3-blue-light px-2.5 py-0.5 text-xs font-semibold text-t3-blue">
-            {g.sektor}
-          </span>
-        )}
-        {g.teknoloji && (
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-            {g.teknoloji}
-          </span>
-        )}
-      </div>
+      {g.kisaTanim ? (
+        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{g.kisaTanim}</p>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground/60 italic">Açıklama girilmemiş</p>
+      )}
 
-      {/* Footer row */}
-      <div className="mt-4 flex items-center gap-3 border-t border-dashed pt-3.5 text-xs text-muted-foreground">
-        {g.kurulusYili && <span>Kuruluş {g.kurulusYili}</span>}
-        {g.ekipBuyuklugu && (
-          <>
-            <span className="text-border">·</span>
-            <span>{g.ekipBuyuklugu} kişi</span>
-          </>
-        )}
-        <span className="ml-auto flex items-center gap-1 font-medium text-t3-blue opacity-0 transition-opacity group-hover:opacity-100">
+      {g.teknoloji && (
+        <p className="mt-2 truncate text-xs text-muted-foreground" title={g.teknoloji}>
+          {g.teknoloji}
+        </p>
+      )}
+
+      {/* Rozet başlık satırında girişim adını kısaltıyordu; ad en önemli bilgi, rozet alta indi. */}
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-3.5">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">
+            {formatCiro(g.toplamOnayliCiro) ? `${formatCiro(g.toplamOnayliCiro)} onaylı ciro` : "Ciro kaydı yok"}
+          </span>
+          <SeviyeRozeti seviye={g.seviye} puan={g.puan} />
+        </div>
+        <span className="flex items-center gap-1 text-xs font-medium text-role-accent opacity-0 transition-opacity group-hover:opacity-100">
           Detay <ArrowRight className="size-3" />
         </span>
-      </div>
-      {/* Puan rozeti panelde vardı, listede yoktu; aynı bilgi her yerde aynı biçimde görünsün. */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        {formatCiro(g.toplamOnayliCiro) && (
-          <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
-            {formatCiro(g.toplamOnayliCiro)} onaylı ciro
-          </span>
-        )}
-        <SeviyeRozeti seviye={g.seviye} puan={g.puan} />
       </div>
     </Link>
   )
