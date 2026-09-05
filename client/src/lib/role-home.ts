@@ -8,7 +8,5 @@ export function roleHomePath(role: UserRole): string {
       return "/girisimler"
     case "StartupKullanicisi":
       return "/girisimim"
-    case "KararVerici":
-      return "/rapor"
   }
 }

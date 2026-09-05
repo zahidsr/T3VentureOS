@@ -11,6 +11,10 @@ public record AiAnalizDto(string Analiz);
 
 public record AiAnalizKaydiDto(Guid Id, DateTime CreatedAt, string CreatedByAdSoyad, string Metin);
 
+public record ProgramSecenegiDto(Guid Id, string Ad);
+public record GirisimSecenegiDto(Guid Id, string Ad);
+public record DashboardFiltreSecenekleriDto(List<string> Sektorler, List<ProgramSecenegiDto> Programlar, List<GirisimSecenegiDto> Girisimler);
+
 public record DashboardStatsDto(
     int ToplamGirisim,
     int AktifProgramSayisi,

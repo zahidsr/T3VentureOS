@@ -19,6 +19,13 @@ public record DashboardStats(
     List<YatirimTuruDagilimi> YatirimTuruDagilimi,
     List<AylikTrend> AylikTrend);
 
+/// <summary>Rapor sayfasındaki filtre çubuğundan gelen kriterler — hepsi opsiyonel.</summary>
+public record DashboardFilter(DateTime? BaslangicTarihi, DateTime? BitisTarihi, string? Sektor, Guid? ProgramId, Guid? GirisimId);
+
+public record ProgramSecenegi(Guid Id, string Ad);
+public record GirisimSecenegi(Guid Id, string Ad);
+public record DashboardFiltreSecenekleri(List<string> Sektorler, List<ProgramSecenegi> Programlar, List<GirisimSecenegi> Girisimler);
+
 /// <summary>Aggregate figures for the Karar Verici (decision maker) read-only dashboard.</summary>
 public class DashboardService
 {
@@ -29,26 +36,65 @@ public class DashboardService
         _db = db;
     }
 
-    public async Task<DashboardStats> GetStatsAsync()
+    public async Task<DashboardStats> GetStatsAsync(DashboardFilter? filter = null)
     {
-        var toplamGirisim = await _db.Girisimler.CountAsync();
-        var aktifProgram = await _db.Programlar.CountAsync(p => p.Durum == ProgramDurumu.Aktif);
+        filter ??= new DashboardFilter(null, null, null, null, null);
 
-        var bekleyenSatis = await _db.SatisKayitlari.CountAsync(s => s.OnayDurumu == OnayDurumu.Beklemede);
-        var bekleyenYatirim = await _db.YatirimKayitlari.CountAsync(y => y.OnayDurumu == OnayDurumu.Beklemede);
-        var bekleyenBasari = await _db.Basarilar.CountAsync(b => b.OnayDurumu == OnayDurumu.Beklemede);
-        var bekleyenDokuman = await _db.Dokumanlar.CountAsync(d => d.OnayDurumu == OnayDurumu.Beklemede);
-        var bekleyenGuncelleme = await _db.GirisimGuncellemeTalepleri.CountAsync(t => t.OnayDurumu == OnayDurumu.Beklemede);
+        var girisimQuery = _db.Girisimler.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(filter.Sektor))
+            girisimQuery = girisimQuery.Where(g => g.Sektor == filter.Sektor);
+        if (filter.GirisimId is not null)
+            girisimQuery = girisimQuery.Where(g => g.Id == filter.GirisimId);
+        if (filter.ProgramId is not null)
+            girisimQuery = girisimQuery.Where(g => _db.ProgramKatilimlari.Any(pk => pk.GirisimId == g.Id && pk.ProgramId == filter.ProgramId));
 
-        var toplamYatirim = await _db.YatirimKayitlari
+        var girisimIds = girisimQuery.Select(g => g.Id);
+
+        var toplamGirisim = await girisimQuery.CountAsync();
+
+        var aktifProgramQuery = _db.Programlar.Where(p => p.Durum == ProgramDurumu.Aktif);
+        if (filter.ProgramId is not null) aktifProgramQuery = aktifProgramQuery.Where(p => p.Id == filter.ProgramId);
+        var aktifProgram = await aktifProgramQuery.CountAsync();
+
+        var satisQuery = _db.SatisKayitlari.Where(s => girisimIds.Contains(s.GirisimId));
+        var yatirimQuery = _db.YatirimKayitlari.Where(y => girisimIds.Contains(y.GirisimId));
+        var basariQuery = _db.Basarilar.Where(b => girisimIds.Contains(b.GirisimId));
+        var dokumanQuery = _db.Dokumanlar.Where(d => girisimIds.Contains(d.GirisimId));
+        var guncellemeQuery = _db.GirisimGuncellemeTalepleri.Where(t => girisimIds.Contains(t.GirisimId));
+
+        if (filter.BaslangicTarihi is not null)
+        {
+            satisQuery = satisQuery.Where(s => s.CreatedAt >= filter.BaslangicTarihi);
+            yatirimQuery = yatirimQuery.Where(y => y.CreatedAt >= filter.BaslangicTarihi);
+            basariQuery = basariQuery.Where(b => b.CreatedAt >= filter.BaslangicTarihi);
+            dokumanQuery = dokumanQuery.Where(d => d.CreatedAt >= filter.BaslangicTarihi);
+            guncellemeQuery = guncellemeQuery.Where(t => t.CreatedAt >= filter.BaslangicTarihi);
+        }
+        if (filter.BitisTarihi is not null)
+        {
+            var bitisSonu = filter.BitisTarihi.Value.Date.AddDays(1);
+            satisQuery = satisQuery.Where(s => s.CreatedAt < bitisSonu);
+            yatirimQuery = yatirimQuery.Where(y => y.CreatedAt < bitisSonu);
+            basariQuery = basariQuery.Where(b => b.CreatedAt < bitisSonu);
+            dokumanQuery = dokumanQuery.Where(d => d.CreatedAt < bitisSonu);
+            guncellemeQuery = guncellemeQuery.Where(t => t.CreatedAt < bitisSonu);
+        }
+
+        var bekleyenSatis = await satisQuery.CountAsync(s => s.OnayDurumu == OnayDurumu.Beklemede);
+        var bekleyenYatirim = await yatirimQuery.CountAsync(y => y.OnayDurumu == OnayDurumu.Beklemede);
+        var bekleyenBasari = await basariQuery.CountAsync(b => b.OnayDurumu == OnayDurumu.Beklemede);
+        var bekleyenDokuman = await dokumanQuery.CountAsync(d => d.OnayDurumu == OnayDurumu.Beklemede);
+        var bekleyenGuncelleme = await guncellemeQuery.CountAsync(t => t.OnayDurumu == OnayDurumu.Beklemede);
+
+        var toplamYatirim = await yatirimQuery
             .Where(y => y.OnayDurumu == OnayDurumu.Onaylandi)
             .SumAsync(y => (decimal?)y.Tutar) ?? 0;
 
-        var toplamCiro = await _db.SatisKayitlari
+        var toplamCiro = await satisQuery
             .Where(s => s.OnayDurumu == OnayDurumu.Onaylandi)
             .SumAsync(s => (decimal?)s.Ciro) ?? 0;
 
-        var sektorGruplari = await _db.Girisimler
+        var sektorGruplari = await girisimQuery
             .Where(g => g.Sektor != null && g.Sektor != "")
             .GroupBy(g => g.Sektor!)
             .Select(g => new { Sektor = g.Key, Sayi = g.Count() })
@@ -56,7 +102,7 @@ public class DashboardService
             .ToListAsync();
         var sektorDagilimi = sektorGruplari.Select(x => new SektorSayisi(x.Sektor, x.Sayi)).ToList();
 
-        var yatirimTuruGruplari = await _db.YatirimKayitlari
+        var yatirimTuruGruplari = await yatirimQuery
             .Where(y => y.OnayDurumu == OnayDurumu.Onaylandi)
             .GroupBy(y => y.Tur)
             .Select(g => new { Tur = g.Key, Toplam = g.Sum(y => y.Tutar) })
@@ -64,7 +110,7 @@ public class DashboardService
             .ToListAsync();
         var yatirimTuruDagilimi = yatirimTuruGruplari.Select(x => new YatirimTuruDagilimi(x.Tur.ToString(), x.Toplam)).ToList();
 
-        var aylikTrend = await GetAylikTrendAsync();
+        var aylikTrend = await GetAylikTrendAsync(girisimIds);
 
         return new DashboardStats(
             toplamGirisim,
@@ -75,6 +121,29 @@ public class DashboardService
             sektorDagilimi,
             yatirimTuruDagilimi,
             aylikTrend);
+    }
+
+    /// <summary>Rapor filtre çubuğu için: mevcut sektörler, programlar ve girişimler listesi.</summary>
+    public async Task<DashboardFiltreSecenekleri> GetFiltreSecenekleriAsync()
+    {
+        var sektorler = await _db.Girisimler
+            .Where(g => g.Sektor != null && g.Sektor != "")
+            .Select(g => g.Sektor!)
+            .Distinct()
+            .OrderBy(s => s)
+            .ToListAsync();
+
+        var programlar = await _db.Programlar
+            .OrderBy(p => p.Name)
+            .Select(p => new ProgramSecenegi(p.Id, p.Name))
+            .ToListAsync();
+
+        var girisimler = await _db.Girisimler
+            .OrderBy(g => g.Ad)
+            .Select(g => new GirisimSecenegi(g.Id, g.Ad))
+            .ToListAsync();
+
+        return new DashboardFiltreSecenekleri(sektorler, programlar, girisimler);
     }
 
     public static string BuildAiPrompt(DashboardStats s)
@@ -128,18 +197,18 @@ public class DashboardService
         { "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara" };
 
     /// <summary>Son 6 ay için onaylı ciro/yatırım toplamı — kayıtların gönderildiği (CreatedAt) aya göre gruplanır.</summary>
-    private async Task<List<AylikTrend>> GetAylikTrendAsync()
+    private async Task<List<AylikTrend>> GetAylikTrendAsync(IQueryable<Guid> girisimIds)
     {
         var windowStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(-5);
 
         var satisAylik = await _db.SatisKayitlari
-            .Where(s => s.OnayDurumu == OnayDurumu.Onaylandi && s.CreatedAt >= windowStart)
+            .Where(s => girisimIds.Contains(s.GirisimId) && s.OnayDurumu == OnayDurumu.Onaylandi && s.CreatedAt >= windowStart)
             .GroupBy(s => new { s.CreatedAt.Year, s.CreatedAt.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Toplam = g.Sum(s => s.Ciro) })
             .ToListAsync();
 
         var yatirimAylik = await _db.YatirimKayitlari
-            .Where(y => y.OnayDurumu == OnayDurumu.Onaylandi && y.CreatedAt >= windowStart)
+            .Where(y => girisimIds.Contains(y.GirisimId) && y.OnayDurumu == OnayDurumu.Onaylandi && y.CreatedAt >= windowStart)
             .GroupBy(y => new { y.CreatedAt.Year, y.CreatedAt.Month })
             .Select(g => new { g.Key.Year, g.Key.Month, Toplam = g.Sum(y => y.Tutar) })
             .ToListAsync();

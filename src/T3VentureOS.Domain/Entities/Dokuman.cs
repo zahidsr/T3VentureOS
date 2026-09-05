@@ -8,6 +8,7 @@ public class Dokuman
     public string DosyaAdi { get; set; } = string.Empty;
     public string DosyaUrl { get; set; } = string.Empty;
     public long DosyaBoyutu { get; set; }
+    public DokumanTuru Tur { get; set; } = DokumanTuru.Genel;
     public OnayDurumu OnayDurumu { get; set; } = OnayDurumu.Beklemede;
     public Guid SubmittedById { get; set; }
     public Guid? ReviewedById { get; set; }

@@ -18,20 +18,24 @@ public class GirisimlerController : ControllerBase
     private readonly FileStorageService _files;
     private readonly ItirazService _itirazlar;
     private readonly OnboardingService _onboarding;
+    private readonly DashboardService _dashboard;
+    private readonly AnthropicService _ai;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
-        ItirazService itirazlar, OnboardingService onboarding)
+        ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, AnthropicService ai)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
         _files = files;
         _itirazlar = itirazlar;
         _onboarding = onboarding;
+        _dashboard = dashboard;
+        _ai = ai;
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.YonetimVeRaporErisimi)]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
     public async Task<IActionResult> Index(
         [FromQuery] string? sektor, [FromQuery] Guid? programId, [FromQuery] string? ara, [FromQuery] string? sirala,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
@@ -48,6 +52,62 @@ public class GirisimlerController : ControllerBase
         var girisim = await _girisimler.GetAsync(_currentUser.GirisimId.Value);
         if (girisim is null) return NotFound();
         return Ok(girisim.ToDetailDto());
+    }
+
+    /// <summary>Girişimcinin kendi verileri üzerinden ciro/yatırım trendi ve onay durumu özeti.</summary>
+    [HttpGet("benim/rapor")]
+    [Authorize(Policy = AuthorizationPolicies.StartupErisimi)]
+    public async Task<IActionResult> BenimRapor([FromQuery] DateTime? baslangic, [FromQuery] DateTime? bitis)
+    {
+        if (_currentUser.GirisimId is null) return NotFound();
+
+        var filter = new DashboardFilter(baslangic, bitis, null, null, _currentUser.GirisimId);
+        var stats = await _dashboard.GetStatsAsync(filter);
+        return Ok(new DashboardStatsDto(
+            stats.ToplamGirisim,
+            stats.AktifProgramSayisi,
+            stats.BekleyenOnaySayisi,
+            stats.ToplamOnayliYatirim,
+            stats.ToplamOnayliCiro,
+            stats.SektorDagilimi.Select(s => new SektorSayisiDto(s.Sektor, s.Sayi)).ToList(),
+            stats.YatirimTuruDagilimi.Select(y => new YatirimTuruDagilimiDto(y.Tur, y.ToplamTutar)).ToList(),
+            stats.AylikTrend.Select(a => new AylikTrendDto(a.Ay, a.Ciro, a.Yatirim)).ToList()));
+    }
+
+    /// <summary>Sektör/kuruluş yılı/ekip/ciro/yatırım kriterlerine göre filtrelenebilir rakip karşılaştırma seti.</summary>
+    [HttpGet("karsilastirma")]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
+    public async Task<IActionResult> Karsilastirma(
+        [FromQuery] string? sektor, [FromQuery] int? kurulusYiliMin, [FromQuery] int? kurulusYiliMax,
+        [FromQuery] int? ekipMin, [FromQuery] int? ekipMax,
+        [FromQuery] decimal? ciroMin, [FromQuery] decimal? ciroMax,
+        [FromQuery] decimal? yatirimMin, [FromQuery] decimal? yatirimMax)
+    {
+        var filtre = new GirisimKarsilastirmaFiltre(
+            sektor, kurulusYiliMin, kurulusYiliMax, ekipMin, ekipMax, ciroMin, ciroMax, yatirimMin, yatirimMax);
+        var sonuclar = await _girisimler.GetKarsilastirmaAsync(filtre);
+        return Ok(sonuclar.Select(s => new GirisimKarsilastirmaDto(
+            s.Girisim.Id, s.Girisim.Ad, s.Girisim.Sektor, s.Girisim.KurulusYili, s.Girisim.EkipBuyuklugu, s.Girisim.LogoUrl,
+            s.ToplamOnayliCiro, s.ToplamOnayliYatirim,
+            s.AylikTrend.Select(t => new AylikTrendDto(t.Ay, t.Ciro, t.Yatirim)).ToList())).ToList());
+    }
+
+    /// <summary>Seçilen girişim setine göre AI destekli detaylı rakip analizi (SWOT + pazar payı + büyüme yorumu).</summary>
+    [HttpPost("karsilastirma/ai-analiz")]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
+    public async Task<IActionResult> KarsilastirmaAiAnaliz([FromBody] RakipAnaliziRequest request)
+    {
+        if (request.GirisimIds is null || request.GirisimIds.Count < 2)
+            return BadRequest(new ErrorResponse("Detaylı analiz için en az 2 girişim seçilmelidir."));
+
+        var secilenler = await _girisimler.GetKarsilastirmaByIdsAsync(request.GirisimIds);
+        if (secilenler.Count < 2)
+            return BadRequest(new ErrorResponse("Seçilen girişimler bulunamadı."));
+
+        var prompt = GirisimService.BuildRakipAnaliziPrompt(secilenler);
+        var (success, text, error) = await _ai.GenerateInsightAsync(prompt);
+        if (!success) return BadRequest(new ErrorResponse(error ?? "AI analizi oluşturulamadı."));
+        return Ok(new AiAnalizDto(text!));
     }
 
     [HttpGet("{id:guid}")]
@@ -223,9 +283,10 @@ public class GirisimlerController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
     [GirisimErisim]
     [RequestSizeLimit(20_000_000)]
-    public async Task<IActionResult> AddDokuman(Guid id, [FromForm] string baslik, [FromForm] IFormFile file)
+    public async Task<IActionResult> AddDokuman(Guid id, [FromForm] string baslik, [FromForm] IFormFile file, [FromForm] string? tur = null)
     {
         if (file.Length == 0) return BadRequest(new ErrorResponse("Dosya boş olamaz."));
+        if (!Enum.TryParse<DokumanTuru>(tur, ignoreCase: true, out var dokumanTuru)) dokumanTuru = DokumanTuru.Genel;
 
         await using var stream = file.OpenReadStream();
         var (url, size) = await _files.SaveAsync(stream, file.FileName);
@@ -237,6 +298,7 @@ public class GirisimlerController : ControllerBase
             DosyaAdi = file.FileName,
             DosyaUrl = url,
             DosyaBoyutu = size,
+            Tur = dokumanTuru,
             SubmittedById = _currentUser.UserId!.Value,
         });
         var full = await _girisimler.GetAsync(id);
@@ -250,6 +312,17 @@ public class GirisimlerController : ControllerBase
     {
         var (success, error) = await _girisimler.DeleteDokumanAsync(id, dokumanId);
         if (!success) return BadRequest(new ErrorResponse(error ?? "Kayıt silinemedi."));
+        var full = await _girisimler.GetAsync(id);
+        return Ok(full!.ToDetailDto());
+    }
+
+    [HttpPut("{id:guid}/iletisim")]
+    [Authorize(Policy = AuthorizationPolicies.StartupErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> UpsertIletisim(Guid id, UpsertGirisimContactRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.AdSoyad)) return BadRequest(new ErrorResponse("Ad soyad zorunludur."));
+        await _girisimler.UpsertContactAsync(id, request.AdSoyad, request.Unvan, request.Telefon, request.Email, request.LinkedInUrl);
         var full = await _girisimler.GetAsync(id);
         return Ok(full!.ToDetailDto());
     }
@@ -282,6 +355,17 @@ public class GirisimlerController : ControllerBase
         return Ok(list.Select(t => new GuncellemeTalebiDto(
             t.Id, t.Ad, t.Sektor, t.KisaTanim, t.Teknoloji, t.WebsiteUrl, t.KurulusYili, t.EkipBuyuklugu,
             t.OnayDurumu.ToString(), t.ReviewNotu, t.CreatedAt)).ToList());
+    }
+
+    /// <summary>Kendi bekleyen profil güncelleme talebini geri çeker (onaylanmış/reddedilmiş talepler geri çekilemez).</summary>
+    [HttpDelete("{id:guid}/guncelleme-talebi/{talebiId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StartupErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> DeleteGuncellemeTalebi(Guid id, Guid talebiId)
+    {
+        var (success, error) = await _girisimler.DeleteGuncellemeTalebiAsync(id, talebiId);
+        if (!success) return BadRequest(new ErrorResponse(error ?? "Talep geri çekilemedi."));
+        return Ok(new MessageResponse("Güncelleme talebi geri çekildi."));
     }
 
     /// <summary>Reddedilmiş bir satış/yatırım/başarı/doküman kaydına itiraz gönderir — sadece kendi girişimi için.</summary>

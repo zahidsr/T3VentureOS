@@ -14,10 +14,20 @@ public record GelisimAdimiDto(Guid Id, DateTime Tarih, string Baslik, string? Ac
 public record SatisKaydiDto(Guid Id, string Donem, decimal Ciro, decimal? Ihracat, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record YatirimKaydiDto(Guid Id, string Tur, decimal Tutar, string ParaBirimi, DateTime Tarih, string? YatirimciAdi, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record BasariDto(Guid Id, string Tur, string Baslik, string? Aciklama, DateTime Tarih, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
-public record DokumanDto(Guid Id, string Baslik, string DosyaAdi, string DosyaUrl, long DosyaBoyutu, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record DokumanDto(Guid Id, string Baslik, string DosyaAdi, string DosyaUrl, long DosyaBoyutu, string Tur, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record GuncellemeTalebiDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
     int? KurulusYili, int? EkipBuyuklugu, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+
+public record GirisimContactDto(string AdSoyad, string? Unvan, string? Telefon, string? Email, string? LinkedInUrl, DateTime UpdatedAt);
+public record UpsertGirisimContactRequest(string AdSoyad, string? Unvan, string? Telefon, string? Email, string? LinkedInUrl);
+
+/// <summary>Rakip karşılaştırma panelindeki bir girişim satırı — filtre kriterlerine uyan set + son 6 ay trendi.</summary>
+public record GirisimKarsilastirmaDto(
+    Guid Id, string Ad, string? Sektor, int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl,
+    decimal ToplamOnayliCiro, decimal ToplamOnayliYatirim, List<AylikTrendDto> AylikTrend);
+
+public record RakipAnaliziRequest(List<Guid> GirisimIds);
 
 public record GirisimDetailDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
@@ -27,7 +37,8 @@ public record GirisimDetailDto(
     List<SatisKaydiDto> SatisKayitlari,
     List<YatirimKaydiDto> YatirimKayitlari,
     List<BasariDto> Basarilar,
-    List<DokumanDto> Dokumanlar);
+    List<DokumanDto> Dokumanlar,
+    GirisimContactDto? Contact);
 
 public record AddGelisimAdimiRequest(DateTime Tarih, string Baslik, string? Aciklama);
 public record AddSatisKaydiRequest(string Donem, decimal Ciro, decimal? Ihracat);
@@ -47,5 +58,6 @@ public static class GirisimDtoExtensions
         g.SatisKayitlari.Select(s => new SatisKaydiDto(s.Id, s.Donem, s.Ciro, s.Ihracat, s.OnayDurumu.ToString(), s.ReviewNotu, s.CreatedAt)).ToList(),
         g.YatirimKayitlari.Select(y => new YatirimKaydiDto(y.Id, y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, y.YatirimciAdi, y.OnayDurumu.ToString(), y.ReviewNotu, y.CreatedAt)).ToList(),
         g.Basarilar.Select(b => new BasariDto(b.Id, b.Tur.ToString(), b.Baslik, b.Aciklama, b.Tarih, b.OnayDurumu.ToString(), b.ReviewNotu, b.CreatedAt)).ToList(),
-        g.Dokumanlar.Select(d => new DokumanDto(d.Id, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.DosyaBoyutu, d.OnayDurumu.ToString(), d.ReviewNotu, d.CreatedAt)).ToList());
+        g.Dokumanlar.Select(d => new DokumanDto(d.Id, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.DosyaBoyutu, d.Tur.ToString(), d.OnayDurumu.ToString(), d.ReviewNotu, d.CreatedAt)).ToList(),
+        g.Contact is null ? null : new GirisimContactDto(g.Contact.AdSoyad, g.Contact.Unvan, g.Contact.Telefon, g.Contact.Email, g.Contact.LinkedInUrl, g.Contact.UpdatedAt));
 }

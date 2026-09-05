@@ -159,7 +159,7 @@ export default function HomePage() {
         <div className="mb-6 text-center">
           <span className="text-xs font-bold tracking-widest text-t3-blue uppercase">Platform Özellikleri</span>
           <h2 className="mt-1 font-heading text-2xl font-extrabold text-t3-navy">
-            Neden T3 GEYS?
+            Neden T3 VentureOS ?
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-3">

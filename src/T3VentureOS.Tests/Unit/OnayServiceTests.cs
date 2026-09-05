@@ -17,7 +17,7 @@ public class OnayServiceTests
         db.SatisKayitlari.Add(satis);
         await db.SaveChangesAsync();
 
-        var onay = new OnayService(db, new NotificationService(db));
+        var onay = new OnayService(db, new NotificationService(db), new AuditLogService(db));
         var reviewerId = Guid.NewGuid();
         var ok = await onay.KararVerSatisAsync(satis.Id, reviewerId, onayla: true, not: null);
 
@@ -31,7 +31,7 @@ public class OnayServiceTests
     public async Task KararVerSatis_returns_false_for_an_unknown_id()
     {
         var db = TestDb.Create();
-        var onay = new OnayService(db, new NotificationService(db));
+        var onay = new OnayService(db, new NotificationService(db), new AuditLogService(db));
 
         var ok = await onay.KararVerSatisAsync(Guid.NewGuid(), Guid.NewGuid(), onayla: true, not: null);
 
@@ -54,7 +54,7 @@ public class OnayServiceTests
         db.GirisimGuncellemeTalepleri.Add(talep);
         await db.SaveChangesAsync();
 
-        var onay = new OnayService(db, new NotificationService(db));
+        var onay = new OnayService(db, new NotificationService(db), new AuditLogService(db));
         var ok = await onay.KararVerGuncellemeAsync(talep.Id, Guid.NewGuid(), onayla: true, not: null);
 
         Assert.True(ok);
@@ -73,7 +73,7 @@ public class OnayServiceTests
         db.GirisimGuncellemeTalepleri.Add(talep);
         await db.SaveChangesAsync();
 
-        var onay = new OnayService(db, new NotificationService(db));
+        var onay = new OnayService(db, new NotificationService(db), new AuditLogService(db));
         await onay.KararVerGuncellemeAsync(talep.Id, Guid.NewGuid(), onayla: false, not: "Eksik bilgi.");
 
         var updatedGirisim = db.Girisimler.Single(g => g.Id == girisim.Id);

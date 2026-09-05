@@ -8,7 +8,7 @@ namespace T3VentureOS.Web.Controllers;
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Policy = AuthorizationPolicies.YonetimVeRaporErisimi)]
+[Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
 public class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
@@ -23,9 +23,15 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(
+        [FromQuery] DateTime? baslangic,
+        [FromQuery] DateTime? bitis,
+        [FromQuery] string? sektor,
+        [FromQuery] Guid? programId,
+        [FromQuery] Guid? girisimId)
     {
-        var stats = await _dashboard.GetStatsAsync();
+        var filter = new DashboardFilter(baslangic, bitis, sektor, programId, girisimId);
+        var stats = await _dashboard.GetStatsAsync(filter);
         return Ok(new DashboardStatsDto(
             stats.ToplamGirisim,
             stats.AktifProgramSayisi,
@@ -35,6 +41,16 @@ public class DashboardController : ControllerBase
             stats.SektorDagilimi.Select(s => new SektorSayisiDto(s.Sektor, s.Sayi)).ToList(),
             stats.YatirimTuruDagilimi.Select(y => new YatirimTuruDagilimiDto(y.Tur, y.ToplamTutar)).ToList(),
             stats.AylikTrend.Select(a => new AylikTrendDto(a.Ay, a.Ciro, a.Yatirim)).ToList()));
+    }
+
+    [HttpGet("filtre-secenekleri")]
+    public async Task<IActionResult> FiltreSecenekleri()
+    {
+        var secenekler = await _dashboard.GetFiltreSecenekleriAsync();
+        return Ok(new DashboardFiltreSecenekleriDto(
+            secenekler.Sektorler,
+            secenekler.Programlar.Select(p => new ProgramSecenegiDto(p.Id, p.Ad)).ToList(),
+            secenekler.Girisimler.Select(g => new GirisimSecenegiDto(g.Id, g.Ad)).ToList()));
     }
 
     /// <summary>Public — feeds the homepage hero's live stat panel, shown to logged-out visitors too.</summary>

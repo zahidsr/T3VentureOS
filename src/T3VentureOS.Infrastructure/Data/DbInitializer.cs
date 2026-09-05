@@ -10,7 +10,7 @@ public static class DbInitializer
 {
     public const string SuperAdminEmail = "superadmin@t3ventureos.local";
     public const string ProgramYoneticisiEmail = "program@t3vakfi.local";
-    public const string KararVericiEmail = "karar@t3vakfi.local";
+    public const string SecondSuperAdminEmail = "karar@t3vakfi.local";
     public const string StartupEmail = "girisim@t3vakfi.local";
     public const string DemoPassword = "Passw0rd!";
 
@@ -25,8 +25,8 @@ public static class DbInitializer
 
         var superAdmin = MakeUser(SuperAdminEmail, "Süper Admin", UserRole.SuperAdmin, hasher);
         var programYoneticisi = MakeUser(ProgramYoneticisiEmail, "Program Yöneticisi", UserRole.ProgramYoneticisi, hasher);
-        var kararVerici = MakeUser(KararVericiEmail, "Karar Verici", UserRole.KararVerici, hasher);
-        db.Users.AddRange(superAdmin, programYoneticisi, kararVerici);
+        var secondSuperAdmin = MakeUser(SecondSuperAdminEmail, "Süper Admin (İkincil)", UserRole.SuperAdmin, hasher);
+        db.Users.AddRange(superAdmin, programYoneticisi, secondSuperAdmin);
 
         var program = new GirisimProgrami
         {

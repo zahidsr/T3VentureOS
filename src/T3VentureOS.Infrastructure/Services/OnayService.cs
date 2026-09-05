@@ -13,11 +13,23 @@ public class OnayService
 {
     private readonly AppDbContext _db;
     private readonly NotificationService _notifications;
+    private readonly AuditLogService _audit;
 
-    public OnayService(AppDbContext db, NotificationService notifications)
+    public OnayService(AppDbContext db, NotificationService notifications, AuditLogService audit)
     {
         _db = db;
         _notifications = notifications;
+        _audit = audit;
+    }
+
+    /// <summary>Onay/red kararlarını merkezi İşlem Geçmişi'ne yazar — kimin, ne zaman, hangi kaydı onayladığı/reddettiği izlenebilir kalsın diye.</summary>
+    private async Task LogKararAsync(string eylem, Guid reviewedById, Guid submittedById, string ozet, bool onayla, string? not)
+    {
+        var actor = await _db.Users.FindAsync(reviewedById);
+        if (actor is null) return;
+        var hedef = await _db.Users.FindAsync(submittedById);
+        var detay = $"{ozet} — {(onayla ? "Onaylandı" : "Reddedildi")}{(string.IsNullOrWhiteSpace(not) ? "" : $". Gerekçe: {not}")}";
+        await _audit.LogAsync(actor, eylem, hedef, detay);
     }
 
     private Task NotifyKararAsync(Guid submittedById, Guid girisimId, string kayitAdi, bool onayla, string? not) =>
@@ -47,52 +59,64 @@ public class OnayService
 
     public async Task<bool> KararVerSatisAsync(Guid id, Guid reviewedById, bool onayla, string? not)
     {
-        var kayit = await _db.SatisKayitlari.FirstOrDefaultAsync(x => x.Id == id);
+        var kayit = await _db.SatisKayitlari.Include(s => s.Girisim).FirstOrDefaultAsync(x => x.Id == id);
         if (kayit is null) return false;
         kayit.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
         kayit.ReviewedById = reviewedById;
         kayit.ReviewNotu = not;
         kayit.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, $"\"{kayit.Donem}\" dönemi satış kaydı", onayla, not);
+        var kayitAdi = $"\"{kayit.Donem}\" dönemi satış kaydı";
+        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
+        await LogKararAsync(IslemEylemleri.SatisKaydiKararVerildi, reviewedById, kayit.SubmittedById,
+            $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }
 
     public async Task<bool> KararVerYatirimAsync(Guid id, Guid reviewedById, bool onayla, string? not)
     {
-        var kayit = await _db.YatirimKayitlari.FirstOrDefaultAsync(x => x.Id == id);
+        var kayit = await _db.YatirimKayitlari.Include(y => y.Girisim).FirstOrDefaultAsync(x => x.Id == id);
         if (kayit is null) return false;
         kayit.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
         kayit.ReviewedById = reviewedById;
         kayit.ReviewNotu = not;
         kayit.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, $"{kayit.Tur} yatırım kaydı", onayla, not);
+        var kayitAdi = $"{kayit.Tur} yatırım kaydı";
+        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
+        await LogKararAsync(IslemEylemleri.YatirimKaydiKararVerildi, reviewedById, kayit.SubmittedById,
+            $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }
 
     public async Task<bool> KararVerBasariAsync(Guid id, Guid reviewedById, bool onayla, string? not)
     {
-        var kayit = await _db.Basarilar.FirstOrDefaultAsync(x => x.Id == id);
+        var kayit = await _db.Basarilar.Include(b => b.Girisim).FirstOrDefaultAsync(x => x.Id == id);
         if (kayit is null) return false;
         kayit.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
         kayit.ReviewedById = reviewedById;
         kayit.ReviewNotu = not;
         kayit.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
-        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, $"\"{kayit.Baslik}\" başarı kaydı", onayla, not);
+        var kayitAdi = $"\"{kayit.Baslik}\" başarı kaydı";
+        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
+        await LogKararAsync(IslemEylemleri.BasariKaydiKararVerildi, reviewedById, kayit.SubmittedById,
+            $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }
 
     public async Task<bool> KararVerDokumanAsync(Guid id, Guid reviewedById, bool onayla, string? not)
     {
-        var kayit = await _db.Dokumanlar.FirstOrDefaultAsync(x => x.Id == id);
+        var kayit = await _db.Dokumanlar.Include(d => d.Girisim).FirstOrDefaultAsync(x => x.Id == id);
         if (kayit is null) return false;
         kayit.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
         kayit.ReviewedById = reviewedById;
         kayit.ReviewNotu = not;
         await _db.SaveChangesAsync();
-        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, $"\"{kayit.Baslik}\" dokümanı", onayla, not);
+        var kayitAdi = $"\"{kayit.Baslik}\" dokümanı";
+        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
+        await LogKararAsync(IslemEylemleri.DokumanKararVerildi, reviewedById, kayit.SubmittedById,
+            $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }
 
@@ -121,6 +145,8 @@ public class OnayService
         await _db.SaveChangesAsync();
         if (talep.Girisim is not null)
             await NotifyKararAsync(talep.SubmittedById, talep.GirisimId, "Profil güncelleme talebiniz", onayla, not);
+        await LogKararAsync(IslemEylemleri.GuncellemeTalebiKararVerildi, reviewedById, talep.SubmittedById,
+            $"Profil güncelleme talebi ({talep.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }
 }

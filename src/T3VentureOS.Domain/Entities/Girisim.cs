@@ -23,4 +23,5 @@ public class Girisim
     public ICollection<YatirimKaydi> YatirimKayitlari { get; set; } = new List<YatirimKaydi>();
     public ICollection<Basari> Basarilar { get; set; } = new List<Basari>();
     public ICollection<Dokuman> Dokumanlar { get; set; } = new List<Dokuman>();
+    public GirisimContact? Contact { get; set; }
 }

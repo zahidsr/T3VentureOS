@@ -23,10 +23,29 @@ import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { api, extractErrorMessage } from "@/lib/api-client"
+import { captureChartPng, type ChartImage } from "@/lib/chart-export"
 import { cn } from "@/lib/utils"
 import ExcelJS from "exceljs"
-import type { AiAnalizDto, AiAnalizKaydiDto, DashboardStatsDto, YatirimTuru } from "@/lib/types"
+import jsPDF from "jspdf"
+import type {
+  AiAnalizDto,
+  AiAnalizKaydiDto,
+  DashboardFiltreSecenekleriDto,
+  DashboardStatsDto,
+  YatirimTuru,
+} from "@/lib/types"
+
+const ALL_VALUE = "__all__"
 
 const YATIRIM_TUR_LABEL: Record<YatirimTuru, string> = {
   Hibe: "Hibe",
@@ -75,55 +94,6 @@ const XLSX_T3_NAVY = "FF2D3F47"
 const XLSX_ROW_TINT = "FFEBF6F9"
 const XLSX_BORDER = "FFD7E4E8"
 const XLSX_MUTED = "FF64748B"
-
-interface ChartImage {
-  dataUrl: string
-  width: number
-  height: number
-}
-
-/** Serializes the container's rendered <svg> to a PNG data URL so it can be embedded in the Excel export. */
-async function captureChartPng(container: HTMLElement | null, scale = 2): Promise<ChartImage | null> {
-  const svg = container?.querySelector("svg")
-  if (!svg) return null
-
-  const rect = svg.getBoundingClientRect()
-  const width = Math.max(1, Math.round(rect.width))
-  const height = Math.max(1, Math.round(rect.height))
-
-  const clone = svg.cloneNode(true) as SVGSVGElement
-  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-  clone.setAttribute("width", String(width))
-  clone.setAttribute("height", String(height))
-
-  const svgBlob = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml;charset=utf-8" })
-  const url = URL.createObjectURL(svgBlob)
-
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image()
-      image.onload = () => resolve(image)
-      image.onerror = () => reject(new Error("Grafik görüntüsü oluşturulamadı."))
-      image.src = url
-    })
-
-    const canvas = document.createElement("canvas")
-    canvas.width = width * scale
-    canvas.height = height * scale
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return null
-    ctx.fillStyle = "#ffffff"
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.scale(scale, scale)
-    ctx.drawImage(img, 0, 0, width, height)
-
-    return { dataUrl: canvas.toDataURL("image/png"), width, height }
-  } catch {
-    return null
-  } finally {
-    URL.revokeObjectURL(url)
-  }
-}
 
 function styleHeaderRow(row: ExcelJS.Row) {
   row.eachCell((cell) => {
@@ -265,6 +235,94 @@ async function downloadXlsx(stats: DashboardStatsDto, charts: RaporCharts) {
   URL.revokeObjectURL(url)
 }
 
+// -------------------------------------------------------- PDF (jsPDF)
+
+async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnalizMetni?: string) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const margin = 40
+  let y = 50
+
+  function ensureSpace(height: number) {
+    if (y + height > pageHeight - margin) {
+      doc.addPage()
+      y = 50
+    }
+  }
+
+  function sectionTitle(title: string) {
+    ensureSpace(24)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(0, 120, 168)
+    doc.text(title, margin, y)
+    y += 18
+    doc.setTextColor(30, 41, 47)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+  }
+
+  async function addChart(title: string, chart: ChartImage | null) {
+    sectionTitle(title)
+    if (!chart) {
+      doc.text("Veri bulunmuyor.", margin, y)
+      y += 20
+      return
+    }
+    const maxWidth = pageWidth - margin * 2
+    const displayWidth = Math.min(maxWidth, chart.width)
+    const displayHeight = (chart.height / chart.width) * displayWidth
+    ensureSpace(displayHeight + 10)
+    doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight)
+    y += displayHeight + 24
+  }
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(16)
+  doc.setTextColor(45, 63, 71)
+  doc.text("T3 Girişim Ekosistemi — Özet Rapor", margin, y)
+  y += 18
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(100, 116, 139)
+  doc.text(`Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)
+  y += 26
+
+  sectionTitle("Genel Durum")
+  const kpiRows: [string, string][] = [
+    ["Toplam Girişim", stats.toplamGirisim.toLocaleString("tr-TR")],
+    ["Aktif Program", stats.aktifProgramSayisi.toLocaleString("tr-TR")],
+    ["Bekleyen Onay", stats.bekleyenOnaySayisi.toLocaleString("tr-TR")],
+    ["Onaylı Yatırım (TRY)", stats.toplamOnayliYatirim.toLocaleString("tr-TR")],
+    ["Onaylı Ciro (TRY)", stats.toplamOnayliCiro.toLocaleString("tr-TR")],
+  ]
+  kpiRows.forEach(([label, value]) => {
+    ensureSpace(16)
+    doc.text(label, margin, y)
+    doc.text(value, margin + 240, y)
+    y += 16
+  })
+  y += 12
+
+  if (aiAnalizMetni) {
+    sectionTitle("AI Analizi")
+    const lines = doc.splitTextToSize(aiAnalizMetni, pageWidth - margin * 2) as string[]
+    lines.forEach((line) => {
+      ensureSpace(14)
+      doc.text(line, margin, y)
+      y += 14
+    })
+    y += 12
+  }
+
+  await addChart("Aylık Trend (Son 6 Ay)", charts.aylikTrend)
+  await addChart("Yatırım Türü Dağılımı", charts.yatirimTuru)
+  await addChart("Sektör Dağılımı", charts.sektor)
+
+  doc.save(`t3-geys-rapor-${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
 const T3_BLUE = "#0078a8"
 const T3_ORANGE = "#f7941d"
 
@@ -290,13 +348,43 @@ export default function RaporPage() {
   const queryClient = useQueryClient()
   const [selectedAnalizId, setSelectedAnalizId] = useState<string | null>(null)
   const [isExportingXlsx, setIsExportingXlsx] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
   const trendChartRef = useRef<HTMLDivElement>(null)
   const yatirimChartRef = useRef<HTMLDivElement>(null)
   const sektorChartRef = useRef<HTMLDivElement>(null)
 
+  const [baslangic, setBaslangic] = useState("")
+  const [bitis, setBitis] = useState("")
+  const [sektorFiltre, setSektorFiltre] = useState(ALL_VALUE)
+  const [programFiltre, setProgramFiltre] = useState(ALL_VALUE)
+  const [girisimFiltre, setGirisimFiltre] = useState(ALL_VALUE)
+
+  const filterParams = {
+    baslangic: baslangic || undefined,
+    bitis: bitis || undefined,
+    sektor: sektorFiltre === ALL_VALUE ? undefined : sektorFiltre,
+    programId: programFiltre === ALL_VALUE ? undefined : programFiltre,
+    girisimId: girisimFiltre === ALL_VALUE ? undefined : girisimFiltre,
+  }
+  const hasActiveFilter = Object.values(filterParams).some((v) => v !== undefined)
+
+  function resetFilters() {
+    setBaslangic("")
+    setBitis("")
+    setSektorFiltre(ALL_VALUE)
+    setProgramFiltre(ALL_VALUE)
+    setGirisimFiltre(ALL_VALUE)
+  }
+
+  const filtreSecenekleriQuery = useQuery({
+    queryKey: ["dashboard-filtre-secenekleri"],
+    queryFn: async () => (await api.get<DashboardFiltreSecenekleriDto>("/dashboard/filtre-secenekleri")).data,
+  })
+  const filtreSecenekleri = filtreSecenekleriQuery.data
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: async () => (await api.get<DashboardStatsDto>("/dashboard")).data,
+    queryKey: ["dashboard", filterParams],
+    queryFn: async () => (await api.get<DashboardStatsDto>("/dashboard", { params: filterParams })).data,
   })
 
   const aiHistoryQuery = useQuery({
@@ -333,6 +421,23 @@ export default function RaporPage() {
       toast.error("Excel raporu oluşturulamadı. Lütfen tekrar deneyin.")
     } finally {
       setIsExportingXlsx(false)
+    }
+  }
+
+  async function handleExportPdf() {
+    if (!data) return
+    setIsExportingPdf(true)
+    try {
+      const [sektor, yatirimTuru, aylikTrend] = await Promise.all([
+        captureChartPng(sektorChartRef.current),
+        captureChartPng(yatirimChartRef.current),
+        captureChartPng(trendChartRef.current),
+      ])
+      await downloadPdf(data, { sektor, yatirimTuru, aylikTrend }, displayedAnaliz)
+    } catch {
+      toast.error("PDF raporu oluşturulamadı. Lütfen tekrar deneyin.")
+    } finally {
+      setIsExportingPdf(false)
     }
   }
 
@@ -378,9 +483,93 @@ export default function RaporPage() {
               <Download className="size-4" />
               {isExportingXlsx ? "Hazırlanıyor…" : "Excel İndir"}
             </Button>
+            <Button variant="outline" className="gap-1.5" onClick={handleExportPdf} disabled={isExportingPdf}>
+              <Download className="size-4" />
+              {isExportingPdf ? "Hazırlanıyor…" : "PDF İndir"}
+            </Button>
           </div>
         }
       />
+
+      {/* ---------------------------------------------------- Filtreler */}
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border bg-card px-5 py-4 shadow-sm">
+        <div className="w-40 space-y-1.5">
+          <Label htmlFor="rapor-baslangic" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Başlangıç
+          </Label>
+          <Input
+            id="rapor-baslangic"
+            type="date"
+            value={baslangic}
+            onChange={(e) => setBaslangic(e.target.value)}
+          />
+        </div>
+        <div className="w-40 space-y-1.5">
+          <Label htmlFor="rapor-bitis" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Bitiş
+          </Label>
+          <Input id="rapor-bitis" type="date" value={bitis} onChange={(e) => setBitis(e.target.value)} />
+        </div>
+        <div className="w-48 space-y-1.5">
+          <Label htmlFor="rapor-sektor-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Sektör
+          </Label>
+          <Select value={sektorFiltre} onValueChange={(value) => setSektorFiltre(value ?? ALL_VALUE)}>
+            <SelectTrigger id="rapor-sektor-filter" className="w-full">
+              <SelectValue placeholder="Tüm sektörler" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Tüm sektörler</SelectItem>
+              {(filtreSecenekleri?.sektorler ?? []).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-56 space-y-1.5">
+          <Label htmlFor="rapor-program-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Program
+          </Label>
+          <Select value={programFiltre} onValueChange={(value) => setProgramFiltre(value ?? ALL_VALUE)}>
+            <SelectTrigger id="rapor-program-filter" className="w-full">
+              <SelectValue placeholder="Tüm programlar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Tüm programlar</SelectItem>
+              {(filtreSecenekleri?.programlar ?? []).map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.ad}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-56 space-y-1.5">
+          <Label htmlFor="rapor-girisim-filter" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            Girişim
+          </Label>
+          <Select value={girisimFiltre} onValueChange={(value) => setGirisimFiltre(value ?? ALL_VALUE)}>
+            <SelectTrigger id="rapor-girisim-filter" className="w-full">
+              <SelectValue placeholder="Tüm girişimler" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Tüm girişimler</SelectItem>
+              {(filtreSecenekleri?.girisimler ?? []).map((g) => (
+                <SelectItem key={g.id} value={g.id}>
+                  {g.ad}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {hasActiveFilter && (
+          <button onClick={resetFilters} className="mb-2.5 text-xs font-medium text-t3-blue hover:underline">
+            Filtreleri temizle
+          </button>
+        )}
+      </div>
 
       {/* ---------------------------------------------------- İstatistik Kartları */}
       <div>
@@ -421,7 +610,7 @@ export default function RaporPage() {
 
       {/* ---------------------------------------------------- AI Analizi */}
       <Card className="overflow-hidden border-t3-blue/20">
-        <CardHeader className="border-b bg-gradient-to-r from-t3-blue-light to-transparent pb-4">
+        <CardHeader className="border-b bg-muted/40 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-t3-blue text-white">

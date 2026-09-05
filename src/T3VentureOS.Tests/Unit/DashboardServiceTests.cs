@@ -53,15 +53,15 @@ public class DashboardServiceTests
     public async Task SaveAiAnalizAsync_persists_a_snapshot_the_actor_and_text()
     {
         var db = TestDb.Create();
-        var karar = new User { Email = "karar@test.local", FullName = "Karar Verici", Role = UserRole.KararVerici };
-        db.Users.Add(karar);
+        var actor = new User { Email = "actor@test.local", FullName = "Test Kullanıcı", Role = UserRole.ProgramYoneticisi };
+        db.Users.Add(actor);
         await db.SaveChangesAsync();
 
         var dashboard = new DashboardService(db);
-        var kayit = await dashboard.SaveAiAnalizAsync(karar.Id, "Ekosistem büyüme trendinde.");
+        var kayit = await dashboard.SaveAiAnalizAsync(actor.Id, "Ekosistem büyüme trendinde.");
 
-        Assert.Equal(karar.Id, kayit.CreatedById);
-        Assert.Equal("Karar Verici", kayit.CreatedByAdSoyad);
+        Assert.Equal(actor.Id, kayit.CreatedById);
+        Assert.Equal("Test Kullanıcı", kayit.CreatedByAdSoyad);
         Assert.Equal("Ekosistem büyüme trendinde.", kayit.Metin);
         Assert.Single(db.AiAnalizKayitlari);
     }

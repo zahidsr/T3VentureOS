@@ -11,14 +11,6 @@ const toneBar: Record<Tone, string> = {
   info: "before:bg-t3-blue",
 }
 
-const toneGlow: Record<Tone, string> = {
-  neutral: "",
-  success: "shadow-emerald-100",
-  warning: "shadow-amber-100",
-  danger: "shadow-red-100",
-  info: "shadow-blue-100",
-}
-
 const toneIconBg: Record<Tone, string> = {
   neutral: "bg-slate-100 text-slate-400",
   success: "bg-emerald-50 text-emerald-500",
@@ -45,10 +37,9 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-shadow duration-200 hover:shadow-md",
+        "relative overflow-hidden rounded-2xl border bg-card p-5",
         "before:absolute before:inset-y-0 before:left-0 before:w-1",
         toneBar[tone],
-        toneGlow[tone],
       )}
     >
       {icon && (

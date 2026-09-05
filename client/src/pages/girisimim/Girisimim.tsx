@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Building2, Trash2 } from "lucide-react"
+import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import jsPDF from "jspdf"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -34,6 +36,9 @@ import type {
   AddSatisKaydiRequest,
   AddYatirimKaydiRequest,
   BasariTuru,
+  DashboardStatsDto,
+  DokumanTuru,
+  GirisimContactDto,
   GirisimDetailDto,
   GuncellemeTalebiDto,
   ItirazDto,
@@ -42,6 +47,7 @@ import type {
   MessageResponse,
   SubmitGuncellemeTalebiRequest,
   SubmitItirazRequest,
+  UpsertGirisimContactRequest,
   YatirimTuru,
 } from "@/lib/types"
 
@@ -134,13 +140,16 @@ type GuncellemeTalebiFormValues = z.input<typeof guncellemeTalebiSchema>
 
 function GuncellemeTalebiForm({
   girisim,
+  prefill,
   onClose,
   onSubmitted,
 }: {
   girisim: GirisimDetailDto
+  prefill?: GuncellemeTalebiDto
   onClose: () => void
   onSubmitted: () => void
 }) {
+  const source = prefill ?? girisim
   const {
     register,
     handleSubmit,
@@ -148,13 +157,13 @@ function GuncellemeTalebiForm({
   } = useForm<GuncellemeTalebiFormValues>({
     resolver: zodResolver(guncellemeTalebiSchema),
     defaultValues: {
-      ad: girisim.ad,
-      sektor: girisim.sektor ?? "",
-      kisaTanim: girisim.kisaTanim ?? "",
-      teknoloji: girisim.teknoloji ?? "",
-      websiteUrl: girisim.websiteUrl ?? "",
-      kurulusYili: girisim.kurulusYili ?? undefined,
-      ekipBuyuklugu: girisim.ekipBuyuklugu ?? undefined,
+      ad: source.ad,
+      sektor: source.sektor ?? "",
+      kisaTanim: source.kisaTanim ?? "",
+      teknoloji: source.teknoloji ?? "",
+      websiteUrl: source.websiteUrl ?? "",
+      kurulusYili: source.kurulusYili ?? undefined,
+      ekipBuyuklugu: source.ekipBuyuklugu ?? undefined,
     },
   })
 
@@ -178,7 +187,9 @@ function GuncellemeTalebiForm({
       <div className="flex items-start gap-2.5 rounded-xl border border-t3-blue/20 bg-white px-4 py-3">
         <span className="mt-0.5 text-base">💡</span>
         <p className="text-sm text-muted-foreground">
-          Değişiklikleriniz yönetici onayından geçtikten sonra profilinize yansır.
+          {prefill
+            ? "Önceki talebinizin değerleri yüklendi — düzenleyip tekrar gönderebilirsiniz."
+            : "Değişiklikleriniz yönetici onayından geçtikten sonra profilinize yansır."}
         </p>
       </div>
       <div className="space-y-1.5">
@@ -225,6 +236,71 @@ function GuncellemeTalebiForm({
         </Button>
       </div>
     </form>
+  )
+}
+
+// ------------------------------------------- güncelleme talebi detayı (diff)
+
+function DiffRow({
+  label,
+  oldValue,
+  newValue,
+}: {
+  label: string
+  oldValue: string
+  newValue: string
+}) {
+  const changed = oldValue !== newValue
+  return (
+    <div className="grid grid-cols-3 gap-3 border-b py-2.5 text-sm last:border-b-0">
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</span>
+      <span className={changed ? "text-muted-foreground line-through" : "text-muted-foreground"}>{oldValue}</span>
+      <span className={changed ? "font-semibold text-t3-navy" : "text-muted-foreground"}>{newValue}</span>
+    </div>
+  )
+}
+
+function GuncellemeTalebiDetailDialog({ girisim, talep }: { girisim: GirisimDetailDto; talep: GuncellemeTalebiDto }) {
+  const rows: { label: string; old: string; yeni: string }[] = [
+    { label: "Girişim Adı", old: girisim.ad, yeni: talep.ad },
+    { label: "Sektör", old: girisim.sektor ?? "—", yeni: talep.sektor ?? "—" },
+    { label: "Kısa Tanım", old: girisim.kisaTanim ?? "—", yeni: talep.kisaTanim ?? "—" },
+    { label: "Teknoloji", old: girisim.teknoloji ?? "—", yeni: talep.teknoloji ?? "—" },
+    { label: "Website", old: girisim.websiteUrl ?? "—", yeni: talep.websiteUrl ?? "—" },
+    { label: "Kuruluş Yılı", old: String(girisim.kurulusYili ?? "—"), yeni: String(talep.kurulusYili ?? "—") },
+    { label: "Ekip Büyüklüğü", old: String(girisim.ekipBuyuklugu ?? "—"), yeni: String(talep.ekipBuyuklugu ?? "—") },
+  ]
+
+  return (
+    <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+      <DialogHeader>
+        <DialogTitle>Güncelleme Talebi Detayı</DialogTitle>
+        <DialogDescription>
+          {formatDate(talep.createdAt)} tarihinde gönderildi.{" "}
+          {talep.onayDurumu === "Beklemede"
+            ? "Yönetici onayı bekleniyor."
+            : talep.onayDurumu === "Onaylandi"
+              ? "Onaylandı ve profilinize yansıdı."
+              : "Reddedildi."}
+        </DialogDescription>
+      </DialogHeader>
+      <div>
+        <div className="grid grid-cols-3 gap-3 border-b pb-2 text-xs font-bold tracking-wide text-muted-foreground uppercase">
+          <span>Alan</span>
+          <span>Mevcut Profil</span>
+          <span>Talep Edilen</span>
+        </div>
+        {rows.map((r) => (
+          <DiffRow key={r.label} label={r.label} oldValue={r.old} newValue={r.yeni} />
+        ))}
+      </div>
+      {talep.reviewNotu && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <span className="font-semibold">Ret gerekçesi: </span>
+          {talep.reviewNotu}
+        </div>
+      )}
+    </DialogContent>
   )
 }
 
@@ -630,10 +706,86 @@ function LogoUploadSection({ girisim, onUpdated }: { girisim: GirisimDetailDto; 
   )
 }
 
+// -------------------------------------------------- iletişim / muhatap kartı
+
+function GirisimContactForm({
+  girisimId,
+  contact,
+  onSaved,
+}: {
+  girisimId: string
+  contact: GirisimContactDto | null
+  onSaved: () => void
+}) {
+  const [adSoyad, setAdSoyad] = useState(contact?.adSoyad ?? "")
+  const [unvan, setUnvan] = useState(contact?.unvan ?? "")
+  const [telefon, setTelefon] = useState(contact?.telefon ?? "")
+  const [email, setEmail] = useState(contact?.email ?? "")
+  const [linkedInUrl, setLinkedInUrl] = useState(contact?.linkedInUrl ?? "")
+
+  const contactMutation = useMutation({
+    mutationFn: async () =>
+      (
+        await api.put<GirisimDetailDto>(`/girisimler/${girisimId}/iletisim`, {
+          adSoyad: adSoyad.trim(),
+          unvan: unvan.trim() || null,
+          telefon: telefon.trim() || null,
+          email: email.trim() || null,
+          linkedInUrl: linkedInUrl.trim() || null,
+        } satisfies UpsertGirisimContactRequest)
+      ).data,
+    onSuccess: () => {
+      toast.success("İletişim bilgileri kaydedildi.")
+      onSaved()
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "İletişim bilgileri kaydedilemedi.")),
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!adSoyad.trim()) {
+      toast.error("Ad soyad zorunludur.")
+      return
+    }
+    contactMutation.mutate()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-adsoyad">Ad Soyad *</Label>
+        <Input id="contact-adsoyad" value={adSoyad} onChange={(e) => setAdSoyad(e.target.value)} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-unvan">Unvan</Label>
+        <Input id="contact-unvan" value={unvan} onChange={(e) => setUnvan(e.target.value)} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-telefon">Telefon</Label>
+        <Input id="contact-telefon" value={telefon} onChange={(e) => setTelefon(e.target.value)} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="contact-email">E-posta</Label>
+        <Input id="contact-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor="contact-linkedin">LinkedIn</Label>
+        <Input id="contact-linkedin" value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} />
+      </div>
+      <div className="sm:col-span-2 flex justify-end">
+        <Button type="submit" size="sm" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={contactMutation.isPending}>
+          {contactMutation.isPending ? "Kaydediliyor…" : "Kaydet"}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 // -------------------------------------------------- doküman yükleme formu
 
 function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: () => void }) {
   const [baslik, setBaslik] = useState("")
+  const [tur, setTur] = useState<DokumanTuru>("Genel")
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -653,6 +805,7 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
     setUploadProgress(0)
     const formData = new FormData()
     formData.append("baslik", baslik.trim())
+    formData.append("tur", tur)
     formData.append("file", file)
     try {
       await api.post(`/girisimler/${girisimId}/dokuman`, formData, {
@@ -663,6 +816,7 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
       })
       toast.success("Doküman onaya gönderildi.")
       setBaslik("")
+      setTur("Genel")
       setFile(null)
       if (fileRef.current) fileRef.current.value = ""
       onAdded()
@@ -677,7 +831,7 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Doküman Yükle</p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="d-baslik">Başlık</Label>
           <Input
@@ -686,6 +840,18 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
             onChange={(e) => setBaslik(e.target.value)}
             placeholder="Doküman başlığı"
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="d-tur">Tür</Label>
+          <Select value={tur} onValueChange={(value) => setTur((value as DokumanTuru) ?? "Genel")}>
+            <SelectTrigger id="d-tur" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Genel">Genel</SelectItem>
+              <SelectItem value="Sunum">Tanıtım Sunumu</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="d-file">Dosya (maks. 20 MB)</Label>
@@ -719,9 +885,167 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
 
 // ---------------------------------------------------------------- sayfa
 
+// -------------------------------------------------------------- Şirket CV'si (PDF)
+
+function downloadSirketCv(girisim: GirisimDetailDto) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const margin = 40
+  let y = 50
+
+  function ensureSpace(height: number) {
+    if (y + height > pageHeight - margin) {
+      doc.addPage()
+      y = 50
+    }
+  }
+
+  function sectionTitle(title: string) {
+    ensureSpace(26)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(0, 120, 168)
+    doc.text(title, margin, y)
+    y += 18
+    doc.setTextColor(30, 41, 47)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+  }
+
+  function bodyLine(text: string) {
+    const lines = doc.splitTextToSize(text, pageWidth - margin * 2) as string[]
+    lines.forEach((line) => {
+      ensureSpace(14)
+      doc.text(line, margin, y)
+      y += 14
+    })
+  }
+
+  function keyValueRow(label: string, value: string) {
+    ensureSpace(16)
+    doc.setFont("helvetica", "bold")
+    doc.text(label, margin, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(value, margin + 160, y)
+    y += 16
+  }
+
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(18)
+  doc.setTextColor(45, 63, 71)
+  doc.text(girisim.ad, margin, y)
+  y += 20
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(100, 116, 139)
+  doc.text(`Şirket CV'si — Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)
+  y += 26
+  doc.setTextColor(30, 41, 47)
+
+  sectionTitle("Şirket Özeti")
+  keyValueRow("Sektör", girisim.sektor ?? "—")
+  keyValueRow("Kuruluş Yılı", girisim.kurulusYili != null ? String(girisim.kurulusYili) : "—")
+  keyValueRow("Ekip Büyüklüğü", girisim.ekipBuyuklugu != null ? `${girisim.ekipBuyuklugu} kişi` : "—")
+  keyValueRow("Teknoloji", girisim.teknoloji ?? "—")
+  keyValueRow("Website", girisim.websiteUrl ?? "—")
+  if (girisim.kisaTanim) {
+    ensureSpace(16)
+    doc.setFont("helvetica", "bold")
+    doc.text("Kısa Tanım", margin, y)
+    y += 16
+    doc.setFont("helvetica", "normal")
+    bodyLine(girisim.kisaTanim)
+  }
+  y += 10
+
+  sectionTitle("İletişim / Muhatap")
+  if (girisim.contact) {
+    keyValueRow("Ad Soyad", girisim.contact.adSoyad)
+    keyValueRow("Unvan", girisim.contact.unvan ?? "—")
+    keyValueRow("Telefon", girisim.contact.telefon ?? "—")
+    keyValueRow("E-posta", girisim.contact.email ?? "—")
+    keyValueRow("LinkedIn", girisim.contact.linkedInUrl ?? "—")
+  } else {
+    bodyLine("İletişim/muhatap bilgisi girilmemiş.")
+  }
+  y += 10
+
+  sectionTitle("Program Katılım Geçmişi")
+  if (girisim.programKatilimlari.length === 0) {
+    bodyLine("Herhangi bir programa katılım bulunmuyor.")
+  } else {
+    girisim.programKatilimlari.forEach((k) => {
+      bodyLine(
+        `• ${k.programAdi} — ${katilimDurumuLabels[k.durum] ?? k.durum} (${formatDate(k.baslangicTarihi)} – ${formatDate(k.bitisTarihi)})`,
+      )
+    })
+  }
+  y += 10
+
+  sectionTitle("Gelişim Yolculuğu")
+  if (girisim.gelisimAdimlari.length === 0) {
+    bodyLine("Henüz bir gelişim adımı eklenmemiş.")
+  } else {
+    ;[...girisim.gelisimAdimlari]
+      .sort((a, b) => new Date(b.tarih).getTime() - new Date(a.tarih).getTime())
+      .forEach((g) => {
+        bodyLine(`• ${formatDate(g.tarih)} — ${g.baslik}${g.aciklama ? `: ${g.aciklama}` : ""}`)
+      })
+  }
+  y += 10
+
+  const onayliSatis = girisim.satisKayitlari.filter((s) => s.onayDurumu === "Onaylandi")
+  sectionTitle("Onaylı Satış Özeti")
+  keyValueRow("Toplam Onaylı Ciro", formatCurrency(onayliSatis.reduce((sum, s) => sum + s.ciro, 0), "TRY"))
+  if (onayliSatis.length === 0) {
+    bodyLine("Onaylı satış kaydı bulunmuyor.")
+  } else {
+    onayliSatis.forEach((s) => {
+      bodyLine(
+        `• ${s.donem}: ${formatCurrency(s.ciro, "TRY")}${s.ihracat != null ? ` (İhracat: ${formatCurrency(s.ihracat, "TRY")})` : ""}`,
+      )
+    })
+  }
+  y += 10
+
+  const onayliYatirim = girisim.yatirimKayitlari.filter((v) => v.onayDurumu === "Onaylandi")
+  sectionTitle("Onaylı Yatırım Özeti")
+  if (onayliYatirim.length === 0) {
+    bodyLine("Onaylı yatırım kaydı bulunmuyor.")
+  } else {
+    const toplamlar = onayliYatirim.reduce<Record<string, number>>((map, v) => {
+      map[v.paraBirimi] = (map[v.paraBirimi] ?? 0) + v.tutar
+      return map
+    }, {})
+    Object.entries(toplamlar).forEach(([currency, tutar]) => keyValueRow(`Toplam Onaylı Yatırım (${currency})`, formatCurrency(tutar, currency)))
+    onayliYatirim.forEach((v) => {
+      bodyLine(
+        `• ${yatirimTuruLabels[v.tur] ?? v.tur} — ${formatCurrency(v.tutar, v.paraBirimi)} (${formatDate(v.tarih)}${v.yatirimciAdi ? `, ${v.yatirimciAdi}` : ""})`,
+      )
+    })
+  }
+  y += 10
+
+  const onayliBasari = girisim.basarilar.filter((b) => b.onayDurumu === "Onaylandi")
+  sectionTitle("Başarılar")
+  if (onayliBasari.length === 0) {
+    bodyLine("Onaylı başarı kaydı bulunmuyor.")
+  } else {
+    onayliBasari.forEach((b) => {
+      bodyLine(`• ${basariTuruLabels[b.tur] ?? b.tur} — ${b.baslik} (${formatDate(b.tarih)})`)
+    })
+  }
+
+  const safeName = girisim.ad.trim().replace(/\s+/g, "-")
+  doc.save(`${safeName}-sirket-cv-${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
 export default function GirisimimPage() {
   const queryClient = useQueryClient()
   const [showGuncellemeForm, setShowGuncellemeForm] = useState(false)
+  const [guncellemePrefill, setGuncellemePrefill] = useState<GuncellemeTalebiDto | undefined>(undefined)
+  const [detailTalep, setDetailTalep] = useState<GuncellemeTalebiDto | null>(null)
   const [itirazTarget, setItirazTarget] = useState<{
     konuTuru: ItirazKonusuTuru
     konuId: string
@@ -742,9 +1066,45 @@ export default function GirisimimPage() {
     enabled: !!girisim?.id,
   })
 
+  const withdrawGuncellemeMutation = useMutation({
+    mutationFn: async (talebiId: string) =>
+      (await api.delete<MessageResponse>(`/girisimler/${girisim!.id}/guncelleme-talebi/${talebiId}`)).data,
+  })
+
+  function handleGeriCek(talep: GuncellemeTalebiDto) {
+    if (!window.confirm("Bu güncelleme talebini geri çekmek istediğinize emin misiniz?")) return
+    withdrawGuncellemeMutation.mutate(talep.id, {
+      onSuccess: (data) => {
+        toast.success(data.message)
+        queryClient.invalidateQueries({ queryKey: ["girisimim-guncelleme-talepleri"] })
+      },
+      onError: (error) => toast.error(extractErrorMessage(error, "Talep geri çekilemedi.")),
+    })
+  }
+
+  function handleDuzenle(talep: GuncellemeTalebiDto) {
+    withdrawGuncellemeMutation.mutate(talep.id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["girisimim-guncelleme-talepleri"] })
+        setGuncellemePrefill(talep)
+        setShowGuncellemeForm(true)
+      },
+      onError: (error) => toast.error(extractErrorMessage(error, "Talep düzenlenemedi.")),
+    })
+  }
+
   const itirazlarQuery = useQuery({
     queryKey: ["girisimim-itirazlar", girisim?.id],
     queryFn: async () => (await api.get<ItirazDto[]>(`/girisimler/${girisim!.id}/itirazlar`)).data,
+    enabled: !!girisim?.id,
+  })
+
+  const [raporBaslangic, setRaporBaslangic] = useState("")
+  const [raporBitis, setRaporBitis] = useState("")
+  const raporParams = { baslangic: raporBaslangic || undefined, bitis: raporBitis || undefined }
+  const raporQuery = useQuery({
+    queryKey: ["girisimim-rapor", raporParams],
+    queryFn: async () => (await api.get<DashboardStatsDto>("/girisimler/benim/rapor", { params: raporParams })).data,
     enabled: !!girisim?.id,
   })
 
@@ -861,14 +1221,22 @@ export default function GirisimimPage() {
           </>
         }
         actions={
-          !showGuncellemeForm ? (
-            <Button
-              variant="outline"
-              onClick={() => setShowGuncellemeForm(true)}
-            >
-              Profil Güncelleme Talebi
+          <>
+            <Button variant="outline" onClick={() => downloadSirketCv(girisim)}>
+              CV'yi İndir (PDF)
             </Button>
-          ) : undefined
+            {!showGuncellemeForm && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setGuncellemePrefill(undefined)
+                  setShowGuncellemeForm(true)
+                }}
+              >
+                Profil Güncelleme Talebi
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -876,7 +1244,11 @@ export default function GirisimimPage() {
         <div className="mb-6">
           <GuncellemeTalebiForm
             girisim={girisim}
-            onClose={() => setShowGuncellemeForm(false)}
+            prefill={guncellemePrefill}
+            onClose={() => {
+              setShowGuncellemeForm(false)
+              setGuncellemePrefill(undefined)
+            }}
             onSubmitted={invalidate}
           />
         </div>
@@ -890,6 +1262,7 @@ export default function GirisimimPage() {
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
           <TabsTrigger value="itirazlarim">İtirazlarım</TabsTrigger>
+          <TabsTrigger value="rapor">Rapor</TabsTrigger>
         </TabsList>
 
         {/* -------------------------------------------------------- Profil */}
@@ -950,6 +1323,15 @@ export default function GirisimimPage() {
 
           <Card className="mt-4">
             <CardHeader>
+              <CardTitle>İletişim / Muhatap</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GirisimContactForm girisimId={girisim.id} contact={girisim.contact} onSaved={invalidate} />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
               <CardTitle>Güncelleme Talebi Geçmişi</CardTitle>
             </CardHeader>
             <CardContent>
@@ -969,6 +1351,32 @@ export default function GirisimimPage() {
                       {t.reviewNotu && (
                         <p className="mt-1.5 text-xs text-red-700">{t.reviewNotu}</p>
                       )}
+                      <div className="mt-2.5 flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setDetailTalep(t)}>
+                          Detay
+                        </Button>
+                        {t.onayDurumu === "Beklemede" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={withdrawGuncellemeMutation.isPending}
+                              onClick={() => handleDuzenle(t)}
+                            >
+                              Düzenle
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:bg-red-50"
+                              disabled={withdrawGuncellemeMutation.isPending}
+                              onClick={() => handleGeriCek(t)}
+                            >
+                              Geri Çek
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1252,6 +1660,7 @@ export default function GirisimimPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Tür</TableHead>
                         <TableHead>Başlık</TableHead>
                         <TableHead>Dosya</TableHead>
                         <TableHead>Boyut</TableHead>
@@ -1263,6 +1672,11 @@ export default function GirisimimPage() {
                     <TableBody>
                       {girisim.dokumanlar.map((d) => (
                         <TableRow key={d.id}>
+                          <TableCell>
+                            <Badge variant="outline" className={d.tur === "Sunum" ? "border-t3-blue/30 text-t3-blue" : ""}>
+                              {d.tur === "Sunum" ? "Tanıtım Sunumu" : "Genel"}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{d.baslik}</TableCell>
                           <TableCell>
                             <a
@@ -1344,6 +1758,133 @@ export default function GirisimimPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="rapor" className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-card px-4 py-3">
+            <div className="w-40 space-y-1.5">
+              <Label
+                htmlFor="girisimim-rapor-baslangic"
+                className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+              >
+                Başlangıç
+              </Label>
+              <Input
+                id="girisimim-rapor-baslangic"
+                type="date"
+                value={raporBaslangic}
+                onChange={(e) => setRaporBaslangic(e.target.value)}
+              />
+            </div>
+            <div className="w-40 space-y-1.5">
+              <Label
+                htmlFor="girisimim-rapor-bitis"
+                className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+              >
+                Bitiş
+              </Label>
+              <Input id="girisimim-rapor-bitis" type="date" value={raporBitis} onChange={(e) => setRaporBitis(e.target.value)} />
+            </div>
+            {(raporBaslangic || raporBitis) && (
+              <button
+                onClick={() => {
+                  setRaporBaslangic("")
+                  setRaporBitis("")
+                }}
+                className="mb-2.5 text-xs font-medium text-t3-blue hover:underline"
+              >
+                Filtreleri temizle
+              </button>
+            )}
+          </div>
+
+          {raporQuery.isLoading ? (
+            <Skeleton className="h-52 rounded-2xl" />
+          ) : raporQuery.data ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Onaylı Ciro</p>
+                    <p className="mt-1 text-2xl font-bold text-t3-navy">
+                      {formatCurrency(raporQuery.data.toplamOnayliCiro, "TRY")}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Onaylı Yatırım</p>
+                    <p className="mt-1 text-2xl font-bold text-t3-navy">
+                      {formatCurrency(raporQuery.data.toplamOnayliYatirim, "TRY")}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Bekleyen Onay</p>
+                    <p className="mt-1 text-2xl font-bold text-t3-navy">{raporQuery.data.bekleyenOnaySayisi}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Ciro / Yatırım Trendi (Son 6 Ay)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {raporQuery.data.aylikTrend.every((a) => a.ciro === 0 && a.yatirim === 0) ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      Seçilen aralıkta onaylanmış kayıt bulunmuyor.
+                    </p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <LineChart data={raporQuery.data.aylikTrend} margin={{ top: 4, right: 12, bottom: 4, left: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis dataKey="ay" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={64} />
+                        <Tooltip formatter={(value, name) => [formatCurrency(Number(value), "TRY"), name]} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Line type="monotone" dataKey="ciro" name="Ciro" stroke="#0078a8" strokeWidth={2.5} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="yatirim" name="Yatırım" stroke="#f7941d" strokeWidth={2.5} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Onay Durumu Özeti</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {(
+                      [
+                        { label: "Satış", kayitlar: girisim.satisKayitlari },
+                        { label: "Yatırım", kayitlar: girisim.yatirimKayitlari },
+                        { label: "Başarı", kayitlar: girisim.basarilar },
+                        { label: "Doküman", kayitlar: girisim.dokumanlar },
+                      ] as { label: string; kayitlar: { onayDurumu: string }[] }[]
+                    ).map(({ label, kayitlar }) => {
+                      const beklemede = kayitlar.filter((k) => k.onayDurumu === "Beklemede").length
+                      const onaylandi = kayitlar.filter((k) => k.onayDurumu === "Onaylandi").length
+                      const reddedildi = kayitlar.filter((k) => k.onayDurumu === "Reddedildi").length
+                      return (
+                        <div key={label} className="rounded-lg border p-3">
+                          <p className="text-sm font-semibold text-t3-navy">{label}</p>
+                          <div className="mt-2 space-y-1 text-xs">
+                            <p className="text-amber-600">Beklemede: {beklemede}</p>
+                            <p className="text-emerald-600">Onaylı: {onaylandi}</p>
+                            <p className="text-red-600">Reddedilen: {reddedildi}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
+        </TabsContent>
       </Tabs>
 
       <Dialog open={itirazTarget !== null} onOpenChange={(open) => !open && setItirazTarget(null)}>
@@ -1382,6 +1923,10 @@ export default function GirisimimPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={detailTalep !== null} onOpenChange={(open) => !open && setDetailTalep(null)}>
+        {detailTalep && <GuncellemeTalebiDetailDialog girisim={girisim} talep={detailTalep} />}
       </Dialog>
     </div>
   )

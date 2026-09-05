@@ -13,11 +13,13 @@ public class ItirazService
 {
     private readonly AppDbContext _db;
     private readonly NotificationService _notifications;
+    private readonly AuditLogService _audit;
 
-    public ItirazService(AppDbContext db, NotificationService notifications)
+    public ItirazService(AppDbContext db, NotificationService notifications, AuditLogService audit)
     {
         _db = db;
         _notifications = notifications;
+        _audit = audit;
     }
 
     private async Task<(bool Found, bool Reddedildi, string Ozet)> GetKonuDurumuAsync(ItirazKonusuTuru tur, Guid girisimId, Guid konuId)
@@ -71,7 +73,7 @@ public class ItirazService
 
     public async Task<bool> KararVerAsync(Guid id, Guid reviewedById, bool onayla, string? not)
     {
-        var itiraz = await _db.Itirazlar.FirstOrDefaultAsync(x => x.Id == id);
+        var itiraz = await _db.Itirazlar.Include(i => i.Girisim).FirstOrDefaultAsync(x => x.Id == id);
         if (itiraz is null) return false;
 
         itiraz.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
@@ -91,6 +93,15 @@ public class ItirazService
                 ? "Kaydınıza yaptığınız itiraz kabul edildi; kayıt tekrar onaylı duruma alındı."
                 : $"Kaydınıza yaptığınız itiraz reddedildi.{(string.IsNullOrWhiteSpace(not) ? "" : $" Gerekçe: {not}")}",
             itiraz.GirisimId);
+
+        var actor = await _db.Users.FindAsync(reviewedById);
+        if (actor is not null)
+        {
+            var hedef = await _db.Users.FindAsync(itiraz.SubmittedById);
+            var detay =
+                $"{itiraz.KonuTuru} itirazı ({itiraz.Girisim?.Ad ?? "Girişim"}) — {(onayla ? "Kabul edildi" : "Reddedildi")}{(string.IsNullOrWhiteSpace(not) ? "" : $". Gerekçe: {not}")}";
+            await _audit.LogAsync(actor, IslemEylemleri.ItirazKararVerildi, hedef, detay);
+        }
 
         return true;
     }

@@ -10,8 +10,4 @@ describe("roleHomePath", () => {
   it("routes StartupKullanicisi to their own girişim page", () => {
     expect(roleHomePath("StartupKullanicisi")).toBe("/girisimim")
   })
-
-  it("routes KararVerici to the report/dashboard page", () => {
-    expect(roleHomePath("KararVerici")).toBe("/rapor")
-  })
 })

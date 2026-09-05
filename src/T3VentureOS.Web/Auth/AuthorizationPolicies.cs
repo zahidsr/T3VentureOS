@@ -10,11 +10,8 @@ namespace T3VentureOS.Web.Auth;
 /// </summary>
 public static class AuthorizationPolicies
 {
-    /// <summary>Girişim/program/onay kayıtlarını yönetir: SuperAdmin, ProgramYoneticisi.</summary>
+    /// <summary>Girişim/program/onay kayıtlarını yönetir; dashboard + girişim listeleme/raporlama: SuperAdmin, ProgramYoneticisi.</summary>
     public const string YoneticiErisimi = nameof(YoneticiErisimi);
-
-    /// <summary>Dashboard + girişim listeleme/raporlama: SuperAdmin, ProgramYoneticisi, KararVerici.</summary>
-    public const string YonetimVeRaporErisimi = nameof(YonetimVeRaporErisimi);
 
     /// <summary>Girişimin kendi self-servis işlemleri (başvuru, güncelleme talebi): yalnızca StartupKullanicisi.</summary>
     public const string StartupErisimi = nameof(StartupErisimi);
@@ -29,9 +26,6 @@ public static class AuthorizationPolicies
     {
         options.AddPolicy(YoneticiErisimi, p => p.RequireRole(
             UserRole.SuperAdmin.ToString(), UserRole.ProgramYoneticisi.ToString()));
-
-        options.AddPolicy(YonetimVeRaporErisimi, p => p.RequireRole(
-            UserRole.SuperAdmin.ToString(), UserRole.ProgramYoneticisi.ToString(), UserRole.KararVerici.ToString()));
 
         options.AddPolicy(StartupErisimi, p => p.RequireRole(UserRole.StartupKullanicisi.ToString()));
 

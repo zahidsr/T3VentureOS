@@ -1,6 +1,6 @@
 // Mirrors the DTOs in T3VentureOS.Web/Dtos/*.cs. Keep in sync with the API.
 
-export type UserRole = "SuperAdmin" | "ProgramYoneticisi" | "StartupKullanicisi" | "KararVerici"
+export type UserRole = "SuperAdmin" | "ProgramYoneticisi" | "StartupKullanicisi"
 
 export interface UserDto {
   id: string
@@ -172,6 +172,7 @@ export interface GirisimSummaryDto {
   teknoloji: string | null
   kurulusYili: number | null
   ekipBuyuklugu: number | null
+  logoUrl: string | null
   toplamOnayliCiro: number
   createdAt: string
 }
@@ -238,12 +239,15 @@ export interface BasariDto {
   createdAt: string
 }
 
+export type DokumanTuru = "Genel" | "Sunum"
+
 export interface DokumanDto {
   id: string
   baslik: string
   dosyaAdi: string
   dosyaUrl: string
   dosyaBoyutu: number
+  tur: DokumanTuru
   onayDurumu: OnayDurumu
   reviewNotu: string | null
   createdAt: string
@@ -280,6 +284,24 @@ export interface GirisimDetailDto {
   yatirimKayitlari: YatirimKaydiDto[]
   basarilar: BasariDto[]
   dokumanlar: DokumanDto[]
+  contact: GirisimContactDto | null
+}
+
+export interface GirisimContactDto {
+  adSoyad: string
+  unvan: string | null
+  telefon: string | null
+  email: string | null
+  linkedInUrl: string | null
+  updatedAt: string
+}
+
+export interface UpsertGirisimContactRequest {
+  adSoyad: string
+  unvan?: string | null
+  telefon?: string | null
+  email?: string | null
+  linkedInUrl?: string | null
 }
 
 export interface AddGelisimAdimiRequest {
@@ -452,4 +474,54 @@ export interface DashboardStatsDto {
   sektorDagilimi: SektorSayisiDto[]
   yatirimTuruDagilimi: YatirimTuruDagilimiDto[]
   aylikTrend: AylikTrendDto[]
+}
+
+export interface DashboardFilters {
+  baslangic?: string
+  bitis?: string
+  sektor?: string
+  programId?: string
+  girisimId?: string
+}
+
+export interface ProgramSecenegiDto {
+  id: string
+  ad: string
+}
+
+export interface GirisimSecenegiDto {
+  id: string
+  ad: string
+}
+
+export interface DashboardFiltreSecenekleriDto {
+  sektorler: string[]
+  programlar: ProgramSecenegiDto[]
+  girisimler: GirisimSecenegiDto[]
+}
+
+// ------------------------------------------------------- Rakip Karşılaştırma
+
+export interface GirisimKarsilastirmaDto {
+  id: string
+  ad: string
+  sektor: string | null
+  kurulusYili: number | null
+  ekipBuyuklugu: number | null
+  logoUrl: string | null
+  toplamOnayliCiro: number
+  toplamOnayliYatirim: number
+  aylikTrend: AylikTrendDto[]
+}
+
+export interface GirisimKarsilastirmaFiltreParams {
+  sektor?: string
+  kurulusYiliMin?: number
+  kurulusYiliMax?: number
+  ekipMin?: number
+  ekipMax?: number
+  ciroMin?: number
+  ciroMax?: number
+  yatirimMin?: number
+  yatirimMax?: number
 }

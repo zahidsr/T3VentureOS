@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom"
-import { AppShell } from "@/components/layout/AppShell"
+import { AppShellPublic } from "@/components/layout/AppShellPublic"
+import { AppShellAuthenticated } from "@/components/layout/AppShellAuthenticated"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 import HomePage from "@/pages/home/Home"
@@ -13,6 +14,7 @@ import AccessDeniedPage from "@/pages/auth/AccessDenied"
 import GirisimlerIndexPage from "@/pages/girisimler/GirisimlerIndex"
 import GirisimCreatePage from "@/pages/girisimler/GirisimCreate"
 import GirisimDetailsPage from "@/pages/girisimler/GirisimDetails"
+import GirisimKarsilastirmaPage from "@/pages/girisimler/GirisimKarsilastirma"
 
 import ProgramlarIndexPage from "@/pages/programlar/ProgramlarIndex"
 import ProgramCreatePage from "@/pages/programlar/ProgramCreate"
@@ -29,7 +31,7 @@ import VerifyEmailPage from "@/pages/account/VerifyEmail"
 export default function App() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
+      <Route element={<AppShellPublic />}>
         {/* Public */}
         <Route path="/" element={<HomePage />} />
 
@@ -39,20 +41,23 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/erisim-reddedildi" element={<AccessDeniedPage />} />
+      </Route>
 
-        {/* Girişimler listesi — SuperAdmin & Program Yöneticisi (Karar Verici read-only) */}
-        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici"]} />}>
+      <Route element={<AppShellAuthenticated />}>
+        {/* Girişimler listesi — SuperAdmin & Program Yöneticisi */}
+        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi"]} />}>
           <Route path="/girisimler" element={<GirisimlerIndexPage />} />
+          <Route path="/girisimler/karsilastirma" element={<GirisimKarsilastirmaPage />} />
         </Route>
 
         {/* Girişim detayı — yöneticiler + kendi girişimini görüntüleyen StartupKullanicisi
             (erişim backend'de GirisimErisim attribute'u ile kendi girişimiyle sınırlanır) */}
-        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici", "StartupKullanicisi"]} />}>
+        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi"]} />}>
           <Route path="/girisimler/:id" element={<GirisimDetailsPage />} />
         </Route>
 
         {/* Programlar — also open to StartupKullanicisi so they can browse + self-apply */}
-        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici", "StartupKullanicisi"]} />}>
+        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi"]} />}>
           <Route path="/programlar" element={<ProgramlarIndexPage />} />
           <Route path="/programlar/:id" element={<ProgramDetailsPage />} />
         </Route>
@@ -74,8 +79,8 @@ export default function App() {
           <Route path="/girisimim" element={<GirisimimPage />} />
         </Route>
 
-        {/* Karar Verici (+ Admin roles can also view the dashboard) */}
-        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi", "KararVerici"]} />}>
+        {/* Rapor — SuperAdmin & Program Yöneticisi */}
+        <Route element={<ProtectedRoute roles={["SuperAdmin", "ProgramYoneticisi"]} />}>
           <Route path="/rapor" element={<RaporPage />} />
         </Route>
 
@@ -84,9 +89,9 @@ export default function App() {
           <Route path="/hesap/parola" element={<ChangePasswordPage />} />
           <Route path="/hesap/dogrula" element={<VerifyEmailPage />} />
         </Route>
-
-        <Route path="*" element={<div className="py-20 text-center text-muted-foreground">Sayfa bulunamadı.</div>} />
       </Route>
+
+      <Route path="*" element={<div className="py-20 text-center text-muted-foreground">Sayfa bulunamadı.</div>} />
     </Routes>
   )
 }

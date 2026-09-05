@@ -14,6 +14,12 @@ public static class IslemEylemleri
     public const string RolDegistirildi = "RolDegistirildi";
     public const string GirisimAtamasiDegistirildi = "GirisimAtamasiDegistirildi";
     public const string TopluDavetTamamlandi = "TopluDavetTamamlandi";
+    public const string SatisKaydiKararVerildi = "SatisKaydiKararVerildi";
+    public const string YatirimKaydiKararVerildi = "YatirimKaydiKararVerildi";
+    public const string BasariKaydiKararVerildi = "BasariKaydiKararVerildi";
+    public const string DokumanKararVerildi = "DokumanKararVerildi";
+    public const string GuncellemeTalebiKararVerildi = "GuncellemeTalebiKararVerildi";
+    public const string ItirazKararVerildi = "ItirazKararVerildi";
 }
 
 /// <summary>SuperAdmin'lerin kullanıcı yönetimi üzerinde yaptığı işlemlerin (audit trail) kaydı.</summary>

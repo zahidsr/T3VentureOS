@@ -16,8 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { api } from "@/lib/api-client"
-import { useAuth } from "@/lib/auth-context"
+import { API_URL, api } from "@/lib/api-client"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import type { GirisimSummaryDto, PagedResultDto, ProgramSummaryDto } from "@/lib/types"
 
@@ -63,20 +62,33 @@ function nameColor(name: string) {
   return tileColors[Math.abs(hash) % tileColors.length]
 }
 
+function logoSrcFor(logoUrl: string | null) {
+  return logoUrl ? `${API_URL.replace(/\/api\/?$/, "")}${logoUrl}` : null
+}
+
 function GirisimCard({ g }: { g: GirisimSummaryDto }) {
   const color = nameColor(g.ad)
+  const logoSrc = logoSrcFor(g.logoUrl)
   return (
     <Link
       to={`/girisimler/${g.id}`}
-      className="group flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-t3-blue/30 hover:shadow-lg"
+      className="group flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition-colors duration-150 hover:border-t3-blue/30"
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
-        <div
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${color}`}
-        >
-          {getInitials(g.ad)}
-        </div>
+        {logoSrc ? (
+          <img
+            src={logoSrc}
+            alt={`${g.ad} logosu`}
+            className="size-11 shrink-0 rounded-xl border object-cover"
+          />
+        ) : (
+          <div
+            className={`flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold ${color}`}
+          >
+            {getInitials(g.ad)}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-t3-blue">
             {g.ad}
@@ -128,7 +140,6 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
 }
 
 export default function GirisimlerIndexPage() {
-  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const [sektor, setSektor] = useState(searchParams.get("sektor") ?? "")
   const [programId, setProgramId] = useState(ALL_PROGRAMS)
@@ -168,11 +179,14 @@ export default function GirisimlerIndexPage() {
         title="Girişimler"
         subtitle="T3 ekosistemindeki girişimlerin profillerini görüntüleyin ve yönetin."
         actions={
-          user?.role !== "KararVerici" ? (
-            <LinkButton to="/girisimler/yeni" className="bg-t3-blue text-white hover:bg-t3-blue-dark shadow-md shadow-t3-blue/20">
+          <>
+            <LinkButton to="/girisimler/karsilastirma" variant="outline">
+              Rakip Karşılaştır
+            </LinkButton>
+            <LinkButton to="/girisimler/yeni" className="bg-t3-blue text-white hover:bg-t3-blue-dark">
               + Yeni Girişim
             </LinkButton>
-          ) : undefined
+          </>
         }
       />
 

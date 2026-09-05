@@ -65,7 +65,7 @@ const EYLEM_LABEL: Record<string, string> = {
   TopluDavetTamamlandi: "Toplu davet tamamlandı",
 }
 
-const ROLE_OPTIONS: UserRole[] = ["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi", "KararVerici"]
+const ROLE_OPTIONS: UserRole[] = ["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi"]
 const ALL_ROLES = "__all__"
 
 function formatLastLogin(value: string | null): string {
@@ -99,7 +99,7 @@ const schema = z
   .object({
     email: z.string().email("Geçerli bir e-posta girin."),
     fullName: z.string().min(1, "Ad soyad zorunludur."),
-    role: z.enum(["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi", "KararVerici"], {
+    role: z.enum(["SuperAdmin", "ProgramYoneticisi", "StartupKullanicisi"], {
       message: "Rol seçin.",
     }),
     girisimId: z.string().optional(),

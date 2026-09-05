@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<YatirimKaydi> YatirimKayitlari => Set<YatirimKaydi>();
     public DbSet<Basari> Basarilar => Set<Basari>();
     public DbSet<Dokuman> Dokumanlar => Set<Dokuman>();
+    public DbSet<GirisimContact> GirisimContactlar => Set<GirisimContact>();
     public DbSet<GirisimGuncellemeTalebi> GirisimGuncellemeTalepleri => Set<GirisimGuncellemeTalebi>();
     public DbSet<VerificationToken> VerificationTokens => Set<VerificationToken>();
     public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
@@ -94,6 +95,13 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.Girisim).WithMany(g => g.Dokumanlar).HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<GirisimContact>(e =>
+        {
+            e.HasKey(x => x.GirisimId);
+            e.Property(x => x.AdSoyad).HasMaxLength(200).IsRequired();
+            e.HasOne(x => x.Girisim).WithOne(g => g.Contact).HasForeignKey<GirisimContact>(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<GirisimGuncellemeTalebi>(e =>

@@ -75,11 +75,11 @@ public class UserServiceTests
         await db.SaveChangesAsync();
 
         var users = MakeService(db);
-        var (success, error, updated) = await users.ChangeRoleAsync(admin2.Id, admin1.Id, UserRole.KararVerici, null);
+        var (success, error, updated) = await users.ChangeRoleAsync(admin2.Id, admin1.Id, UserRole.ProgramYoneticisi, null);
 
         Assert.True(success);
         Assert.Null(error);
-        Assert.Equal(UserRole.KararVerici, updated!.Role);
+        Assert.Equal(UserRole.ProgramYoneticisi, updated!.Role);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class UserServiceTests
     {
         var db = TestDb.Create();
         var actor = MakeUser(UserRole.SuperAdmin);
-        var target = MakeUser(UserRole.KararVerici);
+        var target = MakeUser(UserRole.ProgramYoneticisi);
         db.Users.AddRange(actor, target);
         await db.SaveChangesAsync();
 
@@ -103,7 +103,7 @@ public class UserServiceTests
     {
         var db = TestDb.Create();
         var actor = MakeUser(UserRole.SuperAdmin);
-        var target = MakeUser(UserRole.KararVerici);
+        var target = MakeUser(UserRole.ProgramYoneticisi);
         var girisim = new Girisim { Ad = "Yeni Girişim", CreatedById = actor.Id };
         db.Users.AddRange(actor, target);
         db.Girisimler.Add(girisim);
@@ -167,7 +167,7 @@ public class UserServiceTests
         var users = MakeService(db);
         var rows = new List<BulkInviteRow>
         {
-            new("gecerli@test.local", "Geçerli Kullanıcı", "KararVerici", null),
+            new("gecerli@test.local", "Geçerli Kullanıcı", "ProgramYoneticisi", null),
             new("gecersiz-rol@test.local", "Geçersiz Rol", "OlmayanRol", null),
             new("startup-girisimsiz@test.local", "Girişimsiz Startup", "StartupKullanicisi", null),
         };
@@ -192,7 +192,7 @@ public class UserServiceTests
         await db.SaveChangesAsync();
 
         var users = MakeService(db);
-        var (success, _, invited) = await users.InviteUserAsync(actor.Id, "davetli@test.local", "Davetli Kullanıcı", UserRole.KararVerici, null);
+        var (success, _, invited) = await users.InviteUserAsync(actor.Id, "davetli@test.local", "Davetli Kullanıcı", UserRole.ProgramYoneticisi, null);
 
         Assert.True(success);
         var entry = db.IslemKayitlari.Single();

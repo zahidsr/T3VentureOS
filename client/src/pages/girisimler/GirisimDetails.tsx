@@ -7,6 +7,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { Building2 } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
+import { LinkButton } from "@/components/patterns/LinkButton"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -24,6 +25,7 @@ import { useAuth } from "@/lib/auth-context"
 import type {
   AddGelisimAdimiRequest,
   BasariTuru,
+  DokumanTuru,
   GirisimDetailDto,
   KatilimDurumu,
   UpdateGirisimRequest,
@@ -45,6 +47,11 @@ const basariTuruLabels: Record<BasariTuru, string> = {
   Odul: "Ödül",
   Sertifika: "Sertifika",
   Diger: "Diğer",
+}
+
+const dokumanTuruLabels: Record<DokumanTuru, string> = {
+  Genel: "Genel",
+  Sunum: "Tanıtım Sunumu",
 }
 
 const katilimDurumuLabels: Record<KatilimDurumu, string> = {
@@ -374,10 +381,16 @@ export default function GirisimDetailsPage() {
           </>
         }
         actions={
-          canEdit && !isEditing ? (
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
-              Düzenle
-            </Button>
+          canEdit ? (
+            <>
+              <LinkButton
+                to={`/girisimler/karsilastirma?girisimId=${girisim.id}${girisim.sektor ? `&sektor=${encodeURIComponent(girisim.sektor)}` : ""}`}
+                variant="outline"
+              >
+                Rakip Karşılaştır
+              </LinkButton>
+              {!isEditing && <Button variant="outline" onClick={() => setIsEditing(true)}>Düzenle</Button>}
+            </>
           ) : undefined
         }
       />
@@ -454,6 +467,53 @@ export default function GirisimDetailsPage() {
                     <dd className="mt-0.5 text-sm whitespace-pre-wrap">{girisim.kisaTanim ?? "—"}</dd>
                   </div>
                 </dl>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>İletişim / Muhatap</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {girisim.contact ? (
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Ad Soyad</dt>
+                    <dd className="mt-0.5 text-sm">{girisim.contact.adSoyad}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Unvan</dt>
+                    <dd className="mt-0.5 text-sm">{girisim.contact.unvan ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Telefon</dt>
+                    <dd className="mt-0.5 text-sm">{girisim.contact.telefon ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">E-posta</dt>
+                    <dd className="mt-0.5 text-sm">{girisim.contact.email ?? "—"}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">LinkedIn</dt>
+                    <dd className="mt-0.5 text-sm">
+                      {girisim.contact.linkedInUrl ? (
+                        <a
+                          href={girisim.contact.linkedInUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-t3-blue hover:underline"
+                        >
+                          {girisim.contact.linkedInUrl}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <EmptyState icon="👤" message="Girişimci henüz iletişim/muhatap bilgisi girmedi." />
               )}
             </CardContent>
           </Card>
@@ -651,6 +711,7 @@ export default function GirisimDetailsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Tür</TableHead>
                         <TableHead>Başlık</TableHead>
                         <TableHead>Dosya</TableHead>
                         <TableHead>Durum</TableHead>
@@ -659,6 +720,11 @@ export default function GirisimDetailsPage() {
                     <TableBody>
                       {girisim.dokumanlar.map((d) => (
                         <TableRow key={d.id}>
+                          <TableCell>
+                            <Badge variant="outline" className={d.tur === "Sunum" ? "border-t3-blue/30 text-t3-blue" : ""}>
+                              {dokumanTuruLabels[d.tur] ?? d.tur}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{d.baslik}</TableCell>
                           <TableCell>
                             <a

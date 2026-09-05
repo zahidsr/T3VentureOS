@@ -4,12 +4,22 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { ShieldCheck } from "lucide-react"
 import { AuthShell } from "@/components/patterns/AuthShell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
 import { roleHomePath } from "@/lib/role-home"
+
+/**
+ * T3 KYS (kurumsal kimlik doğrulama) entegrasyon noktası — hangi protokolün (OAuth2/SAML)
+ * kullanılacağı T3 KYS tarafıyla netleşene kadar bu bir placeholder'dır; gerçek SSO redirect
+ * flow'u netleştiğinde burası o akışı tetikleyecek şekilde değiştirilecek.
+ */
+function handleT3KysLogin() {
+  toast.info("T3 KYS ile giriş entegrasyonu yakında aktif olacak.")
+}
 
 const schema = z.object({
   email: z.string().email("Geçerli bir e-posta girin."),
@@ -72,6 +82,23 @@ export default function LoginPage() {
           {isSubmitting ? "Giriş yapılıyor…" : "Giriş Yap"}
         </Button>
       </form>
+
+      <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        veya
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full gap-2"
+        onClick={handleT3KysLogin}
+      >
+        <ShieldCheck className="size-4" />
+        T3 KYS ile Giriş Yap
+      </Button>
+
       <div className="mt-4 flex flex-col items-center gap-2 text-center text-sm">
         <Link to="/forgot-password" className="text-t3-blue hover:underline">
           Parolamı unuttum
