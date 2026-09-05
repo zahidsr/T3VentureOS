@@ -11,6 +11,7 @@ import { LinkButton } from "@/components/patterns/LinkButton"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { GirisimKunyesi } from "@/components/patterns/GirisimKunyesi"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
+import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
@@ -423,6 +424,7 @@ export default function GirisimDetailsPage() {
           <TabsTrigger value="gelisim">Gelişim Yolculuğu</TabsTrigger>
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
+          <TabsTrigger value="analiz">AI Analizi</TabsTrigger>
           <TabsTrigger value="sunum">Sunum</TabsTrigger>
         </TabsList>
 
@@ -769,6 +771,17 @@ export default function GirisimDetailsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Yöneticinin "bu girişim ne durumda" sorusuna AI okuması. */}
+        <TabsContent value="analiz" className="mt-4">
+          <GirisimAnalizPaneli
+            girisimId={girisim.id}
+            tur="durum"
+            baslik="Girişim Durum Analizi"
+            aciklama="Girişimin sistemdeki verisi üzerinden tarafsız bir okuma; büyüme, süreklilik ve veri bütünlüğü."
+            bosDurumMetni="Bu girişim için henüz analiz üretilmedi."
+          />
         </TabsContent>
 
         {/* Yönetici sunumu görüntüler ve indirir; üretmek ve düzenlemek girişimcinin işi. */}

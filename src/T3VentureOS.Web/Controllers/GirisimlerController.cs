@@ -22,11 +22,12 @@ public class GirisimlerController : ControllerBase
     private readonly IAiService _ai;
     private readonly PitchDeckService _pitchDeck;
     private readonly GirisimSaglikService _saglik;
+    private readonly GirisimAnalizService _analiz;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -37,6 +38,7 @@ public class GirisimlerController : ControllerBase
         _ai = ai;
         _pitchDeck = pitchDeck;
         _saglik = saglik;
+        _analiz = analiz;
     }
 
     [HttpGet]
@@ -394,6 +396,46 @@ public class GirisimlerController : ControllerBase
         var list = await _itirazlar.ListForGirisimAsync(id);
         return Ok(list.Select(i => new ItirazDto(
             i.Id, i.KonuTuru.ToString(), i.KonuId, i.Aciklama, i.OnayDurumu.ToString(), i.ReviewNotu, i.CreatedAt)).ToList());
+    }
+
+    /// <summary>
+    /// Girişim bazlı AI analizi. <c>tur</c>: "durum" (tarafsız okuma, yönetici ve girişimci) ya da
+    /// "gelisim" (girişimciye yönelik geliştirme önerileri). Son üretilen analiz döner, yoksa 404.
+    /// </summary>
+    [HttpGet("{id:guid}/ai-analiz/{tur}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> GirisimAnaliz(Guid id, string tur)
+    {
+        if (!TryParseAnalizTuru(tur, out var analizTuru)) return BadRequest(new ErrorResponse("Geçersiz analiz türü."));
+
+        var sonuc = await _analiz.GetSonAnalizAsync(id, analizTuru);
+        if (sonuc is null) return NotFound();
+        return Ok(new GirisimAnalizDto(sonuc.Metin, sonuc.CreatedAt, sonuc.CreatedByAdSoyad, sonuc.Tur.ToString()));
+    }
+
+    [HttpPost("{id:guid}/ai-analiz/{tur}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> GirisimAnalizUret(Guid id, string tur)
+    {
+        if (!TryParseAnalizTuru(tur, out var analizTuru)) return BadRequest(new ErrorResponse("Geçersiz analiz türü."));
+
+        var (ok, sonuc, hata) = await _analiz.UretAsync(id, _currentUser.UserId!.Value, analizTuru);
+        if (!ok) return BadRequest(new ErrorResponse(hata ?? "Analiz üretilemedi."));
+        return Ok(new GirisimAnalizDto(sonuc!.Metin, sonuc.CreatedAt, sonuc.CreatedByAdSoyad, sonuc.Tur.ToString()));
+    }
+
+    /// <summary>Adres çubuğundaki kısa ad ("durum"/"gelisim") ile enum arasındaki eşleme.</summary>
+    private static bool TryParseAnalizTuru(string tur, out AiAnalizTuru analizTuru)
+    {
+        analizTuru = tur.ToLowerInvariant() switch
+        {
+            "durum" => AiAnalizTuru.GirisimDurumu,
+            "gelisim" => AiAnalizTuru.GirisimGelisim,
+            _ => AiAnalizTuru.Ekosistem,
+        };
+        return analizTuru != AiAnalizTuru.Ekosistem;
     }
 
     /// <summary>Girişimin künyesi için durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı.</summary>

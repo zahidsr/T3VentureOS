@@ -9,4 +9,11 @@ public class AiAnalizKaydi
     public Guid CreatedById { get; set; }
     public string CreatedByAdSoyad { get; set; } = string.Empty;
     public string Metin { get; set; } = string.Empty;
+
+    public AiAnalizTuru Tur { get; set; } = AiAnalizTuru.Ekosistem;
+
+    /// <summary>Girişim bazlı analizlerde hangi girişime ait olduğu; ekosistem analizlerinde null.</summary>
+    public Guid? GirisimId { get; set; }
+
+    public Girisim? Girisim { get; set; }
 }

@@ -31,3 +31,9 @@ public enum OnayKonusuTuru { Satis, Yatirim, Basari, Dokuman, Guncelleme, Itiraz
 
 /// <summary>A ProgramYoneticisi's recommendation to the deciding SuperAdmin.</summary>
 public enum OneriTavsiyesi { Onay, Ret, Cekince }
+
+/// <summary>
+/// Hangi soruya cevap veren bir AI analizi. Ekosistem geneli ile tek girişimin analizi aynı tabloda
+/// tutulur; tür alanı hangisinin listeleneceğini ayırır.
+/// </summary>
+public enum AiAnalizTuru { Ekosistem, GirisimDurumu, GirisimGelisim }

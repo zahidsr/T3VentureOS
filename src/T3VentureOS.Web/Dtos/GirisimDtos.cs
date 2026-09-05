@@ -74,3 +74,6 @@ public record PitchDeckBolumGuncelleRequest(string? Icerik);
 /// </summary>
 public record PitchDeckDto(
     List<PitchDeckBolumuDto> Bolumler, DateTime OlusturulmaTarihi, string OlusturanAdSoyad, bool Guncel);
+
+/// <summary>Tek bir girişim için üretilmiş AI analizi.</summary>
+public record GirisimAnalizDto(string Metin, DateTime CreatedAt, string CreatedByAdSoyad, string Tur);

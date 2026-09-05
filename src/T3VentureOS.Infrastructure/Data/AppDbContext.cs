@@ -167,6 +167,8 @@ public class AppDbContext : DbContext
         b.Entity<AiAnalizKaydi>(e =>
         {
             e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => new { x.GirisimId, x.Tur });
+            e.HasOne(x => x.Girisim).WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

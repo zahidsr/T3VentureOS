@@ -9,6 +9,7 @@ import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, Responsi
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
+import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -1860,6 +1861,24 @@ export default function GirisimimPage() {
                   <OkumaKutusu okuma={aylikTrendOkumasi(raporQuery.data.aylikTrend)} />
                 </CardContent>
               </Card>
+
+              {/* Kural tabanlı okumanın üstünde, veriye bakan iki AI sorusu. */}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <GirisimAnalizPaneli
+                  girisimId={girisim.id}
+                  tur="durum"
+                  baslik="Verilerim ne diyor?"
+                  aciklama="Girişimin sistemdeki verisi üzerinden tarafsız bir durum okuması."
+                  bosDurumMetni="Henüz bir analiz üretilmedi. Verilerinin ne anlattığını görmek için analiz et."
+                />
+                <GirisimAnalizPaneli
+                  girisimId={girisim.id}
+                  tur="gelisim"
+                  baslik="Nasıl geliştirebilirim?"
+                  aciklama="Verine dayanan somut geliştirme önerileri."
+                  bosDurumMetni="Henüz bir öneri üretilmedi. Profilini nasıl güçlendirebileceğini görmek için analiz et."
+                />
+              </div>
 
               <Card>
                 <CardHeader>

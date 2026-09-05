@@ -608,3 +608,11 @@ export interface PitchDeckDto {
   /** false ise taslak üretildikten sonra girişim verisi değişmiştir. */
   guncel: boolean
 }
+
+/** Tek bir girişim için üretilmiş AI analizi. */
+export interface GirisimAnalizDto {
+  metin: string
+  createdAt: string
+  createdByAdSoyad: string
+  tur: string
+}

@@ -183,6 +183,8 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 
 Benzersiz index: `(KonuTuru, KonuId, OneriVerenId)` — bir kullanıcının bir kayıtta tek bir güncel önerisi olur.
 
+> `AiAnalizKayitlari` tablosu `Tur` (Ekosistem / GirisimDurumu / GirisimGelisim) ve nullable `GirisimId` alanlarını taşır: ekosistem geneli ile tek girişimin analizleri aynı tabloda tutulur, tür alanı hangisinin listeleneceğini ayırır.
+
 ### Sunum Taslakları (SunumTaslagi)
 > Girişimin verisinden üretilmiş Sequoia pitch deck taslağı. Girişim başına tek güncel kayıt tutulur.
 
