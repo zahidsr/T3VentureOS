@@ -29,6 +29,7 @@ public class Girisim
     public ICollection<SatisKaydi> SatisKayitlari { get; set; } = new List<SatisKaydi>();
     public ICollection<YatirimKaydi> YatirimKayitlari { get; set; } = new List<YatirimKaydi>();
     public ICollection<Basari> Basarilar { get; set; } = new List<Basari>();
+    public ICollection<IstihdamKaydi> IstihdamKayitlari { get; set; } = new List<IstihdamKaydi>();
     public ICollection<Dokuman> Dokumanlar { get; set; } = new List<Dokuman>();
     public GirisimContact? Contact { get; set; }
 }

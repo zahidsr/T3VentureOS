@@ -27,6 +27,62 @@ public static class DbInitializer
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// İstihdam kayıtları sonradan eklendi; mevcut girişimlerin ciro geçmişinden tutarlı bir
+    /// istihdam hikâyesi üretilir. Çalışan sayısı bugünkü ekip büyüklüğüne doğru büyür ve en çok
+    /// artışı cironun en çok sıçradığı dönemde yapar — grafikte ciro ile istihdam birlikte okunsun.
+    /// </summary>
+    public static async Task SeedIstihdamAsync(AppDbContext db)
+    {
+        if (await db.IstihdamKayitlari.AnyAsync()) return;
+
+        var girisimler = await db.Girisimler
+            .Include(g => g.SatisKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
+            .ToListAsync();
+
+        var pmId = await db.Users.Where(u => u.Role == UserRole.ProgramYoneticisi).Select(u => u.Id).FirstOrDefaultAsync();
+        if (pmId == Guid.Empty) return;
+
+        foreach (var girisim in girisimler)
+        {
+            var donemler = girisim.SatisKayitlari.OrderBy(s => s.Donem).ToList();
+            if (donemler.Count == 0) continue;
+
+            var bugunkuEkip = girisim.EkipBuyuklugu ?? 6;
+            // Başlangıç kadrosu: bugünkü ekibin yaklaşık yarısı, en az iki kişi.
+            var baslangic = Math.Max(2, bugunkuEkip / 2);
+            var buyume = bugunkuEkip - baslangic;
+
+            // Ciro artışlarının payına göre işe alım dağıt: en çok büyüyen dönem en çok alım yapar.
+            var artislar = donemler
+                .Select((d, i) => Math.Max(0m, d.Ciro - (i == 0 ? 0 : donemler[i - 1].Ciro)))
+                .ToList();
+            var toplamArtis = artislar.Sum();
+
+            var calisan = baslangic;
+            for (var i = 0; i < donemler.Count; i++)
+            {
+                var pay = toplamArtis > 0 ? (int)Math.Round(buyume * (artislar[i] / toplamArtis)) : 0;
+                var yeniAlim = i == 0 ? 0 : pay;
+                calisan += yeniAlim;
+
+                db.IstihdamKayitlari.Add(new IstihdamKaydi
+                {
+                    GirisimId = girisim.Id,
+                    Donem = donemler[i].Donem,
+                    CalisanSayisi = calisan,
+                    YeniIseAlim = yeniAlim > 0 ? yeniAlim : null,
+                    OnayDurumu = OnayDurumu.Onaylandi,
+                    SubmittedById = pmId,
+                    ReviewedById = pmId,
+                    CreatedAt = donemler[i].CreatedAt,
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     public static async Task SeedAsync(AppDbContext db)
     {
         if (db.Database.IsRelational())

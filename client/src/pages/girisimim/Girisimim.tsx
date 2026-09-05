@@ -6,12 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Building2, Trash2 } from "lucide-react"
-import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
+import { VeriGrafikleri } from "@/components/patterns/VeriGrafikleri"
 import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -375,6 +375,79 @@ function AddSatisForm({ girisimId, onAdded }: { girisimId: string; onAdded: () =
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Satış Kaydı Ekle"}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// ----------------------------------------------- istihdam kaydı formu
+
+const istihdamSchema = z.object({
+  donem: z.string().min(1, "Dönem zorunludur."),
+  calisanSayisi: z.coerce.number().int().min(0, "Çalışan sayısı negatif olamaz."),
+  yeniIseAlim: z.coerce.number().int().min(0).optional().or(z.literal("")),
+})
+type IstihdamFormValues = z.input<typeof istihdamSchema>
+
+function AddIstihdamForm({ girisimId, onAdded }: { girisimId: string; onAdded: () => void }) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<IstihdamFormValues>({ resolver: zodResolver(istihdamSchema) })
+
+  const mutation = useMutation({
+    mutationFn: async (payload: { donem: string; calisanSayisi: number; yeniIseAlim?: number }) =>
+      (await api.post<GirisimDetailDto>(`/girisimler/${girisimId}/istihdam`, payload)).data,
+    onSuccess: () => {
+      toast.success("İstihdam kaydı onaya gönderildi.")
+      reset()
+      onAdded()
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "İstihdam kaydı eklenemedi.")),
+  })
+
+  function onSubmit(values: IstihdamFormValues) {
+    mutation.mutate({
+      donem: values.donem,
+      calisanSayisi: Number(values.calisanSayisi),
+      yeniIseAlim:
+        values.yeniIseAlim !== "" && values.yeniIseAlim !== undefined ? Number(values.yeniIseAlim) : undefined,
+    })
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-3 rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50/40 p-5 dark:bg-sky-950/10"
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Yeni İstihdam Kaydı Ekle</p>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="i-donem">Dönem</Label>
+          <Input id="i-donem" placeholder="örn. 2026-Q1" {...register("donem")} />
+          {errors.donem && <p className="text-xs text-red-600">{errors.donem.message}</p>}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="i-calisan">Dönem sonu çalışan sayısı</Label>
+          <Input id="i-calisan" type="number" min="0" {...register("calisanSayisi")} />
+          {errors.calisanSayisi && <p className="text-xs text-red-600">{errors.calisanSayisi.message}</p>}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="i-alim">Yeni işe alım — opsiyonel</Label>
+          <Input id="i-alim" type="number" min="0" {...register("yeniIseAlim")} />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button
+          type="submit"
+          size="sm"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
+          disabled={isSubmitting || mutation.isPending}
+        >
+          {mutation.isPending ? "Gönderiliyor…" : "İstihdam Kaydı Ekle"}
         </Button>
       </div>
     </form>
@@ -1051,6 +1124,7 @@ const BOLUMLER = [
   "programlar",
   "gelisim",
   "finansal",
+  "istihdam",
   "basari-dokuman",
   "itirazlarim",
   "sunum",
@@ -1399,6 +1473,58 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
+          </div>
+        )}
+
+        {/* --------------------------------------------------- İstihdam */}
+        {bolum === "istihdam" && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>İstihdam Kayıtları</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Her dönem sonundaki çalışan sayını gir. Ciro ve yatırım gibi bu veri de ekosistemin
+                  toplam istihdam etkisine katkı sağlar.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <AddIstihdamForm girisimId={girisim.id} onAdded={invalidate} />
+                {girisim.istihdamKayitlari.length === 0 ? (
+                  <EmptyState icon="👥" message="Henüz istihdam kaydı yok." />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Dönem</TableHead>
+                          <TableHead>Çalışan Sayısı</TableHead>
+                          <TableHead>Yeni İşe Alım</TableHead>
+                          <TableHead>Durum</TableHead>
+                          <TableHead>Not</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...girisim.istihdamKayitlari]
+                          .sort((a, b) => b.donem.localeCompare(a.donem))
+                          .map((i) => (
+                            <TableRow key={i.id}>
+                              <TableCell>{i.donem}</TableCell>
+                              <TableCell>{i.calisanSayisi} kişi</TableCell>
+                              <TableCell>{i.yeniIseAlim ? `+${i.yeniIseAlim}` : "—"}</TableCell>
+                              <TableCell>
+                                <StatusBadge status={i.onayDurumu} />
+                              </TableCell>
+                              <TableCell>
+                                <ReviewNotuCell notu={i.reviewNotu ?? null} />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -1861,31 +1987,12 @@ export default function GirisimimPage() {
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Ciro / Yatırım Trendi (Son 6 Ay)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {raporQuery.data.aylikTrend.every((a) => a.ciro === 0 && a.yatirim === 0) ? (
-                    <p className="py-8 text-center text-sm text-muted-foreground">
-                      Seçilen aralıkta onaylanmış kayıt bulunmuyor.
-                    </p>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={260}>
-                      <LineChart data={raporQuery.data.aylikTrend} margin={{ top: 4, right: 12, bottom: 4, left: 4 }}>
-                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                        <XAxis dataKey="ay" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 11 }} width={64} />
-                        <Tooltip formatter={(value, name) => [formatCurrency(Number(value), "TRY"), name]} />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Line type="monotone" dataKey="ciro" name="Ciro" stroke="#0078a8" strokeWidth={2.5} dot={{ r: 3 }} />
-                        <Line type="monotone" dataKey="yatirim" name="Yatırım" stroke="#f7941d" strokeWidth={2.5} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                  <OkumaKutusu okuma={aylikTrendOkumasi(raporQuery.data.aylikTrend)} />
-                </CardContent>
-              </Card>
+              {/* Birleşik ciro/yatırım grafiği kaldırıldı: aynı veriyi tek eksende ezmek yerine
+                  aşağıda her biri kendi grafiğinde gösteriliyor. Trendin okuması korundu. */}
+              <OkumaKutusu okuma={aylikTrendOkumasi(raporQuery.data.aylikTrend)} className="mt-0" />
+
+              {/* Her sayısal veri kendi grafiğinde: TL ve kişi aynı eksende ezilmesin. */}
+              <VeriGrafikleri girisim={girisim} />
 
               {/* Kural tabanlı okumanın üstünde, veriye bakan iki AI sorusu. */}
               <div className="grid gap-4 lg:grid-cols-2">

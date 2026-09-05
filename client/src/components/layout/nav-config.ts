@@ -36,6 +36,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/girisimim/programlar", label: "Program Geçmişim", icon: Layers, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/gelisim", label: "Gelişim", icon: TrendingUp, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/finansal", label: "Satış & Yatırım", icon: BarChart2, roles: ["StartupKullanicisi"] },
+  { to: "/girisimim/istihdam", label: "İstihdam", icon: Users, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/basari-dokuman", label: "Başarı & Doküman", icon: Award, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/sunum", label: "Sunum", icon: Presentation, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/rapor", label: "Rapor", icon: FileText, roles: ["StartupKullanicisi"] },

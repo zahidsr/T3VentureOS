@@ -19,7 +19,7 @@ const SEVIYELER: { seviye: GirisimSeviyesi; aralik: string }[] = [
 
 const PUAN_BILESENLERI = [
   { baslik: "Profil bilgileri", puan: "50 puan", detay: "Kısa tanım, iletişim muhatabı, logo ve sunum taslağı." },
-  { baslik: "Girilen kayıtlar", puan: "50 puan", detay: "Onaylı satış, yatırım, başarı kayıtları ve gelişim adımları." },
+  { baslik: "Girilen kayıtlar", puan: "58 puan", detay: "Onaylı satış, yatırım, istihdam, başarı kayıtları ve gelişim adımları." },
 ]
 
 /** Rozetin ne anlama geldiği role göre farklı bir soruya cevap verir. */
@@ -86,8 +86,9 @@ export function SeviyeAciklamasi({ rol }: { rol: UserRole | undefined }) {
             </div>
 
             <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-              Puan yalnızca artar; girilen veri geri alınmadığı için kazanılan puan da düşmez. Uzun süre
-              veri girilmezse puan değil, ayrı bir "güncellenmedi" işareti gösterilir.
+              Toplam en fazla 100'dür; bileşenlerin toplamı 100'ü aştığı için 100'e giden birden fazla
+              yol vardır. Puan yalnızca artar; girilen veri geri alınmadığı için kazanılan puan da
+              düşmez. Uzun süre veri girilmezse puan değil, ayrı bir "güncellenmedi" işareti gösterilir.
             </p>
           </div>
         </DialogContent>

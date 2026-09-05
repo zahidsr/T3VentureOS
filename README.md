@@ -87,7 +87,7 @@ Tüm şifreler: `Passw0rd!`
 - Girişim kartları ve detaylı profil yönetimi
 - Girişim künyesi: yöneticiler girişim detayının üstünde durumu, iletişim muhatabını (tıklanabilir telefon/e-posta) ve sunumu tek bakışta görür
 - Hızlandırma programları ve programa katılım süreçleri
-- Onay akışlı satış, yatırım, başarı ve doküman kayıtları (karar SuperAdmin'de; ProgramYoneticisi onay/ret/çekince önerisi bırakır)
+- Onay akışlı satış, yatırım, istihdam, başarı ve doküman kayıtları (karar SuperAdmin'de; ProgramYoneticisi onay/ret/çekince önerisi bırakır)
 - İtiraz (appeal) akışı: reddedilen kayıtlara itiraz, itiraz onaylanırsa kayıt tekrar onaylı duruma döner
 - Uygulama içi bildirimler: onay/itiraz kararları ve program güncellemeleri
 - KVKK/GDPR self-servis: veri dışa aktarma ve hesap silme talebi (anonimleştirme)
@@ -95,6 +95,7 @@ Tüm şifreler: `Passw0rd!`
 - Girişim puanı (0-100) ve seviye rozeti (Bronz/Gümüş/Altın/Platin): profil tamlığı ve girilen kayıt derinliğinden hesaplanır, yalnızca artar; güncellik ayrı bir işaret olarak taşınır
 - Puanın karşılığı görünürlük: yönetici panelinde "Öne Çıkan Girişimler" vitrini ve puana/güncelliğe göre sıralanabilir girişim listesi
 - Girişimciye "puanını yükseltmek için" somut adımlar, en çok puan getirenden başlayarak
+- Girişimin her sayısal verisi (ciro, ihracat, yatırım, istihdam) kendi grafiğinde: farklı birimler tek eksende ezilmesin ve eksik kalan veri boş grafiğinden görülsün
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
 - Her grafiğin altında kural tabanlı otomatik okuma (trendin yönü, yoğunlaşma riski, veri girişindeki boşluklar); aynı okumalar indirilen PDF raporuna da yazılır
 - AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)

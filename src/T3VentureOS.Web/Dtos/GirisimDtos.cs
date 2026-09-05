@@ -17,6 +17,8 @@ public record GelisimAdimiDto(Guid Id, DateTime Tarih, string Baslik, string? Ac
 public record SatisKaydiDto(Guid Id, string Donem, decimal Ciro, decimal? Ihracat, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record YatirimKaydiDto(Guid Id, string Tur, decimal Tutar, string ParaBirimi, DateTime Tarih, string? YatirimciAdi, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record BasariDto(Guid Id, string Tur, string Baslik, string? Aciklama, DateTime Tarih, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record IstihdamKaydiDto(Guid Id, string Donem, int CalisanSayisi, int? YeniIseAlim, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
+public record AddIstihdamKaydiRequest(string Donem, int CalisanSayisi, int? YeniIseAlim);
 public record DokumanDto(Guid Id, string Baslik, string DosyaAdi, string DosyaUrl, long DosyaBoyutu, string Tur, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record GuncellemeTalebiDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
@@ -40,6 +42,7 @@ public record GirisimDetailDto(
     List<SatisKaydiDto> SatisKayitlari,
     List<YatirimKaydiDto> YatirimKayitlari,
     List<BasariDto> Basarilar,
+    List<IstihdamKaydiDto> IstihdamKayitlari,
     List<DokumanDto> Dokumanlar,
     GirisimContactDto? Contact);
 
@@ -64,6 +67,7 @@ public static class GirisimDtoExtensions
         g.SatisKayitlari.Select(s => new SatisKaydiDto(s.Id, s.Donem, s.Ciro, s.Ihracat, s.OnayDurumu.ToString(), s.ReviewNotu, s.CreatedAt)).ToList(),
         g.YatirimKayitlari.Select(y => new YatirimKaydiDto(y.Id, y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, y.YatirimciAdi, y.OnayDurumu.ToString(), y.ReviewNotu, y.CreatedAt)).ToList(),
         g.Basarilar.Select(b => new BasariDto(b.Id, b.Tur.ToString(), b.Baslik, b.Aciklama, b.Tarih, b.OnayDurumu.ToString(), b.ReviewNotu, b.CreatedAt)).ToList(),
+        g.IstihdamKayitlari.Select(i => new IstihdamKaydiDto(i.Id, i.Donem, i.CalisanSayisi, i.YeniIseAlim, i.OnayDurumu.ToString(), i.ReviewNotu, i.CreatedAt)).ToList(),
         g.Dokumanlar.Select(d => new DokumanDto(d.Id, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.DosyaBoyutu, d.Tur.ToString(), d.OnayDurumu.ToString(), d.ReviewNotu, d.CreatedAt)).ToList(),
         g.Contact is null ? null : new GirisimContactDto(g.Contact.AdSoyad, g.Contact.Unvan, g.Contact.Telefon, g.Contact.Email, g.Contact.LinkedInUrl, g.Contact.UpdatedAt));
 }

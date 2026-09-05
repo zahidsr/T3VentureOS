@@ -7,8 +7,8 @@ public class GirisimPuanTests
 {
     private static (int Puan, List<SonrakiAdim> Adimlar) Puan(
         bool logo = false, bool tanim = false, bool iletisim = false, bool sunum = false,
-        int satis = 0, int yatirim = 0, int basari = 0, int gelisim = 0) =>
-        GirisimSaglikService.PuanHesapla(logo, tanim, iletisim, sunum, satis, yatirim, basari, gelisim);
+        int satis = 0, int yatirim = 0, int basari = 0, int gelisim = 0, int istihdam = 0) =>
+        GirisimSaglikService.PuanHesapla(logo, tanim, iletisim, sunum, satis, yatirim, basari, gelisim, istihdam);
 
     [Fact]
     public void Bos_profil_sifir_puan_alir()
@@ -20,13 +20,25 @@ public class GirisimPuanTests
     }
 
     [Fact]
-    public void Tam_doldurulmus_profil_100_puana_ulasir()
+    public void Her_bilesen_doldurulunca_puan_100_olur_ve_adim_kalmaz()
     {
+        var (puan, adimlar) = Puan(logo: true, tanim: true, iletisim: true, sunum: true,
+            satis: 4, yatirim: 2, basari: 2, gelisim: 5, istihdam: 2);
+
+        Assert.Equal(100, puan);
+        Assert.Empty(adimlar);
+    }
+
+    [Fact]
+    public void Istihdam_olmadan_da_100_puana_ulasilabilir()
+    {
+        // İstihdam bileşeni mevcut ağırlıkların üstüne eklendiği için toplam ham puan 100'ü aşar;
+        // bu yüzden 100'e giden birden fazla yol vardır.
         var (puan, adimlar) = Puan(logo: true, tanim: true, iletisim: true, sunum: true,
             satis: 4, yatirim: 2, basari: 2, gelisim: 5);
 
         Assert.Equal(100, puan);
-        Assert.Empty(adimlar);
+        Assert.Contains(adimlar, a => a.Aciklama.Contains("Çalışan sayını"));
     }
 
     [Fact]
@@ -79,6 +91,25 @@ public class GirisimPuanTests
     public void Seviye_esikleri(int puan, GirisimSeviyesi beklenen)
     {
         Assert.Equal(beklenen, GirisimSaglikService.SeviyeBelirle(puan));
+    }
+
+    [Fact]
+    public void Istihdam_kaydi_puan_kazandirir()
+    {
+        var (istihdamsiz, _) = Puan(tanim: true);
+        var (istihdamli, _) = Puan(tanim: true, istihdam: 2);
+
+        Assert.Equal(istihdamsiz + 8, istihdamli);
+    }
+
+    [Fact]
+    public void Istihdam_bileseni_mevcut_puanlari_dusurmez()
+    {
+        // İstihdam sonradan eklendi. Mevcut ağırlıklardan yer açılsaydı veri girmiş girişimlerin
+        // puanı geriye dönük düşerdi; bileşen üstüne eklendiği için eski kombinasyonlar aynı kalır.
+        var (once, _) = Puan(logo: true, tanim: true, iletisim: true, sunum: true, satis: 4, yatirim: 2, basari: 2, gelisim: 5);
+
+        Assert.Equal(100, once);
     }
 
     [Fact]

@@ -39,7 +39,8 @@ export function PuanKarti({ girisimId }: { girisimId: string }) {
   if (!durum) return null
 
   const sonraki = SEVIYE_ESIKLERI.find((s) => durum.puan < s.esik)
-  const adimlar = durum.sonrakiAdimlar.slice(0, 3)
+  // Puan tavana ulaştıysa "yükseltmek için" başlığı anlamsız kalır.
+  const adimlar = durum.puan >= 100 ? [] : durum.sonrakiAdimlar.slice(0, 3)
 
   return (
     <Card>

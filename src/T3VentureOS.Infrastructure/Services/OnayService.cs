@@ -48,6 +48,9 @@ public class OnayService
     public Task<List<Domain.Entities.YatirimKaydi>> ListPendingYatirimAsync() =>
         _db.YatirimKayitlari.Include(y => y.Girisim).Where(y => y.OnayDurumu == OnayDurumu.Beklemede).OrderBy(y => y.CreatedAt).ToListAsync();
 
+    public Task<List<Domain.Entities.IstihdamKaydi>> ListPendingIstihdamAsync() =>
+        _db.IstihdamKayitlari.Include(i => i.Girisim).Where(i => i.OnayDurumu == OnayDurumu.Beklemede).OrderBy(i => i.CreatedAt).ToListAsync();
+
     public Task<List<Domain.Entities.Basari>> ListPendingBasariAsync() =>
         _db.Basarilar.Include(b => b.Girisim).Where(b => b.OnayDurumu == OnayDurumu.Beklemede).OrderBy(b => b.CreatedAt).ToListAsync();
 
@@ -69,6 +72,22 @@ public class OnayService
         var kayitAdi = $"\"{kayit.Donem}\" dönemi satış kaydı";
         await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
         await LogKararAsync(IslemEylemleri.SatisKaydiKararVerildi, reviewedById, kayit.SubmittedById,
+            $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
+        return true;
+    }
+
+    public async Task<bool> KararVerIstihdamAsync(Guid id, Guid reviewedById, bool onayla, string? not)
+    {
+        var kayit = await _db.IstihdamKayitlari.Include(i => i.Girisim).FirstOrDefaultAsync(x => x.Id == id);
+        if (kayit is null) return false;
+        kayit.OnayDurumu = onayla ? OnayDurumu.Onaylandi : OnayDurumu.Reddedildi;
+        kayit.ReviewedById = reviewedById;
+        kayit.ReviewNotu = not;
+        kayit.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        var kayitAdi = $"\"{kayit.Donem}\" dönemi istihdam kaydı";
+        await NotifyKararAsync(kayit.SubmittedById, kayit.GirisimId, kayitAdi, onayla, not);
+        await LogKararAsync(IslemEylemleri.IstihdamKaydiKararVerildi, reviewedById, kayit.SubmittedById,
             $"{kayitAdi} ({kayit.Girisim?.Ad ?? "Girişim"})", onayla, not);
         return true;
     }

@@ -40,6 +40,8 @@
 | DELETE | `/girisimler/{id}/satis/{satisId}` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | satış kaydını siler |
 | POST | `/girisimler/{id}/yatirim` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | yatırım kaydı gönderir (onay bekler) |
 | DELETE | `/girisimler/{id}/yatirim/{yatirimId}` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | yatırım kaydını siler |
+| POST | `/girisimler/{id}/istihdam` | auth (kendi girişimi) | dönem sonu çalışan sayısı kaydı ekler (onaya düşer) |
+| DELETE | `/girisimler/{id}/istihdam/{istihdamId}` | auth (kendi girişimi) | bekleyen istihdam kaydını siler |
 | POST | `/girisimler/{id}/basari` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | başarı kaydı gönderir (onay bekler) |
 | DELETE | `/girisimler/{id}/basari/{basariId}` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | başarı kaydını siler |
 | POST | `/girisimler/{id}/logo` | StartupKullanicisi, SuperAdmin, ProgramYoneticisi | logo yükler (multipart, ≤5 MB) |
@@ -67,6 +69,7 @@
 | POST | `/onaylar/oneri` | SuperAdmin, ProgramYoneticisi | bekleyen bir kayda bağlayıcı olmayan öneri bırakır (`Onay`/`Ret`/`Cekince`; Ret ve Çekince için gerekçe zorunlu). Aynı kullanıcının o kayıttaki önceki önerisini günceller |
 | POST | `/onaylar/satis/{id}` | SuperAdmin | satış kaydı için onay/ret kararı (ret → not zorunlu) |
 | POST | `/onaylar/yatirim/{id}` | SuperAdmin | yatırım kaydı için onay/ret kararı |
+| POST | `/onaylar/istihdam/{id}` | SuperAdmin | istihdam kaydı için onay/ret kararı |
 | POST | `/onaylar/basari/{id}` | SuperAdmin | başarı kaydı için onay/ret kararı |
 | POST | `/onaylar/dokuman/{id}` | SuperAdmin | doküman için onay/ret kararı |
 | POST | `/onaylar/guncelleme/{id}` | SuperAdmin | profil güncelleme talebi için onay/ret kararı (onaylanırsa alanlar `Girisim`'e uygulanır) |

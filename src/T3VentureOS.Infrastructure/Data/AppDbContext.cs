@@ -53,6 +53,7 @@ public class AppDbContext : DbContext
                 SatisKaydi x => x.GirisimId,
                 YatirimKaydi x => x.GirisimId,
                 Basari x => x.GirisimId,
+                IstihdamKaydi x => x.GirisimId,
                 Dokuman x => x.GirisimId,
                 GelisimAdimi x => x.GirisimId,
                 GirisimContact x => x.GirisimId,
@@ -80,6 +81,7 @@ public class AppDbContext : DbContext
                 Yatirim = g.YatirimKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
                 Basari = g.Basarilar.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
                 Gelisim = g.GelisimAdimlari.Count(),
+                Istihdam = g.IstihdamKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
             })
             .ToListAsync(cancellationToken);
 
@@ -87,7 +89,7 @@ public class AppDbContext : DbContext
         foreach (var v in veriler)
         {
             var (puan, _) = GirisimSaglikService.PuanHesapla(
-                v.LogoVar, v.TanimVar, v.IletisimVar, v.SunumVar, v.Satis, v.Yatirim, v.Basari, v.Gelisim);
+                v.LogoVar, v.TanimVar, v.IletisimVar, v.SunumVar, v.Satis, v.Yatirim, v.Basari, v.Gelisim, v.Istihdam);
             if (v.Girisim.Puan == puan) continue;
             v.Girisim.Puan = puan;
             degisti = true;
@@ -104,6 +106,7 @@ public class AppDbContext : DbContext
     public DbSet<SatisKaydi> SatisKayitlari => Set<SatisKaydi>();
     public DbSet<YatirimKaydi> YatirimKayitlari => Set<YatirimKaydi>();
     public DbSet<Basari> Basarilar => Set<Basari>();
+    public DbSet<IstihdamKaydi> IstihdamKayitlari => Set<IstihdamKaydi>();
     public DbSet<Dokuman> Dokumanlar => Set<Dokuman>();
     public DbSet<GirisimContact> GirisimContactlar => Set<GirisimContact>();
     public DbSet<GirisimGuncellemeTalebi> GirisimGuncellemeTalepleri => Set<GirisimGuncellemeTalebi>();
@@ -175,6 +178,15 @@ public class AppDbContext : DbContext
         b.Entity<Basari>(e =>
         {
             e.HasOne(x => x.Girisim).WithMany(g => g.Basarilar).HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<IstihdamKaydi>(e =>
+        {
+            e.HasIndex(x => new { x.GirisimId, x.Donem });
+            e.Property(x => x.Donem).HasMaxLength(20).IsRequired();
+            e.HasOne(x => x.Girisim).WithMany(g => g.IstihdamKayitlari).HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
         });

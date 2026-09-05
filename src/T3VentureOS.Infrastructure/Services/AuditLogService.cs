@@ -17,6 +17,7 @@ public static class IslemEylemleri
     public const string SatisKaydiKararVerildi = "SatisKaydiKararVerildi";
     public const string YatirimKaydiKararVerildi = "YatirimKaydiKararVerildi";
     public const string BasariKaydiKararVerildi = "BasariKaydiKararVerildi";
+    public const string IstihdamKaydiKararVerildi = "IstihdamKaydiKararVerildi";
     public const string DokumanKararVerildi = "DokumanKararVerildi";
     public const string GuncellemeTalebiKararVerildi = "GuncellemeTalebiKararVerildi";
     public const string ItirazKararVerildi = "ItirazKararVerildi";

@@ -170,6 +170,19 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 
 > `Girisimler.Puan` (int, 0-100) türetilmiş bir değerdir ama sıralanabilmesi için tabloda tutulur. Hesap tek yerdedir (`GirisimSaglikService.PuanHesapla`); puanı etkileyen bir kayıt değiştiğinde `AppDbContext.SaveChangesAsync` ilgili girişimlerin puanını kendiliğinden tazeler, böylece uç noktalara tek tek "puanı güncelle" çağrısı serpiştirmek gerekmez.
 
+### İstihdam Kayıtları (IstihdamKaydi)
+> Girişimin bir dönem sonundaki çalışan sayısı; ciro ve yatırım gibi onay akışından geçer. Profildeki `EkipBuyuklugu` tek bir anlık sayıdır ve geçmiş tutmaz — istihdamın zaman içindeki seyri ve ekosistem toplamı için döneme bağlı kayıt gerekir.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade`, (GirisimId, Donem) index |
+| Donem | nvarchar(20) | satış kayıtlarıyla aynı biçim: "2026-Q1" |
+| CalisanSayisi | int | dönem sonundaki toplam çalışan |
+| YeniIseAlim | int? | dönem içinde yapılan yeni işe alım |
+| OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni |
+| CreatedAt, UpdatedAt | datetime2 | |
+
 ### Onay Önerileri (OnayOnerisi)
 > ProgramYoneticisi'nin bekleyen bir kayda bıraktığı bağlayıcı olmayan tavsiye; kararı SuperAdmin verir. `Itiraz` ile aynı polimorfik (KonuTuru, KonuId) desenini kullanır.
 

@@ -90,6 +90,7 @@ public class GirisimSaglikService
                 YatirimSayisi = g.YatirimKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
                 BasariSayisi = g.Basarilar.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
                 GelisimSayisi = g.GelisimAdimlari.Count(),
+                IstihdamSayisi = g.IstihdamKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
                 // "Son veri girişi" girişimcinin sisteme en son ne zaman dokunduğudur; profil
                 // düzenlemesi de bir veri girişidir, bu yüzden UpdatedAt de hesaba katılır.
                 SonSatis = g.SatisKayitlari.Max(x => (DateTime?)x.CreatedAt),
@@ -128,7 +129,8 @@ public class GirisimSaglikService
                 var (puan, sonrakiAdimlar) = PuanHesapla(
                     logoVar: adimlar[0], kisaTanimVar: adimlar[1], iletisimVar: adimlar[2], sunumVar: adimlar[3],
                     satisSayisi: g.SatisSayisi, yatirimSayisi: g.YatirimSayisi,
-                    basariSayisi: g.BasariSayisi, gelisimSayisi: g.GelisimSayisi);
+                    basariSayisi: g.BasariSayisi, gelisimSayisi: g.GelisimSayisi,
+                    istihdamSayisi: g.IstihdamSayisi);
 
                 return new GirisimSaglik(
                     g.Id, g.Ad, g.Sektor, g.LogoUrl,
@@ -161,7 +163,7 @@ public class GirisimSaglikService
     /// </summary>
     public static (int Puan, List<SonrakiAdim> SonrakiAdimlar) PuanHesapla(
         bool logoVar, bool kisaTanimVar, bool iletisimVar, bool sunumVar,
-        int satisSayisi, int yatirimSayisi, int basariSayisi, int gelisimSayisi)
+        int satisSayisi, int yatirimSayisi, int basariSayisi, int gelisimSayisi, int istihdamSayisi = 0)
     {
         // Profil 50 + kayıt derinliği 50 = 100. Bileşenler tam olarak toplanmalı: aksi hâlde
         // arayüzdeki "/100" ulaşılamaz bir hedef gösterir.
@@ -201,6 +203,11 @@ public class GirisimSaglikService
         puan += Derinlik(yatirimSayisi, 6, 2, "Aldığın yatırımı kaydet");     // 12
         puan += Derinlik(gelisimSayisi, 2, 5, "Gelişim adımı ekle");          // 10
         puan += Derinlik(basariSayisi, 4, 2, "Ödül, hibe ya da sertifikanı ekle"); // 8
+
+        // İstihdam sonradan eklendi. Mevcut ağırlıkları düşürüp yer açmak, veri girmiş
+        // girişimlerin puanını geriye dönük düşürürdü; puanın düşmemesi ürün kuralı olduğu için
+        // bu bileşen mevcutların üstüne eklenir ve toplam yine 100'de kesilir.
+        puan += Derinlik(istihdamSayisi, 4, 2, "Çalışan sayını dönem bazında kaydet"); // 8
 
         // En çok puan getiren adım başa gelsin: girişimci en verimli hamleyi görsün.
         return (Math.Min(puan, 100), adimlar.OrderByDescending(a => a.Puan).ToList());

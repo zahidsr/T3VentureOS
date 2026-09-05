@@ -278,6 +278,17 @@ export interface GuncellemeTalebiDto {
   createdAt: string
 }
 
+export interface IstihdamKaydiDto {
+  id: string
+  donem: string
+  calisanSayisi: number
+  /** Dönem içinde yapılan yeni işe alım; girilmemişse alan gelmeyebilir. */
+  yeniIseAlim?: number | null
+  onayDurumu: OnayDurumu
+  reviewNotu?: string | null
+  createdAt: string
+}
+
 export interface GirisimDetailDto {
   id: string
   ad: string
@@ -294,6 +305,7 @@ export interface GirisimDetailDto {
   satisKayitlari: SatisKaydiDto[]
   yatirimKayitlari: YatirimKaydiDto[]
   basarilar: BasariDto[]
+  istihdamKayitlari: IstihdamKaydiDto[]
   dokumanlar: DokumanDto[]
   contact: GirisimContactDto | null
 }
@@ -418,7 +430,7 @@ export interface OnayBekleyenItirazDto {
 }
 
 /** Onay kuyruğundaki her kayıt türü — öneriler bunların hepsine bırakılabilir. */
-export type OnayKonusuTuru = "Satis" | "Yatirim" | "Basari" | "Dokuman" | "Guncelleme" | "Itiraz"
+export type OnayKonusuTuru = "Satis" | "Yatirim" | "Basari" | "Dokuman" | "Guncelleme" | "Itiraz" | "Istihdam"
 
 /** ProgramYoneticisi'nin bağlayıcı olmayan tavsiyesi; kararı SuperAdmin verir. */
 export type OneriTavsiyesi = "Onay" | "Ret" | "Cekince"
@@ -441,9 +453,20 @@ export interface OnayOnerisiRequest {
   not?: string
 }
 
+export interface OnayBekleyenIstihdamDto {
+  id: string
+  girisimId: string
+  girisimAdi: string
+  donem: string
+  calisanSayisi: number
+  yeniIseAlim?: number | null
+  createdAt: string
+}
+
 export interface OnayKuyruguDto {
   satislar: OnayBekleyenSatisDto[]
   yatirimlar: OnayBekleyenYatirimDto[]
+  istihdamlar: OnayBekleyenIstihdamDto[]
   basarilar: OnayBekleyenBasariDto[]
   dokumanlar: OnayBekleyenDokumanDto[]
   guncellemeler: OnayBekleyenGuncellemeDto[]

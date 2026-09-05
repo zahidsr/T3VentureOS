@@ -31,6 +31,7 @@ public class OnayController : ControllerBase
     {
         var satislar = await _onay.ListPendingSatisAsync();
         var yatirimlar = await _onay.ListPendingYatirimAsync();
+        var istihdamlar = await _onay.ListPendingIstihdamAsync();
         var basarilar = await _onay.ListPendingBasariAsync();
         var dokumanlar = await _onay.ListPendingDokumanAsync();
         var guncellemeler = await _onay.ListPendingGuncellemeAsync();
@@ -38,6 +39,7 @@ public class OnayController : ControllerBase
 
         var konular = satislar.Select(x => (OnayKonusuTuru.Satis, x.Id))
             .Concat(yatirimlar.Select(x => (OnayKonusuTuru.Yatirim, x.Id)))
+            .Concat(istihdamlar.Select(x => (OnayKonusuTuru.Istihdam, x.Id)))
             .Concat(basarilar.Select(x => (OnayKonusuTuru.Basari, x.Id)))
             .Concat(dokumanlar.Select(x => (OnayKonusuTuru.Dokuman, x.Id)))
             .Concat(guncellemeler.Select(x => (OnayKonusuTuru.Guncelleme, x.Id)))
@@ -47,6 +49,7 @@ public class OnayController : ControllerBase
         var dto = new OnayKuyruguDto(
             satislar.Select(s => new OnayBekleyenSatisDto(s.Id, s.GirisimId, s.Girisim?.Ad ?? string.Empty, s.Donem, s.Ciro, s.Ihracat, s.CreatedAt)).ToList(),
             yatirimlar.Select(y => new OnayBekleyenYatirimDto(y.Id, y.GirisimId, y.Girisim?.Ad ?? string.Empty, y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, y.YatirimciAdi, y.CreatedAt)).ToList(),
+            istihdamlar.Select(i => new OnayBekleyenIstihdamDto(i.Id, i.GirisimId, i.Girisim?.Ad ?? string.Empty, i.Donem, i.CalisanSayisi, i.YeniIseAlim, i.CreatedAt)).ToList(),
             basarilar.Select(b => new OnayBekleyenBasariDto(b.Id, b.GirisimId, b.Girisim?.Ad ?? string.Empty, b.Tur.ToString(), b.Baslik, b.Tarih, b.CreatedAt)).ToList(),
             dokumanlar.Select(d => new OnayBekleyenDokumanDto(d.Id, d.GirisimId, d.Girisim?.Ad ?? string.Empty, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.CreatedAt)).ToList(),
             guncellemeler.Select(t => new OnayBekleyenGuncellemeDto(t.Id, t.GirisimId, t.Girisim?.Ad ?? string.Empty, t.Ad, t.Sektor, t.CreatedAt)).ToList(),
@@ -109,6 +112,17 @@ public class OnayController : ControllerBase
         if (!ok) return NotFound();
         await _oneriler.ClearAsync(OnayKonusuTuru.Yatirim, id);
         return Ok(new MessageResponse(request.Onayla ? "Yatırım kaydı onaylandı." : "Yatırım kaydı reddedildi."));
+    }
+
+    [HttpPost("istihdam/{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OnayKararErisimi)]
+    public async Task<IActionResult> KararVerIstihdam(Guid id, OnayKararRequest request)
+    {
+        if (ValidateKarar(request) is { } invalid) return invalid;
+        var ok = await _onay.KararVerIstihdamAsync(id, _currentUser.UserId!.Value, request.Onayla, request.Not);
+        if (!ok) return NotFound();
+        await _oneriler.ClearAsync(OnayKonusuTuru.Istihdam, id);
+        return Ok(new MessageResponse(request.Onayla ? "İstihdam kaydı onaylandı." : "İstihdam kaydı reddedildi."));
     }
 
     [HttpPost("basari/{id:guid}")]

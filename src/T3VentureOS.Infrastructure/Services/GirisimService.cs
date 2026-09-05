@@ -63,6 +63,7 @@ public class GirisimService
             .Include(g => g.SatisKayitlari.OrderByDescending(s => s.CreatedAt))
             .Include(g => g.YatirimKayitlari.OrderByDescending(y => y.CreatedAt))
             .Include(g => g.Basarilar.OrderByDescending(b => b.CreatedAt))
+            .Include(g => g.IstihdamKayitlari.OrderByDescending(i => i.Donem))
             .Include(g => g.Dokumanlar.OrderByDescending(d => d.CreatedAt))
             .Include(g => g.Contact)
             .FirstOrDefaultAsync(g => g.Id == id);
@@ -92,6 +93,13 @@ public class GirisimService
     public async Task<SatisKaydi> AddSatisKaydiAsync(SatisKaydi kayit)
     {
         _db.SatisKayitlari.Add(kayit);
+        await _db.SaveChangesAsync();
+        return kayit;
+    }
+
+    public async Task<IstihdamKaydi> AddIstihdamKaydiAsync(IstihdamKaydi kayit)
+    {
+        _db.IstihdamKayitlari.Add(kayit);
         await _db.SaveChangesAsync();
         return kayit;
     }
@@ -264,6 +272,16 @@ public class GirisimService
         if (kayit is null) return (false, "Kayıt bulunamadı.");
         if (kayit.OnayDurumu != OnayDurumu.Beklemede) return (false, "Sadece bekleyen kayıtlar silinebilir.");
         _db.SatisKayitlari.Remove(kayit);
+        await _db.SaveChangesAsync();
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteIstihdamKaydiAsync(Guid girisimId, Guid id)
+    {
+        var kayit = await _db.IstihdamKayitlari.FirstOrDefaultAsync(x => x.Id == id && x.GirisimId == girisimId);
+        if (kayit is null) return (false, "Kayıt bulunamadı.");
+        if (kayit.OnayDurumu != OnayDurumu.Beklemede) return (false, "Sadece bekleyen kayıtlar silinebilir.");
+        _db.IstihdamKayitlari.Remove(kayit);
         await _db.SaveChangesAsync();
         return (true, null);
     }

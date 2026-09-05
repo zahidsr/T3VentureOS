@@ -38,11 +38,12 @@ import type {
   OneriTavsiyesi,
 } from "@/lib/types"
 
-type OnayKategori = "satis" | "yatirim" | "basari" | "dokuman" | "guncelleme" | "itiraz"
+type OnayKategori = "satis" | "yatirim" | "istihdam" | "basari" | "dokuman" | "guncelleme" | "itiraz"
 
 const KATEGORI_KONU_TURU: Record<OnayKategori, OnayKonusuTuru> = {
   satis: "Satis",
   yatirim: "Yatirim",
+  istihdam: "Istihdam",
   basari: "Basari",
   dokuman: "Dokuman",
   guncelleme: "Guncelleme",
@@ -206,6 +207,7 @@ function emptySelection(): Record<OnayKategori, Set<string>> {
   return {
     satis: new Set(),
     yatirim: new Set(),
+    istihdam: new Set(),
     basari: new Set(),
     dokuman: new Set(),
     guncelleme: new Set(),
@@ -418,6 +420,7 @@ export default function OnaylarIndexPage() {
   const data = onaylarQuery.data
   const satislar = data?.satislar ?? []
   const yatirimlar = data?.yatirimlar ?? []
+  const istihdamlar = data?.istihdamlar ?? []
   const basarilar = data?.basarilar ?? []
   const dokumanlar = data?.dokumanlar ?? []
   const guncellemeler = data?.guncellemeler ?? []
@@ -426,6 +429,7 @@ export default function OnaylarIndexPage() {
   const tabs: { value: string; label: string; count: number }[] = [
     { value: "satis", label: "Satış", count: satislar.length },
     { value: "yatirim", label: "Yatırım", count: yatirimlar.length },
+    { value: "istihdam", label: "İstihdam", count: istihdamlar.length },
     { value: "basari", label: "Başarı", count: basarilar.length },
     { value: "dokuman", label: "Doküman", count: dokumanlar.length },
     { value: "guncelleme", label: "Profil Güncellemesi", count: guncellemeler.length },
@@ -546,6 +550,50 @@ export default function OnaylarIndexPage() {
                     selectable={canDecide}
                     selected={selected.yatirim.has(y.id)}
                     onSelectedChange={(checked) => toggleSelected("yatirim", y.id, checked)}
+                  />
+                ))}
+              </>
+            )}
+          </TabsContent>
+
+          <TabsContent value="istihdam" className="mt-4 space-y-3">
+            {istihdamlar.length === 0 ? (
+              <EmptyState icon="🎉" message="Bekleyen istihdam kaydı yok." />
+            ) : (
+              <>
+                <SelectionHeader
+                  ids={istihdamlar.map((i) => i.id)}
+                  selectedIds={selected.istihdam}
+                  onToggleAll={(checked) =>
+                    toggleSelectAll(
+                      "istihdam",
+                      istihdamlar.map((i) => i.id),
+                      checked,
+                    )
+                  }
+                  onBulkApprove={() => handleBulkApprove("istihdam")}
+                  onBulkReject={() => openBulkReject("istihdam")}
+                  isBulkPending={bulkDecideMutation.isPending}
+                  canDecide={canDecide}
+                />
+                {istihdamlar.map((i) => (
+                  <ItemCard
+                    key={i.id}
+                    girisimId={i.girisimId}
+                    girisimAdi={i.girisimAdi}
+                    createdAt={i.createdAt}
+                    fields={
+                      <>
+                        <Field label="Dönem" value={i.donem} />
+                        <Field label="Çalışan" value={`${formatNumber(i.calisanSayisi)} kişi`} />
+                        <Field label="Yeni işe alım" value={i.yeniIseAlim ? `+${i.yeniIseAlim}` : "—"} />
+                      </>
+                    }
+                    actions={actionsFor("istihdam", i.id, i.girisimAdi)}
+                    oneriler={onerilerFor("istihdam", i.id)}
+                    selectable={canDecide}
+                    selected={selected.istihdam.has(i.id)}
+                    onSelectedChange={(checked) => toggleSelected("istihdam", i.id, checked)}
                   />
                 ))}
               </>

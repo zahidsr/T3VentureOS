@@ -244,6 +244,36 @@ public class GirisimlerController : ControllerBase
         return Ok(full!.ToDetailDto());
     }
 
+    [HttpPost("{id:guid}/istihdam")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> AddIstihdam(Guid id, AddIstihdamKaydiRequest request)
+    {
+        if (request.CalisanSayisi < 0) return BadRequest(new ErrorResponse("Çalışan sayısı negatif olamaz."));
+
+        await _girisimler.AddIstihdamKaydiAsync(new IstihdamKaydi
+        {
+            GirisimId = id,
+            Donem = request.Donem,
+            CalisanSayisi = request.CalisanSayisi,
+            YeniIseAlim = request.YeniIseAlim,
+            SubmittedById = _currentUser.UserId!.Value,
+        });
+        var full = await _girisimler.GetAsync(id);
+        return Ok(full!.ToDetailDto());
+    }
+
+    [HttpDelete("{id:guid}/istihdam/{istihdamId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> DeleteIstihdam(Guid id, Guid istihdamId)
+    {
+        var (ok, error) = await _girisimler.DeleteIstihdamKaydiAsync(id, istihdamId);
+        if (!ok) return BadRequest(new ErrorResponse(error!));
+        var full = await _girisimler.GetAsync(id);
+        return Ok(full!.ToDetailDto());
+    }
+
     [HttpPost("{id:guid}/basari")]
     [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
     [GirisimErisim]
