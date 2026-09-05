@@ -21,7 +21,7 @@ public class GirisimService
         _db = db;
     }
 
-    /// <summary>sirala: "ciro_desc" | "ciro_asc" | "ad_asc" | default (en yeni önce).</summary>
+    /// <summary>sirala: "puan_desc" | "puan_asc" | "ciro_desc" | "ciro_asc" | "ad_asc" | default (en yeni önce).</summary>
     public async Task<PagedResult<Girisim>> ListAsync(
         string? sektor = null, Guid? programId = null, string? ara = null, string? sirala = null,
         int page = 1, int pageSize = PagingDefaults.DefaultPageSize)
@@ -44,6 +44,9 @@ public class GirisimService
         {
             "ciro_desc" => query.OrderByDescending(g => g.SatisKayitlari.Where(s => s.OnayDurumu == OnayDurumu.Onaylandi).Sum(s => (decimal?)s.Ciro) ?? 0),
             "ciro_asc" => query.OrderBy(g => g.SatisKayitlari.Where(s => s.OnayDurumu == OnayDurumu.Onaylandi).Sum(s => (decimal?)s.Ciro) ?? 0),
+            // Puan tabloda tutulduğu için sayfalama ile birlikte veritabanında sıralanabiliyor.
+            "puan_desc" => query.OrderByDescending(g => g.Puan).ThenBy(g => g.Ad),
+            "puan_asc" => query.OrderBy(g => g.Puan).ThenBy(g => g.Ad),
             "ad_asc" => query.OrderBy(g => g.Ad),
             _ => query.OrderByDescending(g => g.CreatedAt),
         };

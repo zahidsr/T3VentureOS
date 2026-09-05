@@ -14,6 +14,19 @@ public static class DbInitializer
     public const string StartupEmail = "girisim@t3vakfi.local";
     public const string DemoPassword = "Passw0rd!";
 
+    /// <summary>
+    /// Puan alanı sonradan eklendiği için mevcut girişimlerin puanı sıfır kalmıştı; açılışta bir
+    /// kez tazelenir. Boş bir kaydetme, AppDbContext'teki puan tazeleme kancasını tetikler.
+    /// </summary>
+    public static async Task PuanlariTazeleAsync(AppDbContext db)
+    {
+        var girisimler = await db.Girisimler.ToListAsync();
+        if (girisimler.Count == 0) return;
+
+        foreach (var g in girisimler) db.Entry(g).Property(x => x.UpdatedAt).IsModified = true;
+        await db.SaveChangesAsync();
+    }
+
     public static async Task SeedAsync(AppDbContext db)
     {
         if (db.Database.IsRelational())

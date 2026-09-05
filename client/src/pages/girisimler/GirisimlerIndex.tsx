@@ -25,6 +25,8 @@ const ALL_PROGRAMS = "__all__"
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: "yeni", label: "En Yeni" },
+  { value: "puan_desc", label: "Puan (Yüksekten Düşüğe)" },
+  { value: "puan_asc", label: "Puan (Düşükten Yükseğe)" },
   { value: "ciro_desc", label: "Ciro (Yüksekten Düşüğe)" },
   { value: "ciro_asc", label: "Ciro (Düşükten Yükseğe)" },
   { value: "ad_asc", label: "Girişim Adı (A-Z)" },

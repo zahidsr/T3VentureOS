@@ -168,6 +168,8 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 | OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni (itirazın kendi kararı) |
 | CreatedAt | datetime2 | |
 
+> `Girisimler.Puan` (int, 0-100) türetilmiş bir değerdir ama sıralanabilmesi için tabloda tutulur. Hesap tek yerdedir (`GirisimSaglikService.PuanHesapla`); puanı etkileyen bir kayıt değiştiğinde `AppDbContext.SaveChangesAsync` ilgili girişimlerin puanını kendiliğinden tazeler, böylece uç noktalara tek tek "puanı güncelle" çağrısı serpiştirmek gerekmez.
+
 ### Onay Önerileri (OnayOnerisi)
 > ProgramYoneticisi'nin bekleyen bir kayda bıraktığı bağlayıcı olmayan tavsiye; kararı SuperAdmin verir. `Itiraz` ile aynı polimorfik (KonuTuru, KonuId) desenini kullanır.
 

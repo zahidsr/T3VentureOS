@@ -1,12 +1,99 @@
+using T3VentureOS.Domain;
 using T3VentureOS.Domain.Entities;
+using T3VentureOS.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace T3VentureOS.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
+    /// <summary>Puan tazelemesi kendi SaveChanges'ini çağırdığı için sonsuz döngüyü engelleyen bayrak.</summary>
+    private bool _puanTazeleniyor;
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
+    }
+
+    /// <summary>
+    /// Girişim puanı türetilmiş bir değer ama sıralanabilmesi için tabloda tutuluyor. Puanı
+    /// etkileyen onlarca uç nokta var; her birine tek tek "puanı güncelle" çağrısı serpiştirmek
+    /// er ya da geç bir yerin atlanmasıyla sonuçlanırdı. Bunun yerine kaydetme işleminin kendisi
+    /// hangi girişimlerin etkilendiğini görüp puanlarını tazeliyor.
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        if (_puanTazeleniyor) return await base.SaveChangesAsync(cancellationToken);
+
+        var etkilenen = PuaniEtkilenenGirisimler();
+        var sonuc = await base.SaveChangesAsync(cancellationToken);
+        if (etkilenen.Count == 0) return sonuc;
+
+        _puanTazeleniyor = true;
+        try
+        {
+            await PuanlariTazeleAsync(etkilenen, cancellationToken);
+        }
+        finally
+        {
+            _puanTazeleniyor = false;
+        }
+        return sonuc;
+    }
+
+    private HashSet<Guid> PuaniEtkilenenGirisimler()
+    {
+        var idler = new HashSet<Guid>();
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is EntityState.Unchanged or EntityState.Detached) continue;
+
+            var id = entry.Entity switch
+            {
+                Girisim g => g.Id,
+                SatisKaydi x => x.GirisimId,
+                YatirimKaydi x => x.GirisimId,
+                Basari x => x.GirisimId,
+                Dokuman x => x.GirisimId,
+                GelisimAdimi x => x.GirisimId,
+                GirisimContact x => x.GirisimId,
+                SunumTaslagi x => x.GirisimId,
+                _ => (Guid?)null,
+            };
+            if (id is not null) idler.Add(id.Value);
+        }
+        return idler;
+    }
+
+    private async Task PuanlariTazeleAsync(HashSet<Guid> girisimIdler, CancellationToken cancellationToken)
+    {
+        var veriler = await Girisimler
+            .Where(g => girisimIdler.Contains(g.Id))
+            .Select(g => new
+            {
+                Girisim = g,
+                LogoVar = g.LogoUrl != null && g.LogoUrl != "",
+                TanimVar = g.KisaTanim != null && g.KisaTanim != "",
+                IletisimVar = g.Contact != null,
+                SunumVar = g.Dokumanlar.Any(d => d.Tur == DokumanTuru.Sunum)
+                           || SunumTaslaklari.Any(t => t.GirisimId == g.Id),
+                Satis = g.SatisKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                Yatirim = g.YatirimKayitlari.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                Basari = g.Basarilar.Count(x => x.OnayDurumu == OnayDurumu.Onaylandi),
+                Gelisim = g.GelisimAdimlari.Count(),
+            })
+            .ToListAsync(cancellationToken);
+
+        var degisti = false;
+        foreach (var v in veriler)
+        {
+            var (puan, _) = GirisimSaglikService.PuanHesapla(
+                v.LogoVar, v.TanimVar, v.IletisimVar, v.SunumVar, v.Satis, v.Yatirim, v.Basari, v.Gelisim);
+            if (v.Girisim.Puan == puan) continue;
+            v.Girisim.Puan = puan;
+            degisti = true;
+        }
+
+        if (degisti) await base.SaveChangesAsync(cancellationToken);
     }
 
     public DbSet<User> Users => Set<User>();

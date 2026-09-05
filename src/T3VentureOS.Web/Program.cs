@@ -94,6 +94,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DbInitializer.SeedAsync(db);
     await DbInitializer.SeedDemoExtrasAsync(db);
+    await DbInitializer.PuanlariTazeleAsync(db);
 }
 
 app.UseHttpsRedirection();
