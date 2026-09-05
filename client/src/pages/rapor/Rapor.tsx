@@ -36,7 +36,7 @@ import { api, extractErrorMessage } from "@/lib/api-client"
 import { captureChartPng, type ChartImage } from "@/lib/chart-export"
 import { cn } from "@/lib/utils"
 import ExcelJS from "exceljs"
-import jsPDF from "jspdf"
+import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import type {
   AiAnalizDto,
   AiAnalizKaydiDto,
@@ -238,7 +238,7 @@ async function downloadXlsx(stats: DashboardStatsDto, charts: RaporCharts) {
 // -------------------------------------------------------- PDF (jsPDF)
 
 async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnalizMetni?: string) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const doc = await createTurkishPdf()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 40
@@ -253,13 +253,13 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
 
   function sectionTitle(title: string) {
     ensureSpace(24)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(PDF_FONT, "bold")
     doc.setFontSize(12)
     doc.setTextColor(0, 120, 168)
     doc.text(title, margin, y)
     y += 18
     doc.setTextColor(30, 41, 47)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(PDF_FONT, "normal")
     doc.setFontSize(10)
   }
 
@@ -274,16 +274,17 @@ async function downloadPdf(stats: DashboardStatsDto, charts: RaporCharts, aiAnal
     const displayWidth = Math.min(maxWidth, chart.width)
     const displayHeight = (chart.height / chart.width) * displayWidth
     ensureSpace(displayHeight + 10)
-    doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight)
+    // Sıkıştırmasız gömülen grafikler raporu 12 MB'a çıkarıyordu — e-postayla paylaşılamayacak kadar ağır.
+    doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight, undefined, "MEDIUM")
     y += displayHeight + 24
   }
 
-  doc.setFont("helvetica", "bold")
+  doc.setFont(PDF_FONT, "bold")
   doc.setFontSize(16)
   doc.setTextColor(45, 63, 71)
   doc.text("T3 Girişim Ekosistemi — Özet Rapor", margin, y)
   y += 18
-  doc.setFont("helvetica", "normal")
+  doc.setFont(PDF_FONT, "normal")
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
   doc.text(`Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)

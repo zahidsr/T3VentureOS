@@ -6,7 +6,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { Building2, Trash2 } from "lucide-react"
 import { LineChart, Line, Legend, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import jsPDF from "jspdf"
+import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
@@ -887,8 +887,8 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
 
 // -------------------------------------------------------------- Şirket CV'si (PDF)
 
-function downloadSirketCv(girisim: GirisimDetailDto) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" })
+async function downloadSirketCv(girisim: GirisimDetailDto) {
+  const doc = await createTurkishPdf()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 40
@@ -903,13 +903,13 @@ function downloadSirketCv(girisim: GirisimDetailDto) {
 
   function sectionTitle(title: string) {
     ensureSpace(26)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(PDF_FONT, "bold")
     doc.setFontSize(12)
     doc.setTextColor(0, 120, 168)
     doc.text(title, margin, y)
     y += 18
     doc.setTextColor(30, 41, 47)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(PDF_FONT, "normal")
     doc.setFontSize(10)
   }
 
@@ -924,19 +924,19 @@ function downloadSirketCv(girisim: GirisimDetailDto) {
 
   function keyValueRow(label: string, value: string) {
     ensureSpace(16)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(PDF_FONT, "bold")
     doc.text(label, margin, y)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(PDF_FONT, "normal")
     doc.text(value, margin + 160, y)
     y += 16
   }
 
-  doc.setFont("helvetica", "bold")
+  doc.setFont(PDF_FONT, "bold")
   doc.setFontSize(18)
   doc.setTextColor(45, 63, 71)
   doc.text(girisim.ad, margin, y)
   y += 20
-  doc.setFont("helvetica", "normal")
+  doc.setFont(PDF_FONT, "normal")
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
   doc.text(`Şirket CV'si — Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)
@@ -951,10 +951,10 @@ function downloadSirketCv(girisim: GirisimDetailDto) {
   keyValueRow("Website", girisim.websiteUrl ?? "—")
   if (girisim.kisaTanim) {
     ensureSpace(16)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(PDF_FONT, "bold")
     doc.text("Kısa Tanım", margin, y)
     y += 16
-    doc.setFont("helvetica", "normal")
+    doc.setFont(PDF_FONT, "normal")
     bodyLine(girisim.kisaTanim)
   }
   y += 10
@@ -1222,7 +1222,7 @@ export default function GirisimimPage() {
         }
         actions={
           <>
-            <Button variant="outline" onClick={() => downloadSirketCv(girisim)}>
+            <Button variant="outline" onClick={() => void downloadSirketCv(girisim)}>
               CV'yi İndir (PDF)
             </Button>
             {!showGuncellemeForm && (

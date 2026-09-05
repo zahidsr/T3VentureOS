@@ -18,7 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
-import jsPDF from "jspdf"
+import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -129,7 +129,7 @@ async function downloadRakipAnaliziPdf(
   ciroChart: ChartImage | null,
   yatirimChart: ChartImage | null,
 ) {
-  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const doc = await createTurkishPdf()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 40
@@ -144,13 +144,13 @@ async function downloadRakipAnaliziPdf(
 
   function sectionTitle(title: string) {
     ensureSpace(26)
-    doc.setFont("helvetica", "bold")
+    doc.setFont(PDF_FONT, "bold")
     doc.setFontSize(12)
     doc.setTextColor(0, 120, 168)
     doc.text(title, margin, y)
     y += 18
     doc.setTextColor(30, 41, 47)
-    doc.setFont("helvetica", "normal")
+    doc.setFont(PDF_FONT, "normal")
     doc.setFontSize(10)
   }
 
@@ -165,16 +165,17 @@ async function downloadRakipAnaliziPdf(
     const displayWidth = Math.min(maxWidth, chart.width)
     const displayHeight = (chart.height / chart.width) * displayWidth
     ensureSpace(displayHeight + 10)
-    doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight)
+    // Sıkıştırmasız gömülen grafikler raporu 12 MB'a çıkarıyordu — e-postayla paylaşılamayacak kadar ağır.
+    doc.addImage(chart.dataUrl, "PNG", margin, y, displayWidth, displayHeight, undefined, "MEDIUM")
     y += displayHeight + 24
   }
 
-  doc.setFont("helvetica", "bold")
+  doc.setFont(PDF_FONT, "bold")
   doc.setFontSize(16)
   doc.setTextColor(45, 63, 71)
   doc.text("Detaylı Rakip Analizi", margin, y)
   y += 18
-  doc.setFont("helvetica", "normal")
+  doc.setFont(PDF_FONT, "normal")
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
   doc.text(`Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)
@@ -183,28 +184,40 @@ async function downloadRakipAnaliziPdf(
 
   sectionTitle("Yan Yana Karşılaştırma")
   const usableWidth = pageWidth - margin * 2
-  const labelColWidth = 130
+
+  // Etiket sütunu sabit bir genişliğe kurulursa "Toplam Onaylı Yatırım" gibi uzun başlıklar değer
+  // sütununun üstüne taşar; genişliği gerçek metin ölçüsünden al, sayfanın yarısıyla sınırla.
+  doc.setFont(PDF_FONT, "bold")
+  const measuredLabelWidth = Math.max(...activeMetrics.map((m) => doc.getTextWidth(m.label)))
+  doc.setFont(PDF_FONT, "normal")
+  const labelColWidth = Math.min(measuredLabelWidth + 12, usableWidth * 0.5)
   const valueColWidth = (usableWidth - labelColWidth) / selected.length
 
+  const columnX = (i: number) => margin + labelColWidth + i * valueColWidth
+
   ensureSpace(16)
-  doc.setFont("helvetica", "bold")
-  selected.forEach((g, i) => {
-    const lines = doc.splitTextToSize(g.ad, valueColWidth - 6) as string[]
-    doc.text(lines, margin + labelColWidth + i * valueColWidth, y)
-  })
-  y += 14 * Math.max(1, ...selected.map((g) => (doc.splitTextToSize(g.ad, valueColWidth - 6) as string[]).length))
-  y += 6
-  doc.setFont("helvetica", "normal")
+  doc.setFont(PDF_FONT, "bold")
+  const headerLines = selected.map((g) => doc.splitTextToSize(g.ad, valueColWidth - 8) as string[])
+  headerLines.forEach((lines, i) => doc.text(lines, columnX(i), y))
+  y += 13 * Math.max(1, ...headerLines.map((l) => l.length)) + 4
+
+  // Başlık satırını değerlerden ayıran ince çizgi — sütunların nerede başladığı okunur kalsın.
+  doc.setDrawColor(203, 213, 225)
+  doc.line(margin, y - 8, pageWidth - margin, y - 8)
+  doc.setFont(PDF_FONT, "normal")
 
   activeMetrics.forEach((m) => {
-    ensureSpace(16)
-    doc.setFont("helvetica", "bold")
-    doc.text(m.label, margin, y)
-    doc.setFont("helvetica", "normal")
-    selected.forEach((g, i) => {
-      doc.text(metricValue(g, m.key, selected), margin + labelColWidth + i * valueColWidth, y)
-    })
-    y += 16
+    const valueLines = selected.map(
+      (g) => doc.splitTextToSize(metricValue(g, m.key, selected), valueColWidth - 8) as string[],
+    )
+    const rowHeight = 13 * Math.max(1, ...valueLines.map((l) => l.length)) + 3
+    ensureSpace(rowHeight)
+
+    doc.setFont(PDF_FONT, "bold")
+    doc.text(doc.splitTextToSize(m.label, labelColWidth - 8) as string[], margin, y)
+    doc.setFont(PDF_FONT, "normal")
+    valueLines.forEach((lines, i) => doc.text(lines, columnX(i), y))
+    y += rowHeight
   })
   y += 12
 
