@@ -183,6 +183,18 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 
 Benzersiz index: `(KonuTuru, KonuId, OneriVerenId)` — bir kullanıcının bir kayıtta tek bir güncel önerisi olur.
 
+### Sunum Taslakları (SunumTaslagi)
+> Girişimin verisinden üretilmiş Sequoia pitch deck taslağı. Girişim başına tek güncel kayıt tutulur.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade`, unique |
+| IcerikJson | nvarchar(max) | bölümlerin JSON dizisi (anahtar/başlık/içerik) |
+| VeriParmakIzi | nvarchar | üretim anındaki kaynak verinin SHA-256 özeti; tutmuyorsa sunum "güncel değil" sayılır |
+| OlusturanId | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt, UpdatedAt | datetime2 | |
+
 ### Bildirimler (Bildirim)
 | kolon | tip | not |
 |---|---|---|

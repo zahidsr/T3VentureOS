@@ -589,3 +589,18 @@ export interface PanelOzetiDto {
   profiliEksikOlanlar: GirisimSaglikDto[]
   tumGirisimler: GirisimSaglikDto[]
 }
+
+/** Sequoia şablonuna göre üretilmiş sunum taslağının tek bölümü. */
+export interface PitchDeckBolumuDto {
+  anahtar: string
+  baslik: string
+  icerik: string
+}
+
+export interface PitchDeckDto {
+  bolumler: PitchDeckBolumuDto[]
+  olusturulmaTarihi: string
+  olusturanAdSoyad: string
+  /** false ise taslak üretildikten sonra girişim verisi değişmiştir. */
+  guncel: boolean
+}

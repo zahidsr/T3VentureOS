@@ -20,10 +20,12 @@ public class GirisimlerController : ControllerBase
     private readonly OnboardingService _onboarding;
     private readonly DashboardService _dashboard;
     private readonly IAiService _ai;
+    private readonly PitchDeckService _pitchDeck;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
-        ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai)
+        ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
+        PitchDeckService pitchDeck)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -32,6 +34,7 @@ public class GirisimlerController : ControllerBase
         _onboarding = onboarding;
         _dashboard = dashboard;
         _ai = ai;
+        _pitchDeck = pitchDeck;
     }
 
     [HttpGet]
@@ -390,6 +393,35 @@ public class GirisimlerController : ControllerBase
         return Ok(list.Select(i => new ItirazDto(
             i.Id, i.KonuTuru.ToString(), i.KonuId, i.Aciklama, i.OnayDurumu.ToString(), i.ReviewNotu, i.CreatedAt)).ToList());
     }
+
+    /// <summary>Girişimin güncel sunum taslağı — yoksa 404.</summary>
+    [HttpGet("{id:guid}/sunum-taslagi")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumTaslagi(Guid id)
+    {
+        var sonuc = await _pitchDeck.GetAsync(id);
+        if (sonuc is null) return NotFound();
+        return Ok(ToDto(sonuc));
+    }
+
+    /// <summary>
+    /// Girişimin verisinden Sequoia pitch deck şablonuna göre sunum taslağı üretir. Mevcut taslak
+    /// varsa üzerine yazar — girişimci yatırım/ciro güncelledikçe sunumu tazeleyebilsin diye.
+    /// </summary>
+    [HttpPost("{id:guid}/sunum-taslagi")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumTaslagiUret(Guid id)
+    {
+        var (ok, sonuc, hata) = await _pitchDeck.UretAsync(id, _currentUser.UserId!.Value);
+        if (!ok) return BadRequest(new ErrorResponse(hata ?? "Sunum üretilemedi."));
+        return Ok(ToDto(sonuc!));
+    }
+
+    private static PitchDeckDto ToDto(PitchDeckSonucu s) => new(
+        s.Bolumler.Select(b => new PitchDeckBolumuDto(b.Anahtar, b.Baslik, b.Icerik)).ToList(),
+        s.OlusturulmaTarihi, s.OlusturanAdSoyad, s.Guncel);
 
     [HttpGet("{id:guid}/onboarding-durumu")]
     [GirisimErisim]

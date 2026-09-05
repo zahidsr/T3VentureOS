@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<Bildirim> Bildirimler => Set<Bildirim>();
     public DbSet<Itiraz> Itirazlar => Set<Itiraz>();
     public DbSet<OnayOnerisi> OnayOnerileri => Set<OnayOnerisi>();
+    public DbSet<SunumTaslagi> SunumTaslaklari => Set<SunumTaslagi>();
     public DbSet<SilmeTalebi> SilmeTalepleri => Set<SilmeTalebi>();
     public DbSet<IslemKaydi> IslemKayitlari => Set<IslemKaydi>();
     public DbSet<AiAnalizKaydi> AiAnalizKayitlari => Set<AiAnalizKaydi>();
@@ -140,6 +141,14 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.KonuTuru, x.KonuId, x.OneriVerenId }).IsUnique();
             e.Property(x => x.Not).HasMaxLength(1000);
             e.HasOne(x => x.OneriVeren).WithMany().HasForeignKey(x => x.OneriVerenId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<SunumTaslagi>(e =>
+        {
+            // Girişim başına tek güncel taslak — yeniden üretim yeni satır açmaz, mevcudu günceller.
+            e.HasIndex(x => x.GirisimId).IsUnique();
+            e.HasOne(x => x.Girisim).WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Olusturan).WithMany().HasForeignKey(x => x.OlusturanId).OnDelete(DeleteBehavior.Restrict);
         });
 
         b.Entity<SilmeTalebi>(e =>

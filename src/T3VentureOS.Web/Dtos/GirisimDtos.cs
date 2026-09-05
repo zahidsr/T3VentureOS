@@ -61,3 +61,13 @@ public static class GirisimDtoExtensions
         g.Dokumanlar.Select(d => new DokumanDto(d.Id, d.Baslik, d.DosyaAdi, d.DosyaUrl, d.DosyaBoyutu, d.Tur.ToString(), d.OnayDurumu.ToString(), d.ReviewNotu, d.CreatedAt)).ToList(),
         g.Contact is null ? null : new GirisimContactDto(g.Contact.AdSoyad, g.Contact.Unvan, g.Contact.Telefon, g.Contact.Email, g.Contact.LinkedInUrl, g.Contact.UpdatedAt));
 }
+
+/// <summary>Sequoia şablonuna göre üretilmiş sunum taslağının tek bölümü.</summary>
+public record PitchDeckBolumuDto(string Anahtar, string Baslik, string Icerik);
+
+/// <summary>
+/// Girişimin güncel sunum taslağı. <c>Guncel=false</c> ise taslak üretildikten sonra girişim
+/// verisi değişmiş demektir; arayüz "yeniden üret" uyarısı gösterir.
+/// </summary>
+public record PitchDeckDto(
+    List<PitchDeckBolumuDto> Bolumler, DateTime OlusturulmaTarihi, string OlusturanAdSoyad, bool Guncel);
