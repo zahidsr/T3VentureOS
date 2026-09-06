@@ -33,7 +33,7 @@ export function AuthShell({
           <div className="relative">
             {/* Logo — white plate so the dark wordmark stays legible on this navy panel */}
             {/* Panel zaten koyu; logonun beyaz yazısı doğrudan okunuyor, beyaz kutuya gerek yok. */}
-            <img src="/logo-tam.png" alt="TGM VentureOS" className="h-14 w-auto" />
+            <img src="/logo-tam.png" alt="T3GM VentureOS" className="h-14 w-auto" />
 
             {/* Bottom separator line */}
             <div className="mt-6 h-px w-12 rounded-full bg-t3-blue/60" />
