@@ -1,18 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import type { GirisimAsamasi } from "@/lib/types"
+import { ASAMA_ETIKET, ASAMA_NOKTA, ASAMA_SIRASI } from "@/lib/asama"
 import { cn } from "@/lib/utils"
-
-/** Aşama ekseni: soldan sağa olgunluk. Renkler de bu sırayla ısınır. */
-export const ASAMA_SIRASI: GirisimAsamasi[] = ["Fikir", "Prototip", "MVP", "IlkMusteri", "Olcekleme", "Buyume"]
-
-export const ASAMA_ETIKET: Record<GirisimAsamasi, string> = {
-  Fikir: "Fikir",
-  Prototip: "Prototip",
-  MVP: "MVP",
-  IlkMusteri: "İlk Müşteri",
-  Olcekleme: "Ölçekleme",
-  Buyume: "Büyüme",
-}
 
 const ASAMA_STIL: Record<GirisimAsamasi, string> = {
   Fikir: "border-slate-300 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
@@ -21,15 +10,6 @@ const ASAMA_STIL: Record<GirisimAsamasi, string> = {
   IlkMusteri: "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200",
   Olcekleme: "border-orange-300 bg-orange-50 text-orange-800 dark:bg-orange-950/30 dark:text-orange-200",
   Buyume: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200",
-}
-
-export const ASAMA_NOKTA: Record<GirisimAsamasi, string> = {
-  Fikir: "bg-slate-400",
-  Prototip: "bg-sky-400",
-  MVP: "bg-violet-400",
-  IlkMusteri: "bg-amber-400",
-  Olcekleme: "bg-orange-400",
-  Buyume: "bg-emerald-500",
 }
 
 export function AsamaRozeti({ asama, className }: { asama: GirisimAsamasi; className?: string }) {
