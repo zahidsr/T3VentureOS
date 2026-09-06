@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { AlertTriangle, Banknote, TrendingUp, Users } from "lucide-react"
+import { AlertTriangle, ArrowRight, Banknote, Layers, TrendingUp, Users } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -8,6 +8,7 @@ import { SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { api } from "@/lib/api-client"
 import type { ProgramKohortuDto } from "@/lib/types"
+import { ASAMA_ETIKET } from "@/lib/asama"
 import { cn } from "@/lib/utils"
 
 function paraKisa(value: number) {
@@ -77,13 +78,18 @@ export function ProgramKohortu({ programId }: { programId: string }) {
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metrik ikon={<TrendingUp className="size-4" />} deger={paraKisa(k.toplamProgramSirasindaCiro)} etiket="Program süresince ciro" />
           <Metrik ikon={<Banknote className="size-4" />} deger={paraKisa(k.toplamProgramSirasindaYatirim)} etiket="Çekilen yatırım" />
           <Metrik
             ikon={<Users className="size-4" />}
             deger={`${k.toplamIstihdamArtisi >= 0 ? "+" : ""}${k.toplamIstihdamArtisi} kişi`}
             etiket="Net istihdam artışı"
+          />
+          <Metrik
+            ikon={<Layers className="size-4" />}
+            deger={`${k.asamaAtlayanGirisimSayisi}/${k.girisimSayisi}`}
+            etiket="Aşama atlayan girişim"
           />
         </div>
 
@@ -107,6 +113,7 @@ export function ProgramKohortu({ programId }: { programId: string }) {
                 <TableHead>Program Süresince Ciro</TableHead>
                 <TableHead>Çalışan</TableHead>
                 <TableHead>Çekilen Yatırım</TableHead>
+                <TableHead>Aşama</TableHead>
                 <TableHead>Puan</TableHead>
               </TableRow>
             </TableHeader>
@@ -132,6 +139,24 @@ export function ProgramKohortu({ programId }: { programId: string }) {
                       )}
                     </TableCell>
                     <TableCell>{paraKisa(s.programSirasindaYatirim)}</TableCell>
+                    <TableCell>
+                      {s.girisAsamasi ? (
+                        <span className="flex items-center gap-1 whitespace-nowrap text-xs">
+                          <span className="text-muted-foreground">{ASAMA_ETIKET[s.girisAsamasi]}</span>
+                          <ArrowRight className="size-3 shrink-0 text-muted-foreground" />
+                          <span className="font-medium">{ASAMA_ETIKET[s.cikisAsamasi]}</span>
+                          {s.asamaFarki > 0 && (
+                            <span className="font-semibold text-emerald-600">+{s.asamaFarki}</span>
+                          )}
+                          {s.asamaFarki < 0 && (
+                            <span className="font-semibold text-amber-600">{s.asamaFarki}</span>
+                          )}
+                        </span>
+                      ) : (
+                        // Katılım anındaki aşama kaydedilmemiş; "ilerledi" demek için dayanağımız yok.
+                        <span className="text-xs text-muted-foreground">Giriş aşaması yok</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <SeviyeRozeti seviye={s.seviye} puan={s.puan} />
                     </TableCell>

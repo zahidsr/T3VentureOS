@@ -760,8 +760,18 @@ export default function GirisimDetailsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="yolculuk" className="mt-4">
+        <TabsContent value="yolculuk" className="mt-4 space-y-4">
           <AsamaCizelgesi girisim={girisim} />
+          {/* Yolculuk grafiğinin altında aynı verinin okuması: program ne değiştirdi? */}
+          {girisim.programKatilimlari.length > 0 && (
+            <GirisimAnalizPaneli
+              girisimId={girisim.id}
+              tur="program-etkisi"
+              baslik="Program Etkisi Analizi"
+              aciklama="Girişimin programa katılmadan önceki durumu ile bugünü karşılaştıran okuma."
+              bosDurumMetni="Bu girişim için henüz program etkisi analizi üretilmedi."
+            />
+          )}
         </TabsContent>
 
         {/* Yöneticinin "bu girişim ne durumda" sorusuna AI okuması. */}

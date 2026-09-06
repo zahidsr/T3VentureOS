@@ -62,11 +62,13 @@ public class ProgramsController : ControllerBase
         return Ok(new ProgramKohortuDto(
             k.ProgramId, k.ProgramAdi, k.BaslangicTarihi, k.BitisTarihi, k.GirisimSayisi,
             k.ToplamProgramSirasindaCiro, k.ToplamProgramSirasindaYatirim, k.ToplamIstihdamArtisi,
-            k.VeriGirmeyenGirisimSayisi,
+            k.VeriGirmeyenGirisimSayisi, k.AsamaAtlayanGirisimSayisi,
             k.Satirlar.Select(s => new KohortSatiriDto(
                 s.GirisimId, s.Ad, s.Sektor, s.KatilimDurumu, s.KatilimBaslangici,
                 s.ProgramOncesiCiro, s.ProgramSirasindaCiro, s.ProgramBasindaCalisan, s.GuncelCalisan,
-                s.ProgramSirasindaYatirim, s.Puan, s.Seviye.ToString(), s.GuncellemeUzerindenGecenGun)).ToList()));
+                s.ProgramSirasindaYatirim,
+                s.GirisAsamasi?.ToString(), s.CikisAsamasi.ToString(), s.AsamaFarki,
+                s.Puan, s.Seviye.ToString(), s.GuncellemeUzerindenGecenGun)).ToList()));
     }
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id)

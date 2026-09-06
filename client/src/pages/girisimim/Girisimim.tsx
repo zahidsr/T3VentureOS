@@ -2002,6 +2002,17 @@ export default function GirisimimPage() {
                 />
               </div>
 
+              {/* Programa katıldıysa üçüncü soru anlam kazanır: programdan beri ne değişti? */}
+              {girisim.programKatilimlari.length > 0 && (
+                <GirisimAnalizPaneli
+                  girisimId={girisim.id}
+                  tur="program-etkisi"
+                  baslik="Programdan beri ne değişti?"
+                  aciklama="Programa katılmadan önceki durumunla bugünü karşılaştıran okuma."
+                  bosDurumMetni="Henüz üretilmedi. Program yolculuğunun ne anlattığını görmek için analiz et."
+                />
+              )}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Onay Durumu Özeti</CardTitle>

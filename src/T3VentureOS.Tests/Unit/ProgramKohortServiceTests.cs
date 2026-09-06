@@ -103,4 +103,50 @@ public class ProgramKohortServiceTests
         var db = TestDb.Create();
         Assert.Null(await Servis(db).GetAsync(Guid.NewGuid()));
     }
+
+    [Fact]
+    public async Task Devam_eden_katilimda_cikis_asamasi_girisimin_bugunku_asamasidir()
+    {
+        var db = TestDb.Create();
+        var girisim = new Girisim { Ad = "Test", CreatedById = Guid.NewGuid(), Asama = GirisimAsamasi.Olcekleme };
+        var program = new GirisimProgrami { Name = "Program", BaslangicTarihi = new DateTime(2026, 1, 1), CreatedById = Guid.NewGuid() };
+        db.Girisimler.Add(girisim);
+        db.Programlar.Add(program);
+        db.ProgramKatilimlari.Add(new ProgramKatilimi
+        {
+            GirisimId = girisim.Id,
+            ProgramId = program.Id,
+            BaslangictakiAsama = GirisimAsamasi.Prototip,
+            // BitistekiAsama yok: katılım sürüyor.
+        });
+        await db.SaveChangesAsync();
+
+        var kohort = await Servis(db).GetAsync(program.Id);
+
+        var satir = Assert.Single(kohort!.Satirlar);
+        Assert.Equal(GirisimAsamasi.Prototip, satir.GirisAsamasi);
+        Assert.Equal(GirisimAsamasi.Olcekleme, satir.CikisAsamasi);
+        Assert.Equal(3, satir.AsamaFarki);
+        Assert.Equal(1, kohort.AsamaAtlayanGirisimSayisi);
+    }
+
+    [Fact]
+    public async Task Giris_asamasi_bilinmiyorsa_ilerleme_iddia_edilmez()
+    {
+        var db = TestDb.Create();
+        var girisim = new Girisim { Ad = "Test", CreatedById = Guid.NewGuid(), Asama = GirisimAsamasi.Buyume };
+        var program = new GirisimProgrami { Name = "Program", BaslangicTarihi = new DateTime(2026, 1, 1), CreatedById = Guid.NewGuid() };
+        db.Girisimler.Add(girisim);
+        db.Programlar.Add(program);
+        db.ProgramKatilimlari.Add(new ProgramKatilimi { GirisimId = girisim.Id, ProgramId = program.Id });
+        await db.SaveChangesAsync();
+
+        var kohort = await Servis(db).GetAsync(program.Id);
+
+        // Giriş aşaması kaydedilmemişse "3 aşama ilerledi" demek uydurma olurdu.
+        var satir = Assert.Single(kohort!.Satirlar);
+        Assert.Null(satir.GirisAsamasi);
+        Assert.Equal(0, satir.AsamaFarki);
+        Assert.Equal(0, kohort.AsamaAtlayanGirisimSayisi);
+    }
 }

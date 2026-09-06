@@ -15,6 +15,9 @@ public record KohortSatiri(
     int ProgramBasindaCalisan,
     int GuncelCalisan,
     decimal ProgramSirasindaYatirim,
+    GirisimAsamasi? GirisAsamasi,
+    GirisimAsamasi CikisAsamasi,
+    int AsamaFarki,
     int Puan,
     GirisimSeviyesi Seviye,
     int? GuncellemeUzerindenGecenGun);
@@ -29,6 +32,7 @@ public record ProgramKohortu(
     decimal ToplamProgramSirasindaYatirim,
     int ToplamIstihdamArtisi,
     int VeriGirmeyenGirisimSayisi,
+    int AsamaAtlayanGirisimSayisi,
     List<KohortSatiri> Satirlar);
 
 /// <summary>
@@ -84,7 +88,7 @@ public class ProgramKohortService
         if (girisimIdler.Count == 0)
         {
             return new ProgramKohortu(program.Id, program.Name, program.BaslangicTarihi, program.BitisTarihi,
-                0, 0, 0, 0, 0, []);
+                0, 0, 0, 0, 0, 0, []);
         }
 
         var satislar = await _db.SatisKayitlari
@@ -127,6 +131,11 @@ public class ProgramKohortService
 
             var saglik = saglikMap.GetValueOrDefault(katilim.GirisimId);
 
+            // Giriş aşaması katılımda dondurulur; henüz bitmemiş katılımlarda "çıkış" bugünkü aşamadır.
+            var girisAsamasi = katilim.BaslangictakiAsama;
+            var cikisAsamasi = katilim.BitistekiAsama ?? katilim.Girisim?.Asama ?? GirisimAsamasi.Fikir;
+            var asamaFarki = girisAsamasi is null ? 0 : (int)cikisAsamasi - (int)girisAsamasi;
+
             satirlar.Add(new KohortSatiri(
                 katilim.GirisimId,
                 katilim.Girisim?.Ad ?? string.Empty,
@@ -138,6 +147,9 @@ public class ProgramKohortService
                 basindaCalisan,
                 guncelCalisan,
                 yatirimlar.Where(y => y.GirisimId == katilim.GirisimId && y.Tarih >= esik).Sum(y => y.Tutar),
+                girisAsamasi,
+                cikisAsamasi,
+                asamaFarki,
                 saglik?.Puan ?? 0,
                 saglik?.Seviye ?? GirisimSeviyesi.Bronz,
                 saglik is null || saglik.GuncellemeUzerindenGecenGun == int.MaxValue
@@ -157,6 +169,7 @@ public class ProgramKohortService
             // Programa girdiğinden beri hiç veri girmemiş girişimler: yöneticinin peşine düşeceği liste.
             satirlar.Count(s => s.ProgramSirasindaCiro == 0 && s.ProgramSirasindaYatirim == 0
                                 && s.GuncelCalisan == s.ProgramBasindaCalisan),
+            satirlar.Count(s => s.AsamaFarki > 0),
             satirlar);
     }
 }

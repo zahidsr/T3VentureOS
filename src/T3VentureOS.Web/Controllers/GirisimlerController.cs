@@ -476,6 +476,7 @@ public class GirisimlerController : ControllerBase
         {
             "durum" => AiAnalizTuru.GirisimDurumu,
             "gelisim" => AiAnalizTuru.GirisimGelisim,
+            "program-etkisi" => AiAnalizTuru.GirisimProgramEtkisi,
             _ => AiAnalizTuru.Ekosistem,
         };
         return analizTuru != AiAnalizTuru.Ekosistem;

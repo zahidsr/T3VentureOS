@@ -10,7 +10,7 @@ import { api, extractErrorMessage } from "@/lib/api-client"
 import type { GirisimAnalizDto } from "@/lib/types"
 import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 
-export type AnalizTuru = "durum" | "gelisim"
+export type AnalizTuru = "durum" | "gelisim" | "program-etkisi"
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })

@@ -36,7 +36,7 @@ public enum OneriTavsiyesi { Onay, Ret, Cekince }
 /// Hangi soruya cevap veren bir AI analizi. Ekosistem geneli ile tek girişimin analizi aynı tabloda
 /// tutulur; tür alanı hangisinin listeleneceğini ayırır.
 /// </summary>
-public enum AiAnalizTuru { Ekosistem, GirisimDurumu, GirisimGelisim }
+public enum AiAnalizTuru { Ekosistem, GirisimDurumu, GirisimGelisim, GirisimProgramEtkisi }
 
 /// <summary>
 /// Girişim puanının seviye karşılığı. Puan yalnızca artar (girilen veri geri alınmaz), bu yüzden

@@ -55,12 +55,16 @@ public class GirisimAnalizService
             .Include(g => g.YatirimKayitlari)
             .Include(g => g.Dokumanlar)
             .Include(g => g.ProgramKatilimlari).ThenInclude(k => k.Program)
+            .Include(g => g.AsamaGecisleri)
             .FirstOrDefaultAsync(g => g.Id == girisimId);
         if (girisim is null) return (false, null, "Girişim bulunamadı.");
 
-        var prompt = tur == AiAnalizTuru.GirisimGelisim
-            ? GelisimPromptu(girisim)
-            : DurumPromptu(girisim);
+        var prompt = tur switch
+        {
+            AiAnalizTuru.GirisimGelisim => GelisimPromptu(girisim),
+            AiAnalizTuru.GirisimProgramEtkisi => ProgramEtkisiPromptu(girisim),
+            _ => DurumPromptu(girisim),
+        };
 
         var (ok, metin, hata) = await _ai.GenerateInsightAsync(prompt);
         if (!ok || string.IsNullOrWhiteSpace(metin)) return (false, null, hata ?? "Analiz üretilemedi.");
@@ -107,6 +111,21 @@ public class GirisimAnalizService
         sb.AppendLine($"- Gelişim adımları ({g.GelisimAdimlari.Count}): {(g.GelisimAdimlari.Count == 0 ? "yok" : string.Join(" | ", g.GelisimAdimlari.OrderBy(a => a.Tarih).Select(a => $"{a.Tarih:yyyy-MM}: {a.Baslik}")))}");
         sb.AppendLine($"- Program katılımları: {(g.ProgramKatilimlari.Count == 0 ? "yok" : string.Join(", ", g.ProgramKatilimlari.Select(k => $"{k.Program?.Name} ({k.Durum})")))}");
         sb.AppendLine($"- Onay bekleyen kayıt sayısı: {bekleyen}");
+        sb.AppendLine($"- Güncel ürün olgunluk aşaması: {g.Asama}");
+
+        var gecisler = g.AsamaGecisleri.OrderBy(x => x.Tarih).ToList();
+        if (gecisler.Count > 0)
+        {
+            sb.AppendLine($"- Aşama yolculuğu: {string.Join(" | ", gecisler.Select(x => $"{x.Tarih:yyyy-MM}: {(x.OncekiAsama is null ? "başlangıç " : $"{x.OncekiAsama} → ")}{x.YeniAsama}{(string.IsNullOrWhiteSpace(x.Aciklama) ? "" : $" ({x.Aciklama})")}"))}");
+        }
+
+        // Programa giriş ve çıkış aşaması, "program ne değiştirdi" sorusunun tek dayanağı.
+        foreach (var katilim in g.ProgramKatilimlari)
+        {
+            var giris = katilim.BaslangictakiAsama?.ToString() ?? "bilinmiyor";
+            var cikis = katilim.BitistekiAsama?.ToString() ?? "devam ediyor";
+            sb.AppendLine($"- Program: {katilim.Program?.Name} — {katilim.BaslangicTarihi:yyyy-MM} tarihinde {giris} aşamasında katıldı, çıkış aşaması: {cikis} (durum: {katilim.Durum})");
+        }
         sb.AppendLine($"- Profilin son güncellenme tarihi: {g.UpdatedAt:yyyy-MM-dd}");
         return sb.ToString();
     }
@@ -122,6 +141,29 @@ public class GirisimAnalizService
         - Büyüme, süreklilik ve veri bütünlüğü üzerinde dur. Eksik veri varsa bunu bir bulgu olarak yaz.
         - Süslü giriş/kapanış cümlesi kurma, doğrudan maddelerle başla.
         - Övgü ya da yatırım tavsiyesi verme; tarafsız bir okuma yaz.
+
+        GİRİŞİM VERİSİ:
+        {VeriOzeti(g)}
+        """;
+
+    /// <summary>
+    /// "Bu girişim programdan beri ne yaptı" sorusunun cevabı. Diğer iki promptdan farkı, zaman
+    /// eksenini merkeze alması: programa girmeden önceki durumla bugünü karşılaştırır.
+    /// </summary>
+    public static string ProgramEtkisiPromptu(Girisim g) =>
+        $"""
+        Bir hızlandırma programının girişim üzerindeki etkisini değerlendiriyorsun.
+        Aşağıdaki girişimin program öncesi ve sonrası verisine bakarak Türkçe, madde işaretli
+        4-5 maddelik bir değerlendirme yaz.
+
+        KURALLAR:
+        - Odağın "program öncesinde neredeydi, program sırasında/sonrasında ne değişti" olsun.
+        - Aşama geçişlerinin tarihleriyle program tarihlerini karşılaştır; programdan önce mi
+          sonra mı gerçekleştiklerini açıkça söyle.
+        - Bir değişimi programa bağlamak için yeterli kanıt yoksa bunu dürüstçe belirt;
+          zamanlama örtüşmesi tek başına nedensellik değildir.
+        - Program sonrası veri yoksa "programdan bu yana kayıt girilmemiş" de.
+        - Verilmeyen bilgiyi uydurma. Süslü giriş/kapanış cümlesi kurma.
 
         GİRİŞİM VERİSİ:
         {VeriOzeti(g)}

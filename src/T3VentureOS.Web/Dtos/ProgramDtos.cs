@@ -28,10 +28,13 @@ public record KohortSatiriDto(
     Guid GirisimId, string Ad, string? Sektor, string KatilimDurumu, DateTime KatilimBaslangici,
     decimal ProgramOncesiCiro, decimal ProgramSirasindaCiro,
     int ProgramBasindaCalisan, int GuncelCalisan,
-    decimal ProgramSirasindaYatirim, int Puan, string Seviye, int? GuncellemeUzerindenGecenGun);
+    decimal ProgramSirasindaYatirim,
+    string? GirisAsamasi, string CikisAsamasi, int AsamaFarki,
+    int Puan, string Seviye, int? GuncellemeUzerindenGecenGun);
 
 /// <summary>Programın kohortu: katılan girişimlerin program başlangıcından bugüne değişimi.</summary>
 public record ProgramKohortuDto(
     Guid ProgramId, string ProgramAdi, DateTime? BaslangicTarihi, DateTime? BitisTarihi,
     int GirisimSayisi, decimal ToplamProgramSirasindaCiro, decimal ToplamProgramSirasindaYatirim,
-    int ToplamIstihdamArtisi, int VeriGirmeyenGirisimSayisi, List<KohortSatiriDto> Satirlar);
+    int ToplamIstihdamArtisi, int VeriGirmeyenGirisimSayisi, int AsamaAtlayanGirisimSayisi,
+    List<KohortSatiriDto> Satirlar);

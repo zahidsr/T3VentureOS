@@ -707,6 +707,10 @@ export interface KohortSatiriDto {
   programBasindaCalisan: number
   guncelCalisan: number
   programSirasindaYatirim: number
+  girisAsamasi: GirisimAsamasi | null
+  cikisAsamasi: GirisimAsamasi
+  /** Kaç aşama ilerlediği; negatif ise gerileme. Giriş aşaması bilinmiyorsa 0. */
+  asamaFarki: number
   puan: number
   seviye: GirisimSeviyesi
   guncellemeUzerindenGecenGun?: number | null
@@ -723,6 +727,7 @@ export interface ProgramKohortuDto {
   toplamProgramSirasindaYatirim: number
   toplamIstihdamArtisi: number
   veriGirmeyenGirisimSayisi: number
+  asamaAtlayanGirisimSayisi: number
   satirlar: KohortSatiriDto[]
 }
 
