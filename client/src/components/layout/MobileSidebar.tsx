@@ -4,6 +4,7 @@ import { KeyRound, LogOut, Mail, Menu, X } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { usePendingOnayCount } from "@/lib/hooks/use-pending-onay-count"
 import { navItemsForRole } from "@/components/layout/nav-config"
+import { roleHomePath } from "@/lib/role-home"
 import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
 import { ThemeToggle } from "@/components/patterns/ThemeToggle"
 import { Button } from "@/components/ui/button"
@@ -32,7 +33,9 @@ export function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex h-full flex-col gap-6 px-4 pt-6">
-          <Link to="/" onClick={() => setOpen(false)} className="flex items-center">
+          {/* Genel tanıtım anasayfasına değil, kullanıcının kendi rol anasayfasına döner —
+              oturum korunur. */}
+          <Link to={roleHomePath(user.role)} onClick={() => setOpen(false)} className="flex items-center">
             <img src="/logo-tam.png" alt="TGM VentureOS" className="h-9 w-auto" />
           </Link>
 

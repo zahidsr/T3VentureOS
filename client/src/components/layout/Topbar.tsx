@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/patterns/ThemeToggle"
 import { RoleBadge } from "@/components/patterns/RoleBadge"
 import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
 import { MobileSidebar } from "@/components/layout/MobileSidebar"
+import { roleHomePath } from "@/lib/role-home"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +28,9 @@ export function Topbar() {
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
       <div className="flex items-center gap-2 md:hidden">
         <MobileSidebar />
-        <Link to="/" className="flex items-center">
+        {/* Genel tanıtım anasayfasına değil, kullanıcının kendi rol anasayfasına döner —
+            oturum korunur. */}
+        <Link to={roleHomePath(user.role)} className="flex items-center">
           <img src="/logo-tam-koyu.png" alt="TGM VentureOS" className="h-9 w-auto" />
         </Link>
       </div>

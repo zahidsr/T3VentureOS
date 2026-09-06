@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
-import { NavLink } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
 import { ChevronsLeft, ChevronsRight } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { usePendingOnayCount } from "@/lib/hooks/use-pending-onay-count"
 import { cn } from "@/lib/utils"
 import { navItemsForRole } from "@/components/layout/nav-config"
+import { roleHomePath } from "@/lib/role-home"
 
 const COLLAPSE_KEY = "t3-sidebar-collapsed"
 
@@ -29,12 +30,15 @@ export function Sidebar() {
     >
       <div className="flex items-center gap-2 px-4 py-5">
         {/* Logonun yazısı beyaz olduğu için koyu sidebar'da tam sürümü kullanılır; daraltılmış
-            hâlde yatay logo sığmaz, yalnızca TGM işareti gösterilir. */}
-        {collapsed ? (
-          <img src="/logo-isaret.png" alt="TGM VentureOS" className="mx-auto h-9 w-auto shrink-0" />
-        ) : (
-          <img src="/logo-tam.png" alt="TGM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="w-full max-w-[196px]" />
-        )}
+            hâlde yatay logo sığmaz, yalnızca TGM işareti gösterilir. Tıklanınca genel tanıtım
+            anasayfasına değil, kullanıcının kendi rol anasayfasına döner — oturum korunur. */}
+        <Link to={roleHomePath(user.role)} className={collapsed ? "mx-auto" : "block w-full"}>
+          {collapsed ? (
+            <img src="/logo-isaret.png" alt="TGM VentureOS" className="mx-auto h-9 w-auto shrink-0" />
+          ) : (
+            <img src="/logo-tam.png" alt="TGM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="w-full max-w-[196px]" />
+          )}
+        </Link>
       </div>
 
       <nav aria-label="Ana Menü" className="flex-1 space-y-1 px-2 py-2">
