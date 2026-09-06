@@ -24,11 +24,12 @@ public class GirisimlerController : ControllerBase
     private readonly GirisimSaglikService _saglik;
     private readonly GirisimAnalizService _analiz;
     private readonly YatirimciHazirligiService _hazirlik;
+    private readonly SunumPaylasimService _paylasim;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -41,6 +42,7 @@ public class GirisimlerController : ControllerBase
         _saglik = saglik;
         _analiz = analiz;
         _hazirlik = hazirlik;
+        _paylasim = paylasim;
     }
 
     [HttpGet]
@@ -501,6 +503,45 @@ public class GirisimlerController : ControllerBase
         if (s is null) return NotFound();
 
         return Ok(GirisimSaglikMapper.ToDto(s));
+    }
+
+    /// <summary>Girişimin sunumu için oluşturduğu paylaşım bağlantıları.</summary>
+    [HttpGet("{id:guid}/sunum-paylasimlari")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumPaylasimlari(Guid id)
+    {
+        var liste = await _paylasim.ListeleAsync(id);
+        var simdi = DateTime.UtcNow;
+        return Ok(liste.Select(p => new SunumPaylasimiDto(
+            p.Id, p.Jeton, p.Etiket, p.GecerlilikBitisi, p.IptalEdildi, p.Gecerli(simdi),
+            p.GoruntulenmeSayisi, p.SonGoruntulenme, p.CreatedAt)).ToList());
+    }
+
+    /// <summary>Sunumu sistem dışına açan, süre sınırlı bir bağlantı üretir.</summary>
+    [HttpPost("{id:guid}/sunum-paylasimlari")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumPaylasimiOlustur(Guid id, SunumPaylasimiOlusturRequest request)
+    {
+        var (ok, paylasim, hata) = await _paylasim.OlusturAsync(
+            id, _currentUser.UserId!.Value, request.GecerlilikGun, request.Etiket);
+        if (!ok) return BadRequest(new ErrorResponse(hata!));
+
+        return Ok(new SunumPaylasimiDto(
+            paylasim!.Id, paylasim.Jeton, paylasim.Etiket, paylasim.GecerlilikBitisi, paylasim.IptalEdildi,
+            paylasim.Gecerli(DateTime.UtcNow), paylasim.GoruntulenmeSayisi, paylasim.SonGoruntulenme, paylasim.CreatedAt));
+    }
+
+    /// <summary>Bağlantıyı iptal eder; bundan sonra açılamaz.</summary>
+    [HttpDelete("{id:guid}/sunum-paylasimlari/{paylasimId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> SunumPaylasimiIptal(Guid id, Guid paylasimId)
+    {
+        var ok = await _paylasim.IptalEtAsync(id, paylasimId);
+        if (!ok) return NotFound();
+        return Ok(new MessageResponse("Bağlantı iptal edildi."));
     }
 
     /// <summary>Girişimin güncel sunum taslağı — yoksa 404.</summary>

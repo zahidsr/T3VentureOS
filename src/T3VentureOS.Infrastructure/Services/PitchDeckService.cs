@@ -253,6 +253,9 @@ public class PitchDeckService
             .ToList();
     }
 
+    /// <summary>Saklanan JSON'dan bölümleri okur. Paylaşım servisi de aynı çözümlemeyi kullanır.</summary>
+    public static List<PitchDeckBolumu> BolumleriOku(string json) => Deserialize(json);
+
     private static List<PitchDeckBolumu> Deserialize(string json)
     {
         try

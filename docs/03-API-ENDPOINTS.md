@@ -55,6 +55,9 @@
 | POST | `/girisimler/{id}/ai-analiz/{tur}` | auth (kendi girişimi) | girişimin verisinden yeni AI analizi üretir ve saklar |
 | GET | `/girisimler/{id}/yatirimci-hazirligi` | auth (kendi girişimi) | "yatırımcıya hazır mıyım" değerlendirmesi: dokuz ölçüt, karşılanma durumu ve eksikler için ipuçları |
 | GET | `/girisimler/{id}/durum` | auth (kendi girişimi) | girişim künyesinin durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı |
+| GET | `/girisimler/{id}/sunum-paylasimlari` | auth (kendi girişimi) | sunum için oluşturulmuş paylaşım bağlantıları (görüntülenme sayısı dahil) |
+| POST | `/girisimler/{id}/sunum-paylasimlari` | auth (kendi girişimi) | süre sınırlı paylaşım bağlantısı üretir (7/30/90 gün); sunum taslağı yoksa reddedilir |
+| DELETE | `/girisimler/{id}/sunum-paylasimlari/{paylasimId}` | auth (kendi girişimi) | bağlantıyı iptal eder, bundan sonra açılamaz |
 | GET | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin güncel Sequoia pitch deck taslağı; `guncel=false` ise taslak üretildikten sonra veri değişmiştir |
 | POST | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin verisinden AI ile sunum taslağı üretir, mevcut taslağın üzerine yazar |
 | PUT | `/girisimler/{id}/sunum-taslagi/{anahtar}` | auth (kendi girişimi) | sunum bölümünün metnini elle günceller; gövdedeki `icerik` boş bırakılırsa AI metnine geri dönülür. Elle düzenlenen bölüm yeniden üretimde korunur |
@@ -141,3 +144,10 @@ Yüklenen dosyalar (logo, doküman) `wwwroot/uploads` altına yazılır ve stati
 - `AuthController` ve `GirisimlerController`'ın bir kısmı `T3VentureOS.Tests` altında entegrasyon testleriyle
   kapsanıyor; kalan controller'lar (Bildirimler, Hesabim, Admin/SilmeTalepleri dahil) için henüz otomatik
   test yok — bkz. `docs/01-ARCHITECTURE.md` § 9 Test.
+
+## Paylaşım (`api/paylasim`)
+> **Sistemin tek kimlik doğrulaması gerektirmeyen uç noktası.** Kapsamı bilinçli olarak dardır: yalnızca sunum bölümleri ve girişimin künyesi döner; finansal kayıtlar, onay durumları ve sistem içi notlar buradan geçmez.
+
+| Metod | Yol | Yetki | Açıklama |
+|---|---|---|---|
+| GET | `/paylasim/sunum/{jeton}` | herkese açık | paylaşılan sunumu döndürür. Geçersiz jeton, süresi dolmuş ve iptal edilmiş bağlantı aynı cevabı (`404`) alır — bağlantının durumu dışarıdan ayırt edilemesin |

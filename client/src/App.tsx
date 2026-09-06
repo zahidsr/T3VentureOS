@@ -14,6 +14,7 @@ import AccessDeniedPage from "@/pages/auth/AccessDenied"
 import GirisimlerIndexPage from "@/pages/girisimler/GirisimlerIndex"
 import PanelPage from "@/pages/panel/Panel"
 import EkosistemEtkisiPage from "@/pages/etki/EkosistemEtkisi"
+import PaylasilanSunumPage from "@/pages/paylasim/PaylasilanSunum"
 import GirisimCreatePage from "@/pages/girisimler/GirisimCreate"
 import GirisimDetailsPage from "@/pages/girisimler/GirisimDetails"
 import GirisimKarsilastirmaPage from "@/pages/girisimler/GirisimKarsilastirma"
@@ -33,6 +34,9 @@ import VerifyEmailPage from "@/pages/account/VerifyEmail"
 export default function App() {
   return (
     <Routes>
+      {/* Paylaşım bağlantısı: giriş gerektirmez, kabuk dışındadır. */}
+      <Route path="/sunum/:jeton" element={<PaylasilanSunumPage />} />
+
       <Route element={<AppShellPublic />}>
         {/* Public */}
         <Route path="/" element={<HomePage />} />

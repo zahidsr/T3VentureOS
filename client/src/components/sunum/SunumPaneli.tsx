@@ -22,6 +22,7 @@ import { api, extractErrorMessage } from "@/lib/api-client"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { captureChartPng, type ChartImage } from "@/lib/chart-export"
 import { aiMaddeleriniAyir } from "@/lib/ai-metni"
+import { SunumPaylasimlari } from "@/components/sunum/SunumPaylasimlari"
 import type { GirisimDetailDto, PitchDeckBolumuDto, PitchDeckDto } from "@/lib/types"
 
 /** Slaytların kurumsal paleti — grafik serileri ve PDF vurguları aynı renkleri kullanır. */
@@ -404,6 +405,8 @@ export function SunumPaneli({
           </div>
         </div>
       )}
+
+      {duzenlenebilir && <SunumPaylasimlari girisimId={girisim.id} />}
 
       <div className="grid gap-4 md:grid-cols-2">
         {deck.bolumler.map((bolum, index) => (

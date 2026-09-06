@@ -723,3 +723,30 @@ export interface YatirimciHazirligiDto {
   durum: string
   kriterler: HazirlikKriteriDto[]
 }
+
+export interface SunumPaylasimiDto {
+  id: string
+  jeton: string
+  etiket?: string | null
+  gecerlilikBitisi: string
+  iptalEdildi: boolean
+  /** İptal edilmemiş ve süresi dolmamışsa true. */
+  gecerli: boolean
+  goruntulenmeSayisi: number
+  sonGoruntulenme?: string | null
+  createdAt: string
+}
+
+/** Paylaşım bağlantısını açan ziyaretçinin gördüğü içerik. */
+export interface PaylasilanSunumDto {
+  girisimAdi: string
+  sektor?: string | null
+  kisaTanim?: string | null
+  logoUrl?: string | null
+  kurulusYili?: number | null
+  iletisimAdSoyad?: string | null
+  iletisimUnvan?: string | null
+  iletisimEmail?: string | null
+  bolumler: PitchDeckBolumuDto[]
+  sunumTarihi: string
+}

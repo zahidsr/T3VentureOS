@@ -92,3 +92,14 @@ public record HazirlikKriteriDto(string Anahtar, string Baslik, string NedenOnem
 
 /// <summary>Girişimin yatırımcı görüşmesine hazırlık durumu.</summary>
 public record YatirimciHazirligiDto(int Yuzde, string Durum, List<HazirlikKriteriDto> Kriterler);
+
+public record PaylasilanSunumDto(
+    string GirisimAdi, string? Sektor, string? KisaTanim, string? LogoUrl, int? KurulusYili,
+    string? IletisimAdSoyad, string? IletisimUnvan, string? IletisimEmail,
+    List<PitchDeckBolumuDto> Bolumler, DateTime SunumTarihi);
+
+public record SunumPaylasimiDto(
+    Guid Id, string Jeton, string? Etiket, DateTime GecerlilikBitisi, bool IptalEdildi, bool Gecerli,
+    int GoruntulenmeSayisi, DateTime? SonGoruntulenme, DateTime CreatedAt);
+
+public record SunumPaylasimiOlusturRequest(int GecerlilikGun, string? Etiket);

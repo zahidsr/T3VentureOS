@@ -183,6 +183,21 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 | OnayDurumu, SubmittedById, ReviewedById, ReviewNotu | — | ortak onay deseni |
 | CreatedAt, UpdatedAt | datetime2 | |
 
+### Sunum Paylaşımları (SunumPaylasimi)
+> Sunumu sistem dışına açan, süre sınırlı bağlantılar. Giriş yapmamış birine içerik gösterildiği için üç koruma birlikte kurulur: 256 bitlik rastgele jeton, zorunlu son kullanma tarihi ve iptal edilebilirlik.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade` |
+| Jeton | nvarchar(64) | base64url, unique index |
+| Etiket | nvarchar(200) | girişimcinin kendi notu (kime paylaşıldı) |
+| GecerlilikBitisi | datetime2 | zorunlu; süresiz bağlantı seçeneği yoktur |
+| IptalEdildi | bit | |
+| GoruntulenmeSayisi, SonGoruntulenme | int, datetime2 | girişimci ilgiyi görebilsin |
+| OlusturanId | uniqueidentifier fk→Users | `Restrict` |
+| CreatedAt | datetime2 | |
+
 ### Onay Önerileri (OnayOnerisi)
 > ProgramYoneticisi'nin bekleyen bir kayda bıraktığı bağlayıcı olmayan tavsiye; kararı SuperAdmin verir. `Itiraz` ile aynı polimorfik (KonuTuru, KonuId) desenini kullanır.
 
