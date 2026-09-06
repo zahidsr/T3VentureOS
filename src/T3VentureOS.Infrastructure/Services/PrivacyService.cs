@@ -46,6 +46,8 @@ public class PrivacyService
                     girisim.Sektor,
                     girisim.KisaTanim,
                     girisim.CreatedAt,
+                    NakitPlani = await _db.NakitPlanlari.AsNoTracking().SingleOrDefaultAsync(x => x.GirisimId == girisimId),
+                    HaftalikHedefler = await _db.HaftalikHedefler.AsNoTracking().Where(x => x.GirisimId == girisimId).OrderByDescending(x => x.HaftaBaslangici).ToListAsync(),
                     GelisimAdimlari = girisim.GelisimAdimlari.Select(a => new { a.Tarih, a.Baslik, a.Aciklama }),
                     SatisKayitlari = girisim.SatisKayitlari.Select(s => new { s.Donem, s.Ciro, s.Ihracat, OnayDurumu = s.OnayDurumu.ToString() }),
                     YatirimKayitlari = girisim.YatirimKayitlari.Select(y => new { Tur = y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, OnayDurumu = y.OnayDurumu.ToString() }),

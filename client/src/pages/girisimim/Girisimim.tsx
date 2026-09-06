@@ -1,3 +1,4 @@
+import { GirisimAraclari } from "@/components/araclar/GirisimAraclari"
 import { useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -1296,6 +1297,8 @@ export default function GirisimimPage() {
           />
         </div>
       )}
+
+      {bolum === "profil" && <GirisimAraclari girisimId={girisim.id} />}
 
       {/* Girişimciyi sisteme geri getiren kanca: puanı ve onu yükselten somut adımlar. */}
       <div className="mb-6 space-y-4">

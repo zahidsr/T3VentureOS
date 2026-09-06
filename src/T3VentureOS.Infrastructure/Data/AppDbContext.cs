@@ -98,6 +98,9 @@ public class AppDbContext : DbContext
         if (degisti) await base.SaveChangesAsync(cancellationToken);
     }
 
+    public DbSet<NakitPlani> NakitPlanlari => Set<NakitPlani>();
+    public DbSet<HaftalikHedefler> HaftalikHedefler => Set<HaftalikHedefler>();
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Girisim> Girisimler => Set<Girisim>();
     public DbSet<GirisimProgrami> Programlar => Set<GirisimProgrami>();
@@ -125,6 +128,26 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
+
+        b.Entity<NakitPlani>(e =>
+        {
+            e.HasKey(x => x.GirisimId);
+            e.Property(x => x.KasadakiPara).HasPrecision(14, 2);
+            e.Property(x => x.AylikGelir).HasPrecision(14, 2);
+            e.Property(x => x.AylikGider).HasPrecision(14, 2);
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasOne<Girisim>().WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<HaftalikHedefler>(e =>
+        {
+            e.HasKey(x => new { x.GirisimId, x.HaftaBaslangici });
+            e.Property(x => x.Hedef1).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Hedef2).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Hedef3).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasOne<Girisim>().WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+        });
 
         b.Entity<User>(e =>
         {
