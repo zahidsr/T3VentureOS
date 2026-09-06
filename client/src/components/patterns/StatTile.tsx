@@ -42,18 +42,26 @@ export function StatTile({
         toneBar[tone],
       )}
     >
-      {icon && (
-        <div
-          className={cn(
-            "absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl",
-            toneIconBg[tone],
-          )}
-        >
-          {icon}
+      {/* İkon mutlak konumlandırılıyordu ve uzun tutarların üstüne biniyordu; artık akışın
+          içinde, sayı da daralan alanda küçülebiliyor. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-heading text-2xl font-extrabold text-t3-navy tabular-nums whitespace-nowrap sm:text-3xl">
+            {value}
+          </div>
+          <div className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">{label}</div>
         </div>
-      )}
-      <div className="font-heading text-3xl font-extrabold text-t3-navy">{value}</div>
-      <div className="mt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">{label}</div>
+        {icon && (
+          <div
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-xl",
+              toneIconBg[tone],
+            )}
+          >
+            {icon}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

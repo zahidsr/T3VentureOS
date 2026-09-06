@@ -113,6 +113,23 @@ function formatCurrency(value: number, currency: string) {
   }
 }
 
+/**
+ * Özet kartlarının dar alanına sığan kısa tutar ("2 Mn ₺"). Tam değer başlık (title) olarak
+ * kalır; kartta iki satıra bölünen bir sayı okunmuyordu.
+ */
+function ozetTutari(value: number, currency: string) {
+  const tam = formatCurrency(value, currency)
+  const kisa =
+    value >= 1_000_000_000
+      ? `${(value / 1_000_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} Mlr ₺`
+      : value >= 1_000_000
+        ? `${(value / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} Mn ₺`
+        : value >= 1_000
+          ? `${(value / 1_000).toLocaleString("tr-TR", { maximumFractionDigits: 0 })} B ₺`
+          : formatCurrency(value, currency)
+  return <span title={tam}>{kisa}</span>
+}
+
 function fileUrl(dosyaUrl: string) {
   return `${API_URL.replace(/\/api\/?$/, "")}${dosyaUrl}`
 }
@@ -1956,13 +1973,13 @@ export default function GirisimimPage() {
               {/* Panel ve etki sayfalarıyla aynı sayı kartı dili. */}
               <StatGrid>
                 <StatTile
-                  value={formatCurrency(raporQuery.data.toplamOnayliCiro, "TRY")}
+                  value={ozetTutari(raporQuery.data.toplamOnayliCiro, "TRY")}
                   label="Onaylı Ciro"
                   tone="info"
                   icon={<TrendingUp className="size-4" />}
                 />
                 <StatTile
-                  value={formatCurrency(raporQuery.data.toplamOnayliYatirim, "TRY")}
+                  value={ozetTutari(raporQuery.data.toplamOnayliYatirim, "TRY")}
                   label="Onaylı Yatırım"
                   tone="success"
                   icon={<Banknote className="size-4" />}
