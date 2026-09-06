@@ -109,6 +109,16 @@ export default function LoginPage() {
             Kayıt olun
           </Link>
         </span>
+        {/* Kullanıcı hesabını burada oluşturuyor; aydınlatma metni giriş noktasında erişilebilir olmalı. */}
+        <span className="text-xs text-muted-foreground">
+          <Link to="/kvkk" className="hover:text-foreground hover:underline">
+            KVKK Aydınlatma Metni
+          </Link>
+          {" · "}
+          <Link to="/gizlilik" className="hover:text-foreground hover:underline">
+            Gizlilik Politikası
+          </Link>
+        </span>
       </div>
     </AuthShell>
   )

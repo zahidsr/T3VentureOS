@@ -15,6 +15,8 @@ import GirisimlerIndexPage from "@/pages/girisimler/GirisimlerIndex"
 import PanelPage from "@/pages/panel/Panel"
 import EkosistemEtkisiPage from "@/pages/etki/EkosistemEtkisi"
 import PaylasilanSunumPage from "@/pages/paylasim/PaylasilanSunum"
+import KvkkAydinlatmaPage from "@/pages/yasal/KvkkAydinlatma"
+import GizlilikPolitikasiPage from "@/pages/yasal/GizlilikPolitikasi"
 import GirisimCreatePage from "@/pages/girisimler/GirisimCreate"
 import GirisimDetailsPage from "@/pages/girisimler/GirisimDetails"
 import GirisimKarsilastirmaPage from "@/pages/girisimler/GirisimKarsilastirma"
@@ -47,6 +49,8 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/erisim-reddedildi" element={<AccessDeniedPage />} />
+        <Route path="/kvkk" element={<KvkkAydinlatmaPage />} />
+        <Route path="/gizlilik" element={<GizlilikPolitikasiPage />} />
       </Route>
 
       <Route element={<AppShellAuthenticated />}>

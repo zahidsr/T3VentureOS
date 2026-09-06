@@ -88,6 +88,14 @@ export function Footer() {
           <span className="text-white/50">
             &copy; {new Date().getFullYear()} T3 Vakfı — Tüm hakları saklıdır.
           </span>
+          <div className="flex gap-4">
+            <Link to="/kvkk" className="text-white/60 transition-colors hover:text-white hover:underline">
+              KVKK Aydınlatma Metni
+            </Link>
+            <Link to="/gizlilik" className="text-white/60 transition-colors hover:text-white hover:underline">
+              Gizlilik Politikası
+            </Link>
+          </div>
           <a
             href="https://t3gm.t3vakfi.org/tr/"
             target="_blank"

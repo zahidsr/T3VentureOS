@@ -9,7 +9,7 @@ T3 Vakfı girişimcilik ekosistemi için kurumsal, çok kiracılı (multi-tenant
 | Backend | .NET 10 + ASP.NET Core Web API + Entity Framework Core |
 | Veritabanı | SQL Server (LocalDB üzerinde geliştirme) |
 | Frontend | React + Vite + TypeScript + Tailwind CSS + shadcn/ui |
-| Auth & Session | JWT (access) + HttpOnly cookie (refresh) + ASP.NET Core Identity `PasswordHasher` (PBKDF2-HMAC-SHA256) |
+| Auth & Session | JWT access token (istemcide `localStorage`) + ASP.NET Core Identity `PasswordHasher` (PBKDF2-HMAC-SHA256). Çerez kullanılmaz. |
 | Raporlama & AI | Recharts + Google Gemini API (`IAiService` ile sağlayıcı değiştirilebilir; Anthropic Claude de desteklenir) |
 | Dışa Aktarım | CSV, Excel (XLSX) |
 
@@ -107,3 +107,4 @@ Tüm şifreler: `Passw0rd!`
 - Girişimin verisinden Sequoia pitch deck şablonuna göre otomatik sunum üretimi; veri değiştiğinde sunum "güncel değil" olarak işaretlenir ve tek tıkla yenilenir, bölümler elle düzenlenebilir (düzenlenen bölüm yeniden üretimde korunur, AI metnine geri dönülebilir) ve onaylı ciro/yatırım grafikleriyle birlikte slayt başına bir sayfa PDF olarak indirilir
 - CSV ve Excel rapor export
 - T3 Vakfı kurumsal renkleriyle tutarlı UI/UX
+- KVKK aydınlatma metni ve gizlilik politikası sayfaları (giriş ekranı ve alt bilgiden erişilebilir)
