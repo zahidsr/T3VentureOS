@@ -34,11 +34,11 @@ public static class DbInitializer
     /// </summary>
     public static async Task SeedIstihdamAsync(AppDbContext db)
     {
-        if (await db.IstihdamKayitlari.AnyAsync()) return;
-
         var girisimler = await db.Girisimler
             .Include(g => g.SatisKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
+            .Where(g => !db.IstihdamKayitlari.Any(i => i.GirisimId == g.Id))
             .ToListAsync();
+        if (girisimler.Count == 0) return;
 
         var pmId = await db.Users.Where(u => u.Role == UserRole.ProgramYoneticisi).Select(u => u.Id).FirstOrDefaultAsync();
         if (pmId == Guid.Empty) return;
@@ -91,8 +91,6 @@ public static class DbInitializer
     /// </summary>
     public static async Task SeedAsamaGecisleriAsync(AppDbContext db)
     {
-        if (await db.AsamaGecisleri.AnyAsync()) return;
-
         var pmId = await db.Users.Where(u => u.Role == UserRole.ProgramYoneticisi).Select(u => u.Id).FirstOrDefaultAsync();
         if (pmId == Guid.Empty) return;
 
@@ -100,7 +98,9 @@ public static class DbInitializer
             .Include(g => g.SatisKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
             .Include(g => g.YatirimKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
             .Include(g => g.ProgramKatilimlari)
+            .Where(g => !db.AsamaGecisleri.Any(a => a.GirisimId == g.Id))
             .ToListAsync();
+        if (girisimler.Count == 0) return;
 
         foreach (var girisim in girisimler)
         {
@@ -542,6 +542,273 @@ public static class DbInitializer
             new Basari { GirisimId = logioptim.Id, Tur = BasariTuru.Hibe, Baslik = "Türkiye-Almanya Yenilik Köprüsü Hibesi", Tarih = now.AddMonths(-4), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-4) },
 
             new Basari { GirisimId = agrisense.Id, Tur = BasariTuru.Hibe, Baslik = "KALKINMA AJANSI Tarım Dijitalleşme Hibesi", Tarih = now.AddMonths(-2), OnayDurumu = OnayDurumu.Beklemede, SubmittedById = pmId, CreatedAt = now.AddDays(-15) });
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Adds a second girişim to each sector already seeded by <see cref="SeedDemoExtrasAsync"/>,
+    /// so every sector has at least two örnekler for karşılaştırma/rapor ekranları. Idempotent —
+    /// keyed on one of the new girişim adları rather than a count, so it survives future seed
+    /// additions elsewhere.
+    /// </summary>
+    public static async Task SeedDemoExtras2Async(AppDbContext db)
+    {
+        if (await db.Girisimler.AnyAsync(g => g.Ad == "NeuraVize Yapay Zekâ Çözümleri")) return;
+
+        var adminId = await db.Users
+            .Where(u => u.Role == UserRole.SuperAdmin)
+            .Select(u => u.Id)
+            .FirstOrDefaultAsync();
+
+        var pmId = await db.Users
+            .Where(u => u.Role == UserRole.ProgramYoneticisi)
+            .Select(u => u.Id)
+            .FirstOrDefaultAsync();
+
+        if (adminId == Guid.Empty || pmId == Guid.Empty) return;
+
+        var cleantechId = await db.Programlar
+            .Where(p => p.Name == "T3 CleanTech Hızlandırma 2025")
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync();
+
+        // ─── Girişim 7: NeuraVize (Yapay Zekâ) ─────────────────────────
+        var neuravize = new Girisim
+        {
+            Ad = "NeuraVize Yapay Zekâ Çözümleri",
+            Sektor = "Yapay Zekâ",
+            KisaTanim = "Doğal dil işleme tabanlı çağrı merkezi otomasyonu ve müşteri hizmetleri asistanı geliştiren girişim.",
+            Teknoloji = "NLP, LLM Entegrasyonu, Python",
+            WebsiteUrl = "https://neuravize.example",
+            KurulusYili = 2023,
+            EkipBuyuklugu = 9,
+            CreatedById = pmId,
+        };
+
+        // ─── Girişim 8: GünEnerji (Yeşil Enerji) ───────────────────────
+        var gunenerji = new Girisim
+        {
+            Ad = "GünEnerji Güneş Teknolojileri",
+            Sektor = "Yeşil Enerji",
+            KisaTanim = "Güneş enerjisi santralleri için verimlilik izleme ve arıza tahmini yapan enerji teknolojisi girişimi.",
+            Teknoloji = "IoT Sensörler, Tahminsel Bakım, Bulut Analitik",
+            WebsiteUrl = "https://gunenerji.example",
+            KurulusYili = 2021,
+            EkipBuyuklugu = 13,
+            CreatedById = adminId,
+        };
+
+        // ─── Girişim 9: TeleSağlık (Sağlık Teknolojisi) ────────────────
+        var telesaglik = new Girisim
+        {
+            Ad = "TeleSağlık Dijital Klinik",
+            Sektor = "Sağlık Teknolojisi",
+            KisaTanim = "Kronik hastalık takibi için uzaktan hasta izleme ve telemedicine platformu geliştiren sağlık teknolojisi girişimi.",
+            Teknoloji = "Telemedicine, React, .NET, HL7 FHIR",
+            WebsiteUrl = "https://telesaglik.example",
+            KurulusYili = 2022,
+            EkipBuyuklugu = 15,
+            CreatedById = pmId,
+        };
+
+        // ─── Girişim 10: TarımVeri (AgriTech) ──────────────────────────
+        var tarimveri = new Girisim
+        {
+            Ad = "TarımVeri Analitik",
+            Sektor = "AgriTech",
+            KisaTanim = "Drone görüntülerinden mahsul sağlığı ve verim tahmini çıkaran tarım teknolojisi girişimi.",
+            Teknoloji = "Drone Görüntüleme, Bilgisayarlı Görü, Python",
+            WebsiteUrl = "https://tarimveri.example",
+            KurulusYili = 2023,
+            EkipBuyuklugu = 7,
+            CreatedById = adminId,
+        };
+
+        // ─── Girişim 11: VeriKalkan (Siber Güvenlik) ───────────────────
+        var verikalkan = new Girisim
+        {
+            Ad = "VeriKalkan Güvenlik Teknolojileri",
+            Sektor = "Siber Güvenlik",
+            KisaTanim = "KOBİ'lere yönelik veri sızıntısı önleme (DLP) ve uç nokta güvenliği sağlayan SaaS platformu.",
+            Teknoloji = "Endpoint Security, Rust, Kubernetes",
+            WebsiteUrl = "https://verikalkan.example",
+            KurulusYili = 2022,
+            EkipBuyuklugu = 10,
+            CreatedById = pmId,
+        };
+
+        // ─── Girişim 12: RotaAkıllı (Lojistik Tech) ────────────────────
+        var rotaakilli = new Girisim
+        {
+            Ad = "RotaAkıllı Filo Yönetimi",
+            Sektor = "Lojistik Tech",
+            KisaTanim = "Son mil teslimat operasyonları için gerçek zamanlı rota optimizasyonu ve filo takip platformu.",
+            Teknoloji = "Route Optimization, Go, React Native",
+            WebsiteUrl = "https://rotaakilli.example",
+            KurulusYili = 2020,
+            EkipBuyuklugu = 19,
+            CreatedById = adminId,
+        };
+
+        db.Girisimler.AddRange(neuravize, gunenerji, telesaglik, tarimveri, verikalkan, rotaakilli);
+
+        // SaveChanges so IDs are assigned before we create related records
+        await db.SaveChangesAsync();
+
+        // ─── Program Katılımları ─────────────────────────────────────
+        if (cleantechId is { } cleantech)
+        {
+            db.ProgramKatilimlari.Add(new ProgramKatilimi
+            {
+                GirisimId = gunenerji.Id, ProgramId = cleantech,
+                Donem = "2025 Güz Dönemi", Durum = KatilimDurumu.Mezun,
+                BaslangicTarihi = DateTime.UtcNow.AddMonths(-12),
+                BitisTarihi = DateTime.UtcNow.AddMonths(-3),
+            });
+        }
+
+        // ─── Gelişim Adımları ────────────────────────────────────────
+        var now = DateTime.UtcNow;
+        db.GelisimAdimlari.AddRange(
+            new GelisimAdimi { GirisimId = neuravize.Id, Tarih = now.AddMonths(-4), Baslik = "İlk kurumsal pilot anlaşması imzalandı", CreatedById = pmId },
+            new GelisimAdimi { GirisimId = gunenerji.Id, Tarih = now.AddMonths(-6), Baslik = "500. güneş santrali izlemeye alındı", CreatedById = adminId },
+            new GelisimAdimi { GirisimId = telesaglik.Id, Tarih = now.AddMonths(-3), Baslik = "10.000 aktif hasta kaydına ulaşıldı", CreatedById = pmId },
+            new GelisimAdimi { GirisimId = tarimveri.Id, Tarih = now.AddMonths(-5), Baslik = "İlk pilot çiftlik anlaşması imzalandı", CreatedById = adminId },
+            new GelisimAdimi { GirisimId = verikalkan.Id, Tarih = now.AddMonths(-3), Baslik = "İlk 20 kurumsal müşteriye ulaşıldı", CreatedById = pmId },
+            new GelisimAdimi { GirisimId = rotaakilli.Id, Tarih = now.AddMonths(-2), Baslik = "200. filo operatörü müşterisine ulaşıldı", CreatedById = adminId });
+
+        // ─── Satış Kayıtları ─────────────────────────────────────────
+        db.SatisKayitlari.AddRange(
+            // NeuraVize
+            new SatisKaydi { GirisimId = neuravize.Id, Donem = "2025-Q4", Ciro = 320000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6) },
+            new SatisKaydi { GirisimId = neuravize.Id, Donem = "2026-Q1", Ciro = 510000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) },
+            new SatisKaydi { GirisimId = neuravize.Id, Donem = "2026-Q2", Ciro = 680000, Ihracat = 0, OnayDurumu = OnayDurumu.Beklemede, SubmittedById = pmId, CreatedAt = now.AddDays(-9) },
+
+            // GünEnerji
+            new SatisKaydi { GirisimId = gunenerji.Id, Donem = "2025-Q2", Ciro = 610000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-12) },
+            new SatisKaydi { GirisimId = gunenerji.Id, Donem = "2025-Q3", Ciro = 890000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-9) },
+            new SatisKaydi { GirisimId = gunenerji.Id, Donem = "2025-Q4", Ciro = 1240000, Ihracat = 180000, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6) },
+            new SatisKaydi { GirisimId = gunenerji.Id, Donem = "2026-Q1", Ciro = 1050000, Ihracat = 140000, OnayDurumu = OnayDurumu.Beklemede, SubmittedById = adminId, CreatedAt = now.AddDays(-16) },
+
+            // TeleSağlık
+            new SatisKaydi { GirisimId = telesaglik.Id, Donem = "2025-Q3", Ciro = 1400000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-9) },
+            new SatisKaydi { GirisimId = telesaglik.Id, Donem = "2025-Q4", Ciro = 1850000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6) },
+            new SatisKaydi { GirisimId = telesaglik.Id, Donem = "2026-Q1", Ciro = 2300000, Ihracat = 260000, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) },
+            new SatisKaydi { GirisimId = telesaglik.Id, Donem = "2026-Q2", Ciro = 1100000, Ihracat = 90000, OnayDurumu = OnayDurumu.Beklemede, SubmittedById = pmId, CreatedAt = now.AddDays(-8) },
+
+            // TarımVeri
+            new SatisKaydi { GirisimId = tarimveri.Id, Donem = "2026-Q1", Ciro = 190000, Ihracat = 0, OnayDurumu = OnayDurumu.Beklemede, SubmittedById = adminId, CreatedAt = now.AddDays(-21) },
+
+            // VeriKalkan
+            new SatisKaydi { GirisimId = verikalkan.Id, Donem = "2025-Q4", Ciro = 540000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6) },
+            new SatisKaydi { GirisimId = verikalkan.Id, Donem = "2026-Q1", Ciro = 790000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) },
+            new SatisKaydi { GirisimId = verikalkan.Id, Donem = "2026-Q2", Ciro = 430000, Ihracat = 0, OnayDurumu = OnayDurumu.Beklemede, SubmittedById = pmId, CreatedAt = now.AddDays(-11) },
+
+            // RotaAkıllı
+            new SatisKaydi { GirisimId = rotaakilli.Id, Donem = "2025-Q1", Ciro = 2100000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-15) },
+            new SatisKaydi { GirisimId = rotaakilli.Id, Donem = "2025-Q2", Ciro = 2650000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-12) },
+            new SatisKaydi { GirisimId = rotaakilli.Id, Donem = "2025-Q3", Ciro = 3400000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-9) },
+            new SatisKaydi { GirisimId = rotaakilli.Id, Donem = "2025-Q4", Ciro = 4200000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6) },
+            new SatisKaydi { GirisimId = rotaakilli.Id, Donem = "2026-Q1", Ciro = 4900000, Ihracat = 0, OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) });
+
+        // ─── Yatırım Kayıtları ───────────────────────────────────────
+        db.YatirimKayitlari.AddRange(
+            new YatirimKaydi
+            {
+                GirisimId = neuravize.Id, Tur = YatirimTuru.OnTohum, Tutar = 3000000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-6), YatirimciAdi = "Ankara Teknoloji Melekleri",
+                OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6),
+            },
+            new YatirimKaydi
+            {
+                GirisimId = gunenerji.Id, Tur = YatirimTuru.Tohum, Tutar = 6500000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-9), YatirimciAdi = "Yeşil Dönüşüm Fonu",
+                OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-9),
+            },
+            new YatirimKaydi
+            {
+                GirisimId = telesaglik.Id, Tur = YatirimTuru.SeriA, Tutar = 18000000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-7), YatirimciAdi = "Anadolu Sağlık Girişim Sermayesi",
+                OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-7),
+            },
+            new YatirimKaydi
+            {
+                GirisimId = tarimveri.Id, Tur = YatirimTuru.Hibe, Tutar = 600000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-2), YatirimciAdi = "Tarımsal İnovasyon Destek Programı",
+                OnayDurumu = OnayDurumu.Beklemede, SubmittedById = adminId, CreatedAt = now.AddDays(-19),
+            },
+            new YatirimKaydi
+            {
+                GirisimId = verikalkan.Id, Tur = YatirimTuru.OnTohum, Tutar = 2200000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-5), YatirimciAdi = "Siber Güvenlik Yatırım Ağı",
+                OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-5),
+            },
+            new YatirimKaydi
+            {
+                GirisimId = rotaakilli.Id, Tur = YatirimTuru.SeriA, Tutar = 30000000, ParaBirimi = "TRY",
+                Tarih = now.AddMonths(-6), YatirimciAdi = "Lojistik Büyüme Ortaklığı",
+                OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-6),
+            });
+
+        // ─── Başarılar ───────────────────────────────────────────────
+        db.Basarilar.AddRange(
+            new Basari { GirisimId = neuravize.Id, Tur = BasariTuru.Odul, Baslik = "Teknofest Yapay Zeka Yarışması Finalisti", Tarih = now.AddMonths(-3), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) },
+            new Basari { GirisimId = gunenerji.Id, Tur = BasariTuru.Hibe, Baslik = "Enerji Verimliliği Ar-Ge Desteği", Tarih = now.AddMonths(-5), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-5) },
+            new Basari { GirisimId = telesaglik.Id, Tur = BasariTuru.Sertifika, Baslik = "KVKK ve HIPAA Uyum Sertifikasyonu", Tarih = now.AddMonths(-4), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-4) },
+            new Basari { GirisimId = tarimveri.Id, Tur = BasariTuru.Odul, Baslik = "AgriTech İnovasyon Yarışması İkincisi", Tarih = now.AddMonths(-3), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) },
+            new Basari { GirisimId = verikalkan.Id, Tur = BasariTuru.Sertifika, Baslik = "ISO 27001 Sertifikasyonu", Tarih = now.AddMonths(-2), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = pmId, ReviewedById = pmId, CreatedAt = now.AddMonths(-2) },
+            new Basari { GirisimId = rotaakilli.Id, Tur = BasariTuru.Odul, Baslik = "Lojistik İnovasyon Ödülleri Birincisi", Tarih = now.AddMonths(-3), OnayDurumu = OnayDurumu.Onaylandi, SubmittedById = adminId, ReviewedById = pmId, CreatedAt = now.AddMonths(-3) });
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Örnek girişimler için markaları taklit eden, baş harflerden oluşan basit birer SVG rozet
+    /// üretir (aynı sektördeki iki girişim aynı renk ailesini paylaşır). Gerçek bir logo dosyası
+    /// olmadığından listeleme/detay ekranları boş kalmasın diye demo verisine özel üretilir;
+    /// kullanıcı yüklemesi gibi <see cref="FileStorageService"/> üzerinden değil, doğrudan
+    /// wwwroot/uploads altına yazılır. Idempotent — LogoUrl'i zaten dolu olan girişimlere dokunmaz.
+    /// </summary>
+    public static async Task SeedGirisimLogolariAsync(AppDbContext db, string uploadsRoot)
+    {
+        var logolar = new Dictionary<string, (string Bg, string Fg, string Kisaltma, string DosyaAdi)>
+        {
+            ["Örnek Teknoloji A.Ş."] = ("#ede9fe", "#6d28d9", "ÖT", "ornek-teknoloji"),
+            ["NeuraVize Yapay Zekâ Çözümleri"] = ("#ede9fe", "#6d28d9", "NV", "neuravize"),
+            ["EkoFlow Enerji Teknolojileri"] = ("#d1fae5", "#047857", "EF", "ekoflow"),
+            ["GünEnerji Güneş Teknolojileri"] = ("#d1fae5", "#047857", "GE", "gunenerji"),
+            ["MediTrack Sağlık Sistemleri"] = ("#ffe4e6", "#be123c", "MT", "meditrack"),
+            ["TeleSağlık Dijital Klinik"] = ("#ffe4e6", "#be123c", "TS", "telesaglik"),
+            ["AgriSense Tarım Teknolojileri"] = ("#fef3c7", "#b45309", "AS", "agrisense"),
+            ["TarımVeri Analitik"] = ("#fef3c7", "#b45309", "TV", "tarimveri"),
+            ["CyberShield Güvenlik"] = ("#e0e7ff", "#4338ca", "CS", "cybershield"),
+            ["VeriKalkan Güvenlik Teknolojileri"] = ("#e0e7ff", "#4338ca", "VK", "verikalkan"),
+            ["LogiOptim Lojistik Çözümleri"] = ("#cffafe", "#0e7490", "LO", "logioptim"),
+            ["RotaAkıllı Filo Yönetimi"] = ("#cffafe", "#0e7490", "RA", "rotaakilli"),
+        };
+
+        var girisimler = await db.Girisimler
+            .Where(g => g.LogoUrl == null || g.LogoUrl == "")
+            .ToListAsync();
+        if (girisimler.Count == 0) return;
+
+        Directory.CreateDirectory(uploadsRoot);
+
+        foreach (var girisim in girisimler)
+        {
+            if (!logolar.TryGetValue(girisim.Ad, out var stil)) continue;
+
+            var dosyaAdi = $"logo-{stil.DosyaAdi}.svg";
+            var svg = $"""
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88">
+                <rect width="88" height="88" rx="20" fill="{stil.Bg}"/>
+                <text x="44" y="46" text-anchor="middle" dominant-baseline="central" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="{stil.Fg}">{stil.Kisaltma}</text>
+                </svg>
+                """;
+            await File.WriteAllTextAsync(Path.Combine(uploadsRoot, dosyaAdi), svg);
+            girisim.LogoUrl = $"/uploads/{dosyaAdi}";
+        }
 
         await db.SaveChangesAsync();
     }
