@@ -812,4 +812,48 @@ public static class DbInitializer
 
         await db.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// Demo girişimler için muhatap/iletişim kartı üretir. Idempotent — zaten bir kaydı olan
+    /// girişimlere (ör. elle test edilmiş "Örnek Teknoloji A.Ş.") dokunmaz.
+    /// </summary>
+    public static async Task SeedGirisimContactlariAsync(AppDbContext db)
+    {
+        var muhataplar = new Dictionary<string, (string AdSoyad, string Unvan, string Telefon, string Email, string LinkedIn)>
+        {
+            ["EkoFlow Enerji Teknolojileri"] = ("Mert Aydın", "Kurucu Ortak & CEO", "+905321112233", "mert@ekoflow.example", "https://linkedin.com/in/mertaydin"),
+            ["MediTrack Sağlık Sistemleri"] = ("Elif Demir", "Genel Müdür", "+905322223344", "elif@meditrack.example", "https://linkedin.com/in/elifdemir"),
+            ["AgriSense Tarım Teknolojileri"] = ("Caner Yıldız", "Kurucu Ortak & CEO", "+905323334455", "caner@agrisense.example", "https://linkedin.com/in/caneryildiz"),
+            ["CyberShield Güvenlik"] = ("Selin Kaya", "CTO & Kurucu Ortak", "+905324445566", "selin@cybershield.example", "https://linkedin.com/in/selinkaya"),
+            ["LogiOptim Lojistik Çözümleri"] = ("Barış Şahin", "Genel Müdür", "+905325556677", "baris@logioptim.example", "https://linkedin.com/in/barissahin"),
+            ["NeuraVize Yapay Zekâ Çözümleri"] = ("Deniz Arslan", "Kurucu Ortak & CEO", "+905326667788", "deniz@neuravize.example", "https://linkedin.com/in/denizarslan"),
+            ["GünEnerji Güneş Teknolojileri"] = ("Ece Koç", "Genel Müdür", "+905327778899", "ece@gunenerji.example", "https://linkedin.com/in/ecekoc"),
+            ["TeleSağlık Dijital Klinik"] = ("Kerem Öztürk", "Kurucu Ortak & CEO", "+905328889900", "kerem@telesaglik.example", "https://linkedin.com/in/keremozturk"),
+            ["TarımVeri Analitik"] = ("Zehra Aksoy", "Kurucu Ortak", "+905329990011", "zehra@tarimveri.example", "https://linkedin.com/in/zehraaksoy"),
+            ["VeriKalkan Güvenlik Teknolojileri"] = ("Onur Çelik", "CTO & Kurucu Ortak", "+905331002233", "onur@verikalkan.example", "https://linkedin.com/in/onurcelik"),
+            ["RotaAkıllı Filo Yönetimi"] = ("Pınar Yalçın", "Genel Müdür", "+905332114455", "pinar@rotaakilli.example", "https://linkedin.com/in/pinaryalcin"),
+        };
+
+        var girisimler = await db.Girisimler
+            .Where(g => !db.GirisimContactlar.Any(c => c.GirisimId == g.Id))
+            .ToListAsync();
+        if (girisimler.Count == 0) return;
+
+        foreach (var girisim in girisimler)
+        {
+            if (!muhataplar.TryGetValue(girisim.Ad, out var m)) continue;
+
+            db.GirisimContactlar.Add(new GirisimContact
+            {
+                GirisimId = girisim.Id,
+                AdSoyad = m.AdSoyad,
+                Unvan = m.Unvan,
+                Telefon = m.Telefon,
+                Email = m.Email,
+                LinkedInUrl = m.LinkedIn,
+            });
+        }
+
+        await db.SaveChangesAsync();
+    }
 }

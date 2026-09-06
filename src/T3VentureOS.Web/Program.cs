@@ -105,6 +105,7 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedIstihdamAsync(db);
     await DbInitializer.SeedAsamaGecisleriAsync(db);
     await DbInitializer.SeedGirisimLogolariAsync(db, uploadsRoot);
+    await DbInitializer.SeedGirisimContactlariAsync(db);
     await DbInitializer.PuanlariTazeleAsync(db);
 }
 
