@@ -1,6 +1,10 @@
 <div align="center">
 
-<img src="client/public/logo-tam.png" alt="T3VentureOS" width="220">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="client/public/logo-tam.png">
+  <source media="(prefers-color-scheme: light)" srcset="client/public/logo-tam-koyu.png">
+  <img src="client/public/logo-tam-koyu.png" alt="T3VentureOS" width="320">
+</picture>
 
 # T3VentureOS
 

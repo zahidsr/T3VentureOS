@@ -36,7 +36,7 @@ export function MobileSidebar() {
           {/* Genel tanıtım anasayfasına değil, kullanıcının kendi rol anasayfasına döner —
               oturum korunur. */}
           <Link to={roleHomePath(user.role)} onClick={() => setOpen(false)} className="flex items-center">
-            <img src="/logo-tam.png" alt="TGM VentureOS" className="h-9 w-auto" />
+            <img src="/logo-tam.png" alt="T3GM VentureOS" className="h-9 w-auto" />
           </Link>
 
           <nav className="flex flex-col gap-1">

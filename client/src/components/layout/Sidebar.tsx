@@ -34,9 +34,9 @@ export function Sidebar() {
             anasayfasına değil, kullanıcının kendi rol anasayfasına döner — oturum korunur. */}
         <Link to={roleHomePath(user.role)} className={collapsed ? "mx-auto" : "block w-full"}>
           {collapsed ? (
-            <img src="/logo-isaret.png" alt="TGM VentureOS" className="mx-auto h-9 w-auto shrink-0" />
+            <img src="/logo-isaret.png" alt="T3GM VentureOS" className="mx-auto h-9 w-auto shrink-0" />
           ) : (
-            <img src="/logo-tam.png" alt="TGM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="w-full max-w-[196px]" />
+            <img src="/logo-tam.png" alt="T3GM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="w-full max-w-[196px]" />
           )}
         </Link>
       </div>
