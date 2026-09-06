@@ -303,6 +303,7 @@ export interface GirisimDetailDto {
   kurulusYili: number | null
   ekipBuyuklugu: number | null
   logoUrl: string | null
+  kapakGorseliUrl: string | null
   createdAt: string
   asama: GirisimAsamasi
   programKatilimlari: ProgramKatilimOzetDto[]
@@ -771,6 +772,60 @@ export interface PaylasilanSunumDto {
   iletisimEmail?: string | null
   bolumler: PitchDeckBolumuDto[]
   sunumTarihi: string
+}
+
+export interface GirisimCvPaylasimiDto {
+  id: string
+  jeton: string
+  etiket?: string | null
+  gecerlilikBitisi: string
+  iptalEdildi: boolean
+  /** İptal edilmemiş ve süresi dolmamışsa true. */
+  gecerli: boolean
+  goruntulenmeSayisi: number
+  sonGoruntulenme?: string | null
+  createdAt: string
+}
+
+export interface PaylasilanCvProgramKatilimiDto {
+  programAdi: string
+  donem: string | null
+  durum: KatilimDurumu
+  baslangicTarihi: string
+  bitisTarihi: string | null
+}
+
+export interface PaylasilanCvGelisimAdimiDto {
+  tarih: string
+  baslik: string
+  aciklama: string | null
+}
+
+export interface PaylasilanCvBasariDto {
+  tur: BasariTuru
+  baslik: string
+  aciklama: string | null
+  tarih: string
+}
+
+/** CV paylaşım bağlantısını açan ziyaretçinin gördüğü içerik — finansal kayıt hiç yer almaz. */
+export interface PaylasilanCvDto {
+  girisimAdi: string
+  sektor?: string | null
+  kisaTanim?: string | null
+  teknoloji?: string | null
+  websiteUrl?: string | null
+  logoUrl?: string | null
+  kapakGorseliUrl?: string | null
+  kurulusYili?: number | null
+  ekipBuyuklugu?: number | null
+  iletisimAdSoyad?: string | null
+  iletisimUnvan?: string | null
+  iletisimEmail?: string | null
+  programKatilimlari: PaylasilanCvProgramKatilimiDto[]
+  gelisimAdimlari: PaylasilanCvGelisimAdimiDto[]
+  basarilar: PaylasilanCvBasariDto[]
+  guncellemeTarihi: string
 }
 
 export interface EksikDonemDto {

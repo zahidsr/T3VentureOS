@@ -15,6 +15,7 @@ import GirisimlerIndexPage from "@/pages/girisimler/GirisimlerIndex"
 import PanelPage from "@/pages/panel/Panel"
 import EkosistemEtkisiPage from "@/pages/etki/EkosistemEtkisi"
 import PaylasilanSunumPage from "@/pages/paylasim/PaylasilanSunum"
+import PaylasilanCvPage from "@/pages/paylasim/PaylasilanCv"
 import KvkkAydinlatmaPage from "@/pages/yasal/KvkkAydinlatma"
 import GizlilikPolitikasiPage from "@/pages/yasal/GizlilikPolitikasi"
 import GirisimCreatePage from "@/pages/girisimler/GirisimCreate"
@@ -38,6 +39,7 @@ export default function App() {
     <Routes>
       {/* Paylaşım bağlantısı: giriş gerektirmez, kabuk dışındadır. */}
       <Route path="/sunum/:jeton" element={<PaylasilanSunumPage />} />
+      <Route path="/cv/:jeton" element={<PaylasilanCvPage />} />
 
       <Route element={<AppShellPublic />}>
         {/* Public */}

@@ -6,8 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Award, Banknote, Building2, Clock, FileText, History, Layers, Mail, MessageSquareWarning, Trash2, TrendingUp } from "lucide-react"
-import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
+import { buildSirketCvPdf } from "@/lib/sirket-cv-pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
+import { GirisimCvPaylasimlari } from "@/components/cv/GirisimCvPaylasimlari"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
@@ -807,6 +808,62 @@ function LogoUploadSection({ girisim, onUpdated }: { girisim: GirisimDetailDto; 
   )
 }
 
+// --------------------------------------------------- kapak görseli yükleme
+
+function BannerUploadSection({ girisim, onUpdated }: { girisim: GirisimDetailDto; onUpdated: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const bannerMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      return (await api.post<GirisimDetailDto>(`/girisimler/${girisim.id}/kapak-gorseli`, formData)).data
+    },
+    onSuccess: () => {
+      toast.success("Kapak görseli güncellendi.")
+      onUpdated()
+    },
+    onError: (error) => toast.error(extractErrorMessage(error, "Kapak görseli yüklenemedi.")),
+  })
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) bannerMutation.mutate(file)
+    e.target.value = ""
+  }
+
+  const bannerSrc = girisim.kapakGorseliUrl ? fileUrl(girisim.kapakGorseliUrl) : null
+
+  return (
+    <div className="mb-6 space-y-2">
+      {bannerSrc ? (
+        <img
+          src={bannerSrc}
+          alt={`${girisim.ad} kapak görseli`}
+          className="h-28 w-full rounded-2xl border object-cover"
+        />
+      ) : (
+        <div className="flex h-28 w-full items-center justify-center rounded-2xl border border-dashed bg-muted">
+          <p className="text-xs text-muted-foreground">Henüz kapak görseli yüklenmemiş</p>
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => fileRef.current?.click()}
+        disabled={bannerMutation.isPending}
+      >
+        {bannerMutation.isPending ? "Yükleniyor…" : "Kapak Görseli Yükle"}
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Şirket CV'sinin ve paylaşım sayfasının ilk ekranında banner olarak kullanılır.
+      </p>
+    </div>
+  )
+}
+
 // -------------------------------------------------- iletişim / muhatap kartı
 
 function GirisimContactForm({
@@ -989,154 +1046,23 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
 // -------------------------------------------------------------- Şirket CV'si (PDF)
 
 async function downloadSirketCv(girisim: GirisimDetailDto) {
-  const doc = await createTurkishPdf()
-  const pageWidth = doc.internal.pageSize.getWidth()
-  const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 40
-  let y = 50
-
-  function ensureSpace(height: number) {
-    if (y + height > pageHeight - margin) {
-      doc.addPage()
-      y = 50
-    }
-  }
-
-  function sectionTitle(title: string) {
-    ensureSpace(26)
-    doc.setFont(PDF_FONT, "bold")
-    doc.setFontSize(12)
-    doc.setTextColor(0, 120, 168)
-    doc.text(title, margin, y)
-    y += 18
-    doc.setTextColor(30, 41, 47)
-    doc.setFont(PDF_FONT, "normal")
-    doc.setFontSize(10)
-  }
-
-  function bodyLine(text: string) {
-    const lines = doc.splitTextToSize(text, pageWidth - margin * 2) as string[]
-    lines.forEach((line) => {
-      ensureSpace(14)
-      doc.text(line, margin, y)
-      y += 14
-    })
-  }
-
-  function keyValueRow(label: string, value: string) {
-    ensureSpace(16)
-    doc.setFont(PDF_FONT, "bold")
-    doc.text(label, margin, y)
-    doc.setFont(PDF_FONT, "normal")
-    doc.text(value, margin + 160, y)
-    y += 16
-  }
-
-  doc.setFont(PDF_FONT, "bold")
-  doc.setFontSize(18)
-  doc.setTextColor(45, 63, 71)
-  doc.text(girisim.ad, margin, y)
-  y += 20
-  doc.setFont(PDF_FONT, "normal")
-  doc.setFontSize(9)
-  doc.setTextColor(100, 116, 139)
-  doc.text(`Şirket CV'si — Oluşturulma tarihi: ${new Date().toLocaleDateString("tr-TR")}`, margin, y)
-  y += 26
-  doc.setTextColor(30, 41, 47)
-
-  sectionTitle("Şirket Özeti")
-  keyValueRow("Sektör", girisim.sektor ?? "—")
-  keyValueRow("Kuruluş Yılı", girisim.kurulusYili != null ? String(girisim.kurulusYili) : "—")
-  keyValueRow("Ekip Büyüklüğü", girisim.ekipBuyuklugu != null ? `${girisim.ekipBuyuklugu} kişi` : "—")
-  keyValueRow("Teknoloji", girisim.teknoloji ?? "—")
-  keyValueRow("Website", girisim.websiteUrl ?? "—")
-  if (girisim.kisaTanim) {
-    ensureSpace(16)
-    doc.setFont(PDF_FONT, "bold")
-    doc.text("Kısa Tanım", margin, y)
-    y += 16
-    doc.setFont(PDF_FONT, "normal")
-    bodyLine(girisim.kisaTanim)
-  }
-  y += 10
-
-  sectionTitle("İletişim / Muhatap")
-  if (girisim.contact) {
-    keyValueRow("Ad Soyad", girisim.contact.adSoyad)
-    keyValueRow("Unvan", girisim.contact.unvan ?? "—")
-    keyValueRow("Telefon", girisim.contact.telefon ?? "—")
-    keyValueRow("E-posta", girisim.contact.email ?? "—")
-    keyValueRow("LinkedIn", girisim.contact.linkedInUrl ?? "—")
-  } else {
-    bodyLine("İletişim/muhatap bilgisi girilmemiş.")
-  }
-  y += 10
-
-  sectionTitle("Program Katılım Geçmişi")
-  if (girisim.programKatilimlari.length === 0) {
-    bodyLine("Herhangi bir programa katılım bulunmuyor.")
-  } else {
-    girisim.programKatilimlari.forEach((k) => {
-      bodyLine(
-        `• ${k.programAdi} — ${katilimDurumuLabels[k.durum] ?? k.durum} (${formatDate(k.baslangicTarihi)} – ${formatDate(k.bitisTarihi)})`,
-      )
-    })
-  }
-  y += 10
-
-  sectionTitle("Gelişim Yolculuğu")
-  if (girisim.gelisimAdimlari.length === 0) {
-    bodyLine("Henüz bir gelişim adımı eklenmemiş.")
-  } else {
-    ;[...girisim.gelisimAdimlari]
-      .sort((a, b) => new Date(b.tarih).getTime() - new Date(a.tarih).getTime())
-      .forEach((g) => {
-        bodyLine(`• ${formatDate(g.tarih)} — ${g.baslik}${g.aciklama ? `: ${g.aciklama}` : ""}`)
-      })
-  }
-  y += 10
-
-  const onayliSatis = girisim.satisKayitlari.filter((s) => s.onayDurumu === "Onaylandi")
-  sectionTitle("Onaylı Satış Özeti")
-  keyValueRow("Toplam Onaylı Ciro", formatCurrency(onayliSatis.reduce((sum, s) => sum + s.ciro, 0), "TRY"))
-  if (onayliSatis.length === 0) {
-    bodyLine("Onaylı satış kaydı bulunmuyor.")
-  } else {
-    onayliSatis.forEach((s) => {
-      bodyLine(
-        `• ${s.donem}: ${formatCurrency(s.ciro, "TRY")}${s.ihracat != null ? ` (İhracat: ${formatCurrency(s.ihracat, "TRY")})` : ""}`,
-      )
-    })
-  }
-  y += 10
-
-  const onayliYatirim = girisim.yatirimKayitlari.filter((v) => v.onayDurumu === "Onaylandi")
-  sectionTitle("Onaylı Yatırım Özeti")
-  if (onayliYatirim.length === 0) {
-    bodyLine("Onaylı yatırım kaydı bulunmuyor.")
-  } else {
-    const toplamlar = onayliYatirim.reduce<Record<string, number>>((map, v) => {
-      map[v.paraBirimi] = (map[v.paraBirimi] ?? 0) + v.tutar
-      return map
-    }, {})
-    Object.entries(toplamlar).forEach(([currency, tutar]) => keyValueRow(`Toplam Onaylı Yatırım (${currency})`, formatCurrency(tutar, currency)))
-    onayliYatirim.forEach((v) => {
-      bodyLine(
-        `• ${yatirimTuruLabels[v.tur] ?? v.tur} — ${formatCurrency(v.tutar, v.paraBirimi)} (${formatDate(v.tarih)}${v.yatirimciAdi ? `, ${v.yatirimciAdi}` : ""})`,
-      )
-    })
-  }
-  y += 10
-
-  const onayliBasari = girisim.basarilar.filter((b) => b.onayDurumu === "Onaylandi")
-  sectionTitle("Başarılar")
-  if (onayliBasari.length === 0) {
-    bodyLine("Onaylı başarı kaydı bulunmuyor.")
-  } else {
-    onayliBasari.forEach((b) => {
-      bodyLine(`• ${basariTuruLabels[b.tur] ?? b.tur} — ${b.baslik} (${formatDate(b.tarih)})`)
-    })
-  }
+  const doc = await buildSirketCvPdf({
+    ad: girisim.ad,
+    sektor: girisim.sektor,
+    kisaTanim: girisim.kisaTanim,
+    teknoloji: girisim.teknoloji,
+    websiteUrl: girisim.websiteUrl,
+    kurulusYili: girisim.kurulusYili,
+    ekipBuyuklugu: girisim.ekipBuyuklugu,
+    logoUrl: girisim.logoUrl ? fileUrl(girisim.logoUrl) : null,
+    kapakGorseliUrl: girisim.kapakGorseliUrl ? fileUrl(girisim.kapakGorseliUrl) : null,
+    contact: girisim.contact,
+    programKatilimlari: girisim.programKatilimlari,
+    gelisimAdimlari: girisim.gelisimAdimlari,
+    basarilar: girisim.basarilar.filter((b) => b.onayDurumu === "Onaylandi"),
+    onayliSatisKayitlari: girisim.satisKayitlari.filter((s) => s.onayDurumu === "Onaylandi"),
+    onayliYatirimKayitlari: girisim.yatirimKayitlari.filter((v) => v.onayDurumu === "Onaylandi"),
+  })
 
   const safeName = girisim.ad.trim().replace(/\s+/g, "-")
   doc.save(`${safeName}-sirket-cv-${new Date().toISOString().slice(0, 10)}.pdf`)
@@ -1386,6 +1312,7 @@ export default function GirisimimPage() {
           <Card>
             <KartBasligi ikon={<Building2 className="size-4" />} baslik="Profil Bilgileri" ton="accent" />
             <CardContent>
+              <BannerUploadSection girisim={girisim} onUpdated={invalidate} />
               <LogoUploadSection girisim={girisim} onUpdated={invalidate} />
               <dl className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -1434,6 +1361,10 @@ export default function GirisimimPage() {
               </dl>
             </CardContent>
           </Card>
+
+          <div className="mt-4">
+            <GirisimCvPaylasimlari girisimId={girisim.id} />
+          </div>
 
           <Card className="mt-4">
             <KartBasligi ikon={<Mail className="size-4" />} baslik="İletişim / Muhatap" ton="accent" />

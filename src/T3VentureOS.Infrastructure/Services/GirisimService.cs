@@ -128,6 +128,16 @@ public class GirisimService
         return true;
     }
 
+    public async Task<bool> UpdateKapakGorseliAsync(Guid girisimId, string kapakGorseliUrl)
+    {
+        var girisim = await _db.Girisimler.FirstOrDefaultAsync(g => g.Id == girisimId);
+        if (girisim is null) return false;
+        girisim.KapakGorseliUrl = kapakGorseliUrl;
+        girisim.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<Dokuman> AddDokumanAsync(Dokuman dokuman)
     {
         _db.Dokumanlar.Add(dokuman);

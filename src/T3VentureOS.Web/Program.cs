@@ -44,6 +44,7 @@ builder.Services.AddScoped<EkosistemEtkiService>();
 builder.Services.AddScoped<ProgramKohortService>();
 builder.Services.AddScoped<YatirimciHazirligiService>();
 builder.Services.AddScoped<SunumPaylasimService>();
+builder.Services.AddScoped<GirisimCvPaylasimService>();
 builder.Services.AddScoped<AsamaService>();
 builder.Services.AddScoped<DonemGirisiService>();
 builder.Services.AddScoped<AuditLogService>();
@@ -100,16 +101,21 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DbInitializer.SeedAsync(db);
     await DbInitializer.SeedDemoExtrasAsync(db);
+    await DbInitializer.SeedDemoExtras2Async(db);
     await DbInitializer.SeedIstihdamAsync(db);
     await DbInitializer.SeedAsamaGecisleriAsync(db);
+    await DbInitializer.SeedGirisimLogolariAsync(db, uploadsRoot);
     await DbInitializer.PuanlariTazeleAsync(db);
 }
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseStaticFiles();
 
+// CORS, statik dosyalardan (logo/kapak görseli) önce çalışmalı; aksi halde /uploads yanıtları
+// Access-Control-Allow-Origin header'ı almaz ve tarayıcı bu görselleri canvas'a çizip PDF'e
+// gömmek isteyen kodda (Şirket CV'si dışa aktarımı) "tainted canvas" hatası verir.
 app.UseCors("Spa");
+app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();

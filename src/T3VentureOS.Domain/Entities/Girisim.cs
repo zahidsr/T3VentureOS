@@ -12,6 +12,9 @@ public class Girisim
     public int? KurulusYili { get; set; }
     public int? EkipBuyuklugu { get; set; }
     public string? LogoUrl { get; set; }
+
+    /// <summary>Şirket CV'si ve dışa açılan paylaşım sayfasının ilk ekranında kullanılan geniş kapak görseli.</summary>
+    public string? KapakGorseliUrl { get; set; }
     public Guid CreatedById { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

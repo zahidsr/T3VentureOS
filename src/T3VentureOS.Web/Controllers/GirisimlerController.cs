@@ -25,13 +25,15 @@ public class GirisimlerController : ControllerBase
     private readonly GirisimAnalizService _analiz;
     private readonly YatirimciHazirligiService _hazirlik;
     private readonly SunumPaylasimService _paylasim;
+    private readonly GirisimCvPaylasimService _cvPaylasim;
     private readonly AsamaService _asama;
     private readonly DonemGirisiService _donemGirisi;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim, AsamaService asama, DonemGirisiService donemGirisi)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik,
+        SunumPaylasimService paylasim, GirisimCvPaylasimService cvPaylasim, AsamaService asama, DonemGirisiService donemGirisi)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -45,6 +47,7 @@ public class GirisimlerController : ControllerBase
         _analiz = analiz;
         _hazirlik = hazirlik;
         _paylasim = paylasim;
+        _cvPaylasim = cvPaylasim;
         _asama = asama;
         _donemGirisi = donemGirisi;
     }
@@ -329,6 +332,25 @@ public class GirisimlerController : ControllerBase
         return Ok(full!.ToDetailDto());
     }
 
+    /// <summary>Şirket CV'si ve dışa açılan paylaşım sayfasının ilk ekranında kullanılan kapak görseli.</summary>
+    [HttpPost("{id:guid}/kapak-gorseli")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    [RequestSizeLimit(5_000_000)]
+    public async Task<IActionResult> UploadKapakGorseli(Guid id, [FromForm] IFormFile file)
+    {
+        if (file.Length == 0) return BadRequest(new ErrorResponse("Dosya boş olamaz."));
+
+        await using var stream = file.OpenReadStream();
+        var (url, _) = await _files.SaveAsync(stream, file.FileName);
+
+        var ok = await _girisimler.UpdateKapakGorseliAsync(id, url);
+        if (!ok) return NotFound();
+
+        var full = await _girisimler.GetAsync(id);
+        return Ok(full!.ToDetailDto());
+    }
+
     [HttpPost("{id:guid}/dokuman")]
     [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
     [GirisimErisim]
@@ -604,6 +626,45 @@ public class GirisimlerController : ControllerBase
     public async Task<IActionResult> SunumPaylasimiIptal(Guid id, Guid paylasimId)
     {
         var ok = await _paylasim.IptalEtAsync(id, paylasimId);
+        if (!ok) return NotFound();
+        return Ok(new MessageResponse("Bağlantı iptal edildi."));
+    }
+
+    /// <summary>Girişimin Şirket CV'si için oluşturduğu paylaşım bağlantıları.</summary>
+    [HttpGet("{id:guid}/cv-paylasimlari")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> CvPaylasimlari(Guid id)
+    {
+        var liste = await _cvPaylasim.ListeleAsync(id);
+        var simdi = DateTime.UtcNow;
+        return Ok(liste.Select(p => new GirisimCvPaylasimiDto(
+            p.Id, p.Jeton, p.Etiket, p.GecerlilikBitisi, p.IptalEdildi, p.Gecerli(simdi),
+            p.GoruntulenmeSayisi, p.SonGoruntulenme, p.CreatedAt)).ToList());
+    }
+
+    /// <summary>Şirket CV'sini sistem dışına açan, süre sınırlı bir bağlantı üretir.</summary>
+    [HttpPost("{id:guid}/cv-paylasimlari")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> CvPaylasimiOlustur(Guid id, GirisimCvPaylasimiOlusturRequest request)
+    {
+        var (ok, paylasim, hata) = await _cvPaylasim.OlusturAsync(
+            id, _currentUser.UserId!.Value, request.GecerlilikGun, request.Etiket);
+        if (!ok) return BadRequest(new ErrorResponse(hata!));
+
+        return Ok(new GirisimCvPaylasimiDto(
+            paylasim!.Id, paylasim.Jeton, paylasim.Etiket, paylasim.GecerlilikBitisi, paylasim.IptalEdildi,
+            paylasim.Gecerli(DateTime.UtcNow), paylasim.GoruntulenmeSayisi, paylasim.SonGoruntulenme, paylasim.CreatedAt));
+    }
+
+    /// <summary>Bağlantıyı iptal eder; bundan sonra açılamaz.</summary>
+    [HttpDelete("{id:guid}/cv-paylasimlari/{paylasimId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> CvPaylasimiIptal(Guid id, Guid paylasimId)
+    {
+        var ok = await _cvPaylasim.IptalEtAsync(id, paylasimId);
         if (!ok) return NotFound();
         return Ok(new MessageResponse("Bağlantı iptal edildi."));
     }

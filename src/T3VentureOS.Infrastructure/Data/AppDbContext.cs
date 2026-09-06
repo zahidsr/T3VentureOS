@@ -117,6 +117,7 @@ public class AppDbContext : DbContext
     public DbSet<OnayOnerisi> OnayOnerileri => Set<OnayOnerisi>();
     public DbSet<SunumTaslagi> SunumTaslaklari => Set<SunumTaslagi>();
     public DbSet<SunumPaylasimi> SunumPaylasimlari => Set<SunumPaylasimi>();
+    public DbSet<GirisimCvPaylasimi> GirisimCvPaylasimlari => Set<GirisimCvPaylasimi>();
     public DbSet<SilmeTalebi> SilmeTalepleri => Set<SilmeTalebi>();
     public DbSet<IslemKaydi> IslemKayitlari => Set<IslemKaydi>();
     public DbSet<AiAnalizKaydi> AiAnalizKayitlari => Set<AiAnalizKaydi>();
@@ -263,6 +264,15 @@ public class AppDbContext : DbContext
         b.Entity<SunumPaylasimi>(e =>
         {
             // Jeton üzerinden arama yapılacak; benzersiz index hem hızı hem çakışmazlığı sağlar.
+            e.HasIndex(x => x.Jeton).IsUnique();
+            e.Property(x => x.Jeton).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Etiket).HasMaxLength(200);
+            e.HasOne(x => x.Girisim).WithMany().HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Olusturan).WithMany().HasForeignKey(x => x.OlusturanId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<GirisimCvPaylasimi>(e =>
+        {
             e.HasIndex(x => x.Jeton).IsUnique();
             e.Property(x => x.Jeton).HasMaxLength(64).IsRequired();
             e.Property(x => x.Etiket).HasMaxLength(200);

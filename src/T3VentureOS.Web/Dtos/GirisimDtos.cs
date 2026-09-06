@@ -36,7 +36,7 @@ public record RakipAnaliziRequest(List<Guid> GirisimIds);
 
 public record GirisimDetailDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
-    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, DateTime CreatedAt, string Asama,
+    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, string? KapakGorseliUrl, DateTime CreatedAt, string Asama,
     List<ProgramKatilimOzetDto> ProgramKatilimlari,
     List<GelisimAdimiDto> GelisimAdimlari,
     List<SatisKaydiDto> SatisKayitlari,
@@ -62,7 +62,7 @@ public static class GirisimDtoExtensions
             g.Asama.ToString());
 
     public static GirisimDetailDto ToDetailDto(this Girisim g) => new(
-        g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.CreatedAt, g.Asama.ToString(),
+        g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.KapakGorseliUrl, g.CreatedAt, g.Asama.ToString(),
         g.ProgramKatilimlari.Select(k => new ProgramKatilimOzetDto(k.Id, k.ProgramId, k.Program?.Name ?? string.Empty, k.Donem, k.Durum.ToString(), k.BaslangicTarihi, k.BitisTarihi, k.BaslangictakiAsama?.ToString(), k.BitistekiAsama?.ToString())).ToList(),
         g.GelisimAdimlari.Select(a => new GelisimAdimiDto(a.Id, a.Tarih, a.Baslik, a.Aciklama)).ToList(),
         g.SatisKayitlari.Select(s => new SatisKaydiDto(s.Id, s.Donem, s.Ciro, s.Ihracat, s.OnayDurumu.ToString(), s.ReviewNotu, s.CreatedAt)).ToList(),
@@ -104,6 +104,34 @@ public record SunumPaylasimiDto(
     int GoruntulenmeSayisi, DateTime? SonGoruntulenme, DateTime CreatedAt);
 
 public record SunumPaylasimiOlusturRequest(int GecerlilikGun, string? Etiket);
+
+/// <summary>Paylaşım bağlantısıyla açılan Şirket CV'sinde görünen tek bir program katılımı — onay/finansal alan yok.</summary>
+public record PaylasilanCvProgramKatilimiDto(string ProgramAdi, string? Donem, string Durum, DateTime BaslangicTarihi, DateTime? BitisTarihi);
+
+/// <summary>Paylaşım bağlantısıyla açılan Şirket CV'sinde görünen tek bir gelişim adımı.</summary>
+public record PaylasilanCvGelisimAdimiDto(DateTime Tarih, string Baslik, string? Aciklama);
+
+/// <summary>Paylaşım bağlantısıyla açılan Şirket CV'sinde görünen tek bir başarı — yalnızca onaylı olanlar.</summary>
+public record PaylasilanCvBasariDto(string Tur, string Baslik, string? Aciklama, DateTime Tarih);
+
+/// <summary>
+/// Şirket CV'si paylaşım bağlantısını açan ziyaretçinin gördüğü içerik. Ciro/yatırım gibi finansal
+/// kayıtlar, onay durumları ve sistem içi notlar bu DTO'da hiç yer almaz.
+/// </summary>
+public record PaylasilanCvDto(
+    string GirisimAdi, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
+    string? LogoUrl, string? KapakGorseliUrl, int? KurulusYili, int? EkipBuyuklugu,
+    string? IletisimAdSoyad, string? IletisimUnvan, string? IletisimEmail,
+    List<PaylasilanCvProgramKatilimiDto> ProgramKatilimlari,
+    List<PaylasilanCvGelisimAdimiDto> GelisimAdimlari,
+    List<PaylasilanCvBasariDto> Basarilar,
+    DateTime GuncellemeTarihi);
+
+public record GirisimCvPaylasimiDto(
+    Guid Id, string Jeton, string? Etiket, DateTime GecerlilikBitisi, bool IptalEdildi, bool Gecerli,
+    int GoruntulenmeSayisi, DateTime? SonGoruntulenme, DateTime CreatedAt);
+
+public record GirisimCvPaylasimiOlusturRequest(int GecerlilikGun, string? Etiket);
 
 public record AsamaGecisiDto(
     Guid Id, string? OncekiAsama, string YeniAsama, DateTime Tarih, string? Aciklama, string DegistirenAdSoyad);
