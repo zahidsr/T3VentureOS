@@ -159,6 +159,7 @@ export default function ProgramlarIndexPage() {
           />
         </div>
         <Select
+          items={{ [ALL_DURUMLAR]: "Tüm durumlar", ...programDurumLabels }}
           value={durumFilter}
           onValueChange={(value) => { setDurumFilter(value ?? ALL_DURUMLAR); setPage(1) }}
         >

@@ -5,6 +5,9 @@ import { EmptyState } from "@/components/patterns/EmptyState"
 import { Pagination } from "@/components/patterns/Pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
+import { History } from "lucide-react"
 import { api } from "@/lib/api-client"
 import type { IslemKaydiDto, PagedResultDto } from "@/lib/types"
 
@@ -44,7 +47,7 @@ export default function IslemGecmisiIndexPage() {
       <PageHeader
         eyebrow="Denetim"
         title="İşlem Geçmişi"
-        subtitle="Sistem yöneticilerinin kullanıcı yönetimi üzerinde yaptığı işlemlerin kaydı."
+        subtitle="Onay kararları, rol değişiklikleri ve kullanıcı yönetimi işlemlerinin denetim kaydı."
       />
 
       {query.isLoading ? (
@@ -56,7 +59,15 @@ export default function IslemGecmisiIndexPage() {
       ) : items.length === 0 ? (
         <EmptyState icon="🕓" message="Henüz kayıtlı bir işlem yok." />
       ) : (
-        <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+        // Diğer sayfalarda listeler kart içinde duruyor; denetim kaydı da aynı çerçeveye alındı.
+        <Card>
+          <KartBasligi
+            ikon={<History className="size-4" />}
+            baslik="Denetim Kaydı"
+            aciklama="En yeni işlem en üstte."
+            ton="notr"
+          />
+          <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -79,7 +90,8 @@ export default function IslemGecmisiIndexPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       <Pagination page={query.data?.page ?? 1} totalPages={query.data?.totalPages ?? 1} onPageChange={setPage} />

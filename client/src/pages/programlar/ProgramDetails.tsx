@@ -580,6 +580,7 @@ export default function ProgramDetailsPage() {
                         <TableCell>
                           {canWrite ? (
                             <Select
+                              items={katilimDurumLabels}
                               value={k.durum}
                               onValueChange={(value) =>
                                 katilimDurumMutation.mutate({ katilimId: k.katilimId, durum: value as KatilimDurumu })

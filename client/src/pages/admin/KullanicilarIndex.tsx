@@ -260,7 +260,7 @@ export default function KullanicilarIndexPage() {
       <PageHeader
         eyebrow="Kullanıcı Yönetimi"
         title="Kullanıcılar"
-        subtitle="Program yöneticileri, startup kullanıcıları ve karar vericiler için hesap davet edin."
+        subtitle="Program yöneticileri ve girişim temsilcileri için hesap davet edin, rollerini yönetin."
         actions={
           <>
             <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
