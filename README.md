@@ -37,19 +37,48 @@ T3VentureOS/
 
 ## Hızlı Başlangıç
 
-### Backend
+Sıfırdan kurulum: aşağıdaki adımlar yeni klonlanmış bir kopyayı çalışır hâle getirir.
+Veritabanı şeması ve demo verisi API ilk açılışta otomatik oluşturulur; elle migration
+çalıştırmak gerekmez.
+
+**Gereksinimler:** .NET 10 SDK, Node.js 20+, bir SQL Server örneği.
+
+### 1. Veritabanı
+
+`appsettings.json` içindeki varsayılan bağlantı LocalDB'yi işaret eder ve yalnızca
+Windows'ta çalışır. macOS/Linux'ta SQL Server'ı Docker ile ayağa kaldırın:
+
+```bash
+docker run -d --name t3-sql \
+  -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=<güçlü bir parola>" \
+  -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+```
+
+Sonra bağlantıyı user-secrets'a yazın (bir sonraki adımda):
+
+```
+Server=localhost,1433;Database=T3VentureOS;User Id=sa;Password=<parola>;TrustServerCertificate=True
+```
+
+### 2. Backend
 
 ```bash
 cd src/T3VentureOS.Web
 dotnet restore
-dotnet user-secrets set "Jwt:Key" "<en az 32 karakterlik rastgele bir gizli anahtar>"  # zorunlu
-dotnet user-secrets set "Gemini:ApiKey" "<AIza...>"  # AI analizleri için (isteğe bağlı)
+dotnet user-secrets set "Jwt:Key" "<en az 32 karakterlik rastgele bir gizli anahtar>"   # zorunlu
+dotnet user-secrets set "ConnectionStrings:Default" "<yukarıdaki bağlantı dizesi>"       # LocalDB kullanmıyorsanız zorunlu
+dotnet user-secrets set "Gemini:ApiKey" "<AIza...>"                                      # AI analizleri için
 dotnet run --urls "http://localhost:5215"
 ```
 
-`Jwt:Key` ayarlanmadan uygulama başlatılamaz (JWT imzalama anahtarı `appsettings.json`'a asla commit edilmez). Diğer ortamlarda `Jwt__Key` environment variable'ı olarak da verilebilir.
+`Jwt:Key` ayarlanmadan uygulama başlatılamaz (JWT imzalama anahtarı `appsettings.json`'a
+asla commit edilmez). Diğer ortamlarda `Jwt__Key` environment variable'ı olarak da verilebilir.
 
-### Frontend
+`Gemini:ApiKey` girilmezse uygulama çalışır ama AI analizi üreten ekranlar hata döner;
+sistemin geri kalanı bundan etkilenmez. Anahtar user-secrets'ta tutulur, repoya girmez —
+projeyi yeni klonlayan herkesin kendi anahtarını girmesi gerekir.
+
+### 3. Frontend
 
 ```bash
 cd client
@@ -57,18 +86,16 @@ npm install
 npm run dev
 ```
 
-Uygulama http://localhost:5173 adresinde açılır, API'ye http://localhost:5215 üzerinden bağlanır (`client/.env` → `VITE_API_URL`).
+Uygulama http://localhost:5173 adresinde açılır ve API'ye http://localhost:5215/api
+üzerinden bağlanır. API'yi farklı bir portta çalıştırıyorsanız `client/.env.local`
+oluşturup `VITE_API_URL` verin (bkz. `client/.env.example`) ve API tarafında da o adrese
+CORS izni tanımlayın (`Cors__AllowedOrigins__1` environment variable'ı).
 
 ### Test
 
 ```bash
-cd src/T3VentureOS.Tests
-dotnet test
-```
-
-```bash
-cd client
-npm test
+dotnet test T3VentureOS.slnx     # backend
+cd client && npm test            # frontend
 ```
 
 ## Geliştirme Hesapları
@@ -107,8 +134,38 @@ Tüm şifreler: `Passw0rd!`
 - Ekosistem Etkisi panosu: tüm girişimlerin ürettiği ciro, ihracat, çekilen yatırım ve yaratılan istihdamın dönem bazında toplamı
 - AI destekli ekosistem analizi ve rakip analizi (Google Gemini API)
 - Girişim bazlı AI analizi: girişimciye "verilerim ne diyor" ve "nasıl geliştirebilirim", yöneticiye tekil girişim durum okuması
+- Program etkisi analizi: aşama yolculuğu ile programa giriş/çıkış aşaması AI'a beslenerek "bu girişim programdan beri ne yaptı" okuması üretilir; zamanlama örtüşmesi nedensellik sayılmaz, veri yoksa bu açıkça söylenir
 - Sunumu sistem dışına açan süre sınırlı, iptal edilebilir paylaşım bağlantısı (yatırımcıya gönderilebilir; yalnızca sunum ve künye görünür)
 - Girişimin verisinden Sequoia pitch deck şablonuna göre otomatik sunum üretimi; veri değiştiğinde sunum "güncel değil" olarak işaretlenir ve tek tıkla yenilenir, bölümler elle düzenlenebilir (düzenlenen bölüm yeniden üretimde korunur, AI metnine geri dönülebilir) ve onaylı ciro/yatırım grafikleriyle birlikte slayt başına bir sayfa PDF olarak indirilir
 - CSV ve Excel rapor export
 - T3 Vakfı kurumsal renkleriyle tutarlı UI/UX
 - KVKK aydınlatma metni ve gizlilik politikası sayfaları (giriş ekranı ve alt bilgiden erişilebilir)
+
+## Dallar ve Sürümler
+
+| Ref | Ne |
+|-----|-----|
+| `main` | Değişikliklerimizden önceki hâl; dokunulmadı |
+| `arif-son-surum` (etiket) | `main`'in o günkü commit'ini sabitler, geri dönüş noktası |
+| `feat/gemini-ai-ve-onay-onerisi` | Gemini entegrasyonu, onay önerisi akışı, aşama takibi, program etkisi analizi ve UI yenilemesi |
+
+Projeyi devralmak için:
+
+```bash
+git clone https://github.com/zahidsr/T3VentureOS.git
+cd T3VentureOS
+git checkout feat/gemini-ai-ve-onay-onerisi
+```
+
+Ardından yukarıdaki **Hızlı Başlangıç** adımlarını izleyin.
+
+Önceki sürüme dönmek gerekirse `git checkout main` yeterlidir; tek tek dosya geri almak
+için `git checkout arif-son-surum -- <yol>` kullanılabilir.
+
+## Bilinen Eksikler
+
+- KVKK aydınlatma metni ve gizlilik politikasında hukuk tarafının dolduracağı yer
+  tutucular var: `[T3 Vakfı — tam ticari unvan]`, `[kurum adresi]`, `[kvkk@kurum.org]`.
+  Canlıya çıkmadan önce doldurulmalı.
+- Demo verisi ve demo hesapları (`Passw0rd!`) `DbInitializer` tarafından her açılışta
+  oluşturulur; üretim ortamına alınmadan önce devre dışı bırakılmalı.
