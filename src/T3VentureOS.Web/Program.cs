@@ -42,6 +42,7 @@ builder.Services.AddScoped<PitchDeckService>();
 builder.Services.AddScoped<GirisimAnalizService>();
 builder.Services.AddScoped<EkosistemEtkiService>();
 builder.Services.AddScoped<ProgramKohortService>();
+builder.Services.AddScoped<YatirimciHazirligiService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();

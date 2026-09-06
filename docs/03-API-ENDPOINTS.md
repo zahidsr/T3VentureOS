@@ -53,6 +53,7 @@
 | GET | `/girisimler/{id}/itirazlar` | auth (kendi girişimi) | o girişime ait itirazların geçmişi |
 | GET | `/girisimler/{id}/ai-analiz/{tur}` | auth (kendi girişimi) | girişim bazlı son AI analizi. `tur`: `durum` (tarafsız okuma) veya `gelisim` (geliştirme önerileri) |
 | POST | `/girisimler/{id}/ai-analiz/{tur}` | auth (kendi girişimi) | girişimin verisinden yeni AI analizi üretir ve saklar |
+| GET | `/girisimler/{id}/yatirimci-hazirligi` | auth (kendi girişimi) | "yatırımcıya hazır mıyım" değerlendirmesi: dokuz ölçüt, karşılanma durumu ve eksikler için ipuçları |
 | GET | `/girisimler/{id}/durum` | auth (kendi girişimi) | girişim künyesinin durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı |
 | GET | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin güncel Sequoia pitch deck taslağı; `guncel=false` ise taslak üretildikten sonra veri değişmiştir |
 | POST | `/girisimler/{id}/sunum-taslagi` | auth (kendi girişimi) | girişimin verisinden AI ile sunum taslağı üretir, mevcut taslağın üzerine yazar |

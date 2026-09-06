@@ -708,3 +708,18 @@ export interface ProgramKohortuDto {
   veriGirmeyenGirisimSayisi: number
   satirlar: KohortSatiriDto[]
 }
+
+export interface HazirlikKriteriDto {
+  anahtar: string
+  baslik: string
+  nedenOnemli: string
+  karsilandi: boolean
+  ipucu?: string | null
+}
+
+/** Girişimin yatırımcı görüşmesine hazırlık durumu. */
+export interface YatirimciHazirligiDto {
+  yuzde: number
+  durum: string
+  kriterler: HazirlikKriteriDto[]
+}

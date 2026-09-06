@@ -87,3 +87,8 @@ public record PitchDeckDto(
 
 /// <summary>Tek bir girişim için üretilmiş AI analizi.</summary>
 public record GirisimAnalizDto(string Metin, DateTime CreatedAt, string CreatedByAdSoyad, string Tur);
+
+public record HazirlikKriteriDto(string Anahtar, string Baslik, string NedenOnemli, bool Karsilandi, string? Ipucu);
+
+/// <summary>Girişimin yatırımcı görüşmesine hazırlık durumu.</summary>
+public record YatirimciHazirligiDto(int Yuzde, string Durum, List<HazirlikKriteriDto> Kriterler);

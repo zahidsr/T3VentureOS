@@ -12,6 +12,7 @@ import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
 import { VeriGrafikleri } from "@/components/patterns/VeriGrafikleri"
+import { YatirimciHazirligi } from "@/components/patterns/YatirimciHazirligi"
 import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -1990,6 +1991,8 @@ export default function GirisimimPage() {
               {/* Birleşik ciro/yatırım grafiği kaldırıldı: aynı veriyi tek eksende ezmek yerine
                   aşağıda her biri kendi grafiğinde gösteriliyor. Trendin okuması korundu. */}
               <OkumaKutusu okuma={aylikTrendOkumasi(raporQuery.data.aylikTrend)} className="mt-0" />
+
+              <YatirimciHazirligi girisimId={girisim.id} />
 
               {/* Her sayısal veri kendi grafiğinde: TL ve kişi aynı eksende ezilmesin. */}
               <VeriGrafikleri girisim={girisim} />

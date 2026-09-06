@@ -96,6 +96,7 @@ Tüm şifreler: `Passw0rd!`
 - Girişim puanı (0-100) ve seviye rozeti (Bronz/Gümüş/Altın/Platin): profil tamlığı ve girilen kayıt derinliğinden hesaplanır, yalnızca artar; güncellik ayrı bir işaret olarak taşınır
 - Puanın karşılığı görünürlük: yönetici panelinde "Öne Çıkan Girişimler" vitrini ve puana/güncelliğe göre sıralanabilir girişim listesi
 - Girişimciye "puanını yükseltmek için" somut adımlar, en çok puan getirenden başlayarak
+- "Yatırımcıya hazır mıyım?" değerlendirmesi: profil puanından farklı olarak verinin varlığını değil, bir yatırımcı görüşmesine dayanıp dayanmadığını ölçer (trend, süreklilik, güncellik, onay durumu)
 - Girişimin her sayısal verisi (ciro, ihracat, yatırım, istihdam) kendi grafiğinde: farklı birimler tek eksende ezilmesin ve eksik kalan veri boş grafiğinden görülsün
 - Karar verici için interaktif dashboard: sektör dağılımı, aylık trend, yatırım türü dağılımı
 - Her grafiğin altında kural tabanlı otomatik okuma (trendin yönü, yoğunlaşma riski, veri girişindeki boşluklar); aynı okumalar indirilen PDF raporuna da yazılır

@@ -23,11 +23,12 @@ public class GirisimlerController : ControllerBase
     private readonly PitchDeckService _pitchDeck;
     private readonly GirisimSaglikService _saglik;
     private readonly GirisimAnalizService _analiz;
+    private readonly YatirimciHazirligiService _hazirlik;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -39,6 +40,7 @@ public class GirisimlerController : ControllerBase
         _pitchDeck = pitchDeck;
         _saglik = saglik;
         _analiz = analiz;
+        _hazirlik = hazirlik;
     }
 
     [HttpGet]
@@ -471,6 +473,22 @@ public class GirisimlerController : ControllerBase
             _ => AiAnalizTuru.Ekosistem,
         };
         return analizTuru != AiAnalizTuru.Ekosistem;
+    }
+
+    /// <summary>
+    /// "Yatırımcıya hazır mıyım?" değerlendirmesi. Girişim puanından farklıdır: puan verinin var
+    /// olup olmadığını, bu ölçüt verinin bir yatırımcı görüşmesine dayanıp dayanmadığını ölçer.
+    /// </summary>
+    [HttpGet("{id:guid}/yatirimci-hazirligi")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> YatirimciHazirligi(Guid id)
+    {
+        var h = await _hazirlik.GetAsync(id);
+        if (h is null) return NotFound();
+
+        return Ok(new YatirimciHazirligiDto(h.Yuzde, h.Durum,
+            h.Kriterler.Select(k => new HazirlikKriteriDto(k.Anahtar, k.Baslik, k.NedenOnemli, k.Karsilandi, k.Ipucu)).ToList()));
     }
 
     /// <summary>Girişimin künyesi için durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı.</summary>
