@@ -83,6 +83,100 @@ public static class DbInitializer
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Aşama geçişleri sonradan eklendi; mevcut girişimler için ciro ve program geçmişinden
+    /// tutarlı bir yolculuk üretilir. Amaç demo verisinin bir hikâye anlatması: girişim programa
+    /// erken aşamada girer, program sırasında ilerler, ilk müşterisini/ölçeklenmesini o dönemde
+    /// kaydeder.
+    /// </summary>
+    public static async Task SeedAsamaGecisleriAsync(AppDbContext db)
+    {
+        if (await db.AsamaGecisleri.AnyAsync()) return;
+
+        var pmId = await db.Users.Where(u => u.Role == UserRole.ProgramYoneticisi).Select(u => u.Id).FirstOrDefaultAsync();
+        if (pmId == Guid.Empty) return;
+
+        var girisimler = await db.Girisimler
+            .Include(g => g.SatisKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
+            .Include(g => g.YatirimKayitlari.Where(x => x.OnayDurumu == OnayDurumu.Onaylandi))
+            .Include(g => g.ProgramKatilimlari)
+            .ToListAsync();
+
+        foreach (var girisim in girisimler)
+        {
+            var kurulus = new DateTime(girisim.KurulusYili ?? DateTime.UtcNow.Year - 2, 1, 15);
+            var satislar = girisim.SatisKayitlari.OrderBy(s => s.Donem).ToList();
+            var ilkKatilim = girisim.ProgramKatilimlari.OrderBy(k => k.BaslangicTarihi).FirstOrDefault();
+
+            var yolculuk = new List<(GirisimAsamasi Asama, DateTime Tarih, string Aciklama)>
+            {
+                (GirisimAsamasi.Fikir, kurulus, "Girişim kuruldu."),
+                (GirisimAsamasi.Prototip, kurulus.AddMonths(5), "İlk çalışan prototip tamamlandı."),
+            };
+
+            // Programa katılım, MVP eşiğinin hemen öncesine denk getirilir: program etkisi görünsün.
+            if (ilkKatilim is not null)
+                yolculuk.Add((GirisimAsamasi.MVP, ilkKatilim.BaslangicTarihi.AddDays(20), "Program sürecinde MVP yayına alındı."));
+
+            // İlk onaylı ciro = ilk müşteri.
+            if (satislar.Count > 0 && ProgramKohortService.DonemBaslangici(satislar[0].Donem) is { } ilkCiroTarihi)
+                yolculuk.Add((GirisimAsamasi.IlkMusteri, ilkCiroTarihi.AddDays(25), "İlk ticari müşteri kazanıldı."));
+
+            // Üç dönemden fazla ciro geçmişi olan girişimler ölçeklenmeye geçmiş sayılır.
+            if (satislar.Count >= 3 && ProgramKohortService.DonemBaslangici(satislar[2].Donem) is { } olceklemeTarihi)
+                yolculuk.Add((GirisimAsamasi.Olcekleme, olceklemeTarihi.AddDays(15), "Düzenli gelir akışı ve ekip büyümesi."));
+
+            // Seri A ve sonrası yatırım almışsa büyüme aşaması.
+            var buyumeTuru = girisim.YatirimKayitlari
+                .Where(y => y.Tur is YatirimTuru.SeriA or YatirimTuru.SeriB or YatirimTuru.SeriSonrasi)
+                .OrderBy(y => y.Tarih)
+                .FirstOrDefault();
+            if (buyumeTuru is not null)
+                yolculuk.Add((GirisimAsamasi.Buyume, buyumeTuru.Tarih.AddDays(10), $"{buyumeTuru.Tur} turu tamamlandı."));
+
+            // Tarihe göre sıralamak yetmez: olgunluk ekseninde geriye giden adımlar elenir, yoksa
+            // programa geç katılan olgun bir girişim "Büyüme'den MVP'ye düştü" gibi görünür.
+            yolculuk = yolculuk
+                .OrderBy(x => x.Tarih)
+                .Aggregate(new List<(GirisimAsamasi Asama, DateTime Tarih, string Aciklama)>(), (liste, adim) =>
+                {
+                    if (liste.Count == 0 || adim.Asama > liste[^1].Asama) liste.Add(adim);
+                    return liste;
+                });
+
+            GirisimAsamasi? onceki = null;
+            foreach (var adim in yolculuk)
+            {
+                db.AsamaGecisleri.Add(new AsamaGecisi
+                {
+                    GirisimId = girisim.Id,
+                    OncekiAsama = onceki,
+                    YeniAsama = adim.Asama,
+                    Tarih = adim.Tarih,
+                    Aciklama = adim.Aciklama,
+                    DegistirenId = pmId,
+                    CreatedAt = adim.Tarih,
+                });
+                onceki = adim.Asama;
+            }
+
+            girisim.Asama = yolculuk[^1].Asama;
+
+            // Program giriş/çıkış fotoğrafları geçmişe göre doldurulur.
+            foreach (var katilim in girisim.ProgramKatilimlari)
+            {
+                var gecisler = yolculuk
+                    .Select(a => new AsamaGecisi { Tarih = a.Tarih, YeniAsama = a.Asama })
+                    .ToList();
+                katilim.BaslangictakiAsama ??= AsamaService.TarihtekiAsama(gecisler, katilim.BaslangicTarihi);
+                if (katilim.Durum is KatilimDurumu.Mezun or KatilimDurumu.Ayrildi && katilim.BitisTarihi is { } bitis)
+                    katilim.BitistekiAsama ??= AsamaService.TarihtekiAsama(gecisler, bitis);
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     public static async Task SeedAsync(AppDbContext db)
     {
         if (db.Database.IsRelational())

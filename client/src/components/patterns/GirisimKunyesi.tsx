@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
 import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
+import { AsamaRozeti, AsamaSeridi } from "@/components/patterns/AsamaRozeti"
 import { useAuth } from "@/lib/auth-context"
 import { API_URL, api } from "@/lib/api-client"
 import type { GirisimDetailDto, GirisimSaglikDto, PitchDeckDto } from "@/lib/types"
@@ -66,6 +67,11 @@ export function GirisimKunyesi({ girisim }: { girisim: GirisimDetailDto }) {
         <KunyeBolumu baslik="Durum">
           {durum ? (
             <div className="space-y-2">
+              {/* Aşama, puandan önce gelir: "ne durumda" sorusunun asıl cevabı bu. */}
+              <div className="space-y-1.5">
+                <AsamaRozeti asama={girisim.asama} />
+                <AsamaSeridi asama={girisim.asama} />
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <SeviyeRozeti seviye={durum.seviye} puan={durum.puan} />
                 <GuncellikRozeti guncel={durum.guncel} gun={durum.guncellemeUzerindenGecenGun} />

@@ -7,12 +7,12 @@ namespace T3VentureOS.Web.Dtos;
 public record GirisimSummaryDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji,
     int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, decimal ToplamOnayliCiro, DateTime CreatedAt,
-    int Puan, string Seviye, bool Guncel);
+    int Puan, string Seviye, bool Guncel, string Asama);
 
 public record CreateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
 public record UpdateGirisimRequest(string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl, int? KurulusYili, int? EkipBuyuklugu);
 
-public record ProgramKatilimOzetDto(Guid Id, Guid ProgramId, string ProgramAdi, string? Donem, string Durum, DateTime BaslangicTarihi, DateTime? BitisTarihi);
+public record ProgramKatilimOzetDto(Guid Id, Guid ProgramId, string ProgramAdi, string? Donem, string Durum, DateTime BaslangicTarihi, DateTime? BitisTarihi, string? BaslangictakiAsama, string? BitistekiAsama);
 public record GelisimAdimiDto(Guid Id, DateTime Tarih, string Baslik, string? Aciklama);
 public record SatisKaydiDto(Guid Id, string Donem, decimal Ciro, decimal? Ihracat, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
 public record YatirimKaydiDto(Guid Id, string Tur, decimal Tutar, string ParaBirimi, DateTime Tarih, string? YatirimciAdi, string OnayDurumu, string? ReviewNotu, DateTime CreatedAt);
@@ -36,7 +36,7 @@ public record RakipAnaliziRequest(List<Guid> GirisimIds);
 
 public record GirisimDetailDto(
     Guid Id, string Ad, string? Sektor, string? KisaTanim, string? Teknoloji, string? WebsiteUrl,
-    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, DateTime CreatedAt,
+    int? KurulusYili, int? EkipBuyuklugu, string? LogoUrl, DateTime CreatedAt, string Asama,
     List<ProgramKatilimOzetDto> ProgramKatilimlari,
     List<GelisimAdimiDto> GelisimAdimlari,
     List<SatisKaydiDto> SatisKayitlari,
@@ -58,11 +58,12 @@ public static class GirisimDtoExtensions
     public static GirisimSummaryDto ToSummaryDto(this Girisim g, GirisimSaglik? saglik = null) =>
         new(g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl,
             g.SatisKayitlari.Sum(s => s.Ciro), g.CreatedAt,
-            saglik?.Puan ?? 0, (saglik?.Seviye ?? GirisimSeviyesi.Bronz).ToString(), saglik?.Guncel ?? false);
+            saglik?.Puan ?? 0, (saglik?.Seviye ?? GirisimSeviyesi.Bronz).ToString(), saglik?.Guncel ?? false,
+            g.Asama.ToString());
 
     public static GirisimDetailDto ToDetailDto(this Girisim g) => new(
-        g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.CreatedAt,
-        g.ProgramKatilimlari.Select(k => new ProgramKatilimOzetDto(k.Id, k.ProgramId, k.Program?.Name ?? string.Empty, k.Donem, k.Durum.ToString(), k.BaslangicTarihi, k.BitisTarihi)).ToList(),
+        g.Id, g.Ad, g.Sektor, g.KisaTanim, g.Teknoloji, g.WebsiteUrl, g.KurulusYili, g.EkipBuyuklugu, g.LogoUrl, g.CreatedAt, g.Asama.ToString(),
+        g.ProgramKatilimlari.Select(k => new ProgramKatilimOzetDto(k.Id, k.ProgramId, k.Program?.Name ?? string.Empty, k.Donem, k.Durum.ToString(), k.BaslangicTarihi, k.BitisTarihi, k.BaslangictakiAsama?.ToString(), k.BitistekiAsama?.ToString())).ToList(),
         g.GelisimAdimlari.Select(a => new GelisimAdimiDto(a.Id, a.Tarih, a.Baslik, a.Aciklama)).ToList(),
         g.SatisKayitlari.Select(s => new SatisKaydiDto(s.Id, s.Donem, s.Ciro, s.Ihracat, s.OnayDurumu.ToString(), s.ReviewNotu, s.CreatedAt)).ToList(),
         g.YatirimKayitlari.Select(y => new YatirimKaydiDto(y.Id, y.Tur.ToString(), y.Tutar, y.ParaBirimi, y.Tarih, y.YatirimciAdi, y.OnayDurumu.ToString(), y.ReviewNotu, y.CreatedAt)).ToList(),
@@ -103,3 +104,8 @@ public record SunumPaylasimiDto(
     int GoruntulenmeSayisi, DateTime? SonGoruntulenme, DateTime CreatedAt);
 
 public record SunumPaylasimiOlusturRequest(int GecerlilikGun, string? Etiket);
+
+public record AsamaGecisiDto(
+    Guid Id, string? OncekiAsama, string YeniAsama, DateTime Tarih, string? Aciklama, string DegistirenAdSoyad);
+
+public record AsamaDegistirRequest(string Asama, DateTime? Tarih, string? Aciklama);

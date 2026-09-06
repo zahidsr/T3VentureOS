@@ -186,6 +186,7 @@ export interface GirisimSummaryDto {
   puan: number
   seviye: GirisimSeviyesi
   guncel: boolean
+  asama: GirisimAsamasi
 }
 
 export interface CreateGirisimRequest {
@@ -208,6 +209,9 @@ export interface ProgramKatilimOzetDto {
   durum: KatilimDurumu
   baslangicTarihi: string
   bitisTarihi: string | null
+  /** Programa girildiği andaki aşama; sonradan değişse de bu fotoğraf sabit kalır. */
+  baslangictakiAsama?: GirisimAsamasi | null
+  bitistekiAsama?: GirisimAsamasi | null
 }
 
 export interface GelisimAdimiDto {
@@ -300,6 +304,7 @@ export interface GirisimDetailDto {
   ekipBuyuklugu: number | null
   logoUrl: string | null
   createdAt: string
+  asama: GirisimAsamasi
   programKatilimlari: ProgramKatilimOzetDto[]
   gelisimAdimlari: GelisimAdimiDto[]
   satisKayitlari: SatisKaydiDto[]
@@ -587,6 +592,18 @@ export interface GirisimKarsilastirmaFiltreParams {
 
 /** Panelde bir girişimin "ne durumda" kartı. */
 export type GirisimSeviyesi = "Bronz" | "Gumus" | "Altin" | "Platin"
+
+/** Girişimin ürün olgunluk aşaması — puandan (veri kalitesi) bağımsızdır. */
+export type GirisimAsamasi = "Fikir" | "Prototip" | "MVP" | "IlkMusteri" | "Olcekleme" | "Buyume"
+
+export interface AsamaGecisiDto {
+  id: string
+  oncekiAsama?: GirisimAsamasi | null
+  yeniAsama: GirisimAsamasi
+  tarih: string
+  aciklama?: string | null
+  degistirenAdSoyad: string
+}
 
 /** Girişimciye "şunu yaparsan şu kadar puan" diye gösterilen tek adım. */
 export interface SonrakiAdimDto {

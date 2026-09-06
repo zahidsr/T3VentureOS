@@ -107,6 +107,7 @@ public class AppDbContext : DbContext
     public DbSet<YatirimKaydi> YatirimKayitlari => Set<YatirimKaydi>();
     public DbSet<Basari> Basarilar => Set<Basari>();
     public DbSet<IstihdamKaydi> IstihdamKayitlari => Set<IstihdamKaydi>();
+    public DbSet<AsamaGecisi> AsamaGecisleri => Set<AsamaGecisi>();
     public DbSet<Dokuman> Dokumanlar => Set<Dokuman>();
     public DbSet<GirisimContact> GirisimContactlar => Set<GirisimContact>();
     public DbSet<GirisimGuncellemeTalebi> GirisimGuncellemeTalepleri => Set<GirisimGuncellemeTalebi>();
@@ -190,6 +191,14 @@ public class AppDbContext : DbContext
             e.HasOne(x => x.Girisim).WithMany(g => g.IstihdamKayitlari).HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.ReviewedBy).WithMany().HasForeignKey(x => x.ReviewedById).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<AsamaGecisi>(e =>
+        {
+            e.HasIndex(x => new { x.GirisimId, x.Tarih });
+            e.Property(x => x.Aciklama).HasMaxLength(500);
+            e.HasOne(x => x.Girisim).WithMany(g => g.AsamaGecisleri).HasForeignKey(x => x.GirisimId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Degistiren).WithMany().HasForeignKey(x => x.DegistirenId).OnDelete(DeleteBehavior.Restrict);
         });
 
         b.Entity<Dokuman>(e =>

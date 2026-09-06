@@ -11,6 +11,8 @@ import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
+import { AsamaGuncelle } from "@/components/patterns/AsamaGuncelle"
+import { AsamaCizelgesi } from "@/components/patterns/AsamaCizelgesi"
 import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { VeriGrafikleri } from "@/components/patterns/VeriGrafikleri"
 import { YatirimciHazirligi } from "@/components/patterns/YatirimciHazirligi"
@@ -1561,7 +1563,9 @@ export default function GirisimimPage() {
 
         {/* ------------------------------------------------------ Gelişim */}
         {bolum === "gelisim" && (
-          <div>
+          <div className="space-y-4">
+            <AsamaGuncelle girisim={girisim} />
+            <AsamaCizelgesi girisim={girisim} />
           <Card>
             <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Gelişim Yolculuğu" ton="olumlu" />
             <CardContent className="space-y-4">

@@ -82,13 +82,27 @@ public class ProgramService
         var alreadyApplied = await _db.ProgramKatilimlari.AnyAsync(k => k.ProgramId == programId && k.GirisimId == girisimId);
         if (alreadyApplied) return (false, "Bu programa zaten başvurdunuz.");
 
-        _db.ProgramKatilimlari.Add(new ProgramKatilimi { ProgramId = programId, GirisimId = girisimId, Durum = KatilimDurumu.Basvuru });
+        _db.ProgramKatilimlari.Add(new ProgramKatilimi
+        {
+            ProgramId = programId,
+            GirisimId = girisimId,
+            Durum = KatilimDurumu.Basvuru,
+            BaslangictakiAsama = await GirisiminAsamasiAsync(girisimId),
+        });
         await _db.SaveChangesAsync();
         return (true, null);
     }
 
+    /// <summary>
+    /// Girişimin programa girdiği andaki aşaması. Sonradan hesaplamak yerine katılım anında
+    /// dondurulur; aşama daha sonra değiştiğinde programın başlangıç fotoğrafı bozulmasın.
+    /// </summary>
+    private async Task<T3VentureOS.Domain.GirisimAsamasi?> GirisiminAsamasiAsync(Guid girisimId) =>
+        await _db.Girisimler.Where(g => g.Id == girisimId).Select(g => (T3VentureOS.Domain.GirisimAsamasi?)g.Asama).FirstOrDefaultAsync();
+
     public async Task<ProgramKatilimi> AddKatilimAsync(ProgramKatilimi katilim)
     {
+        katilim.BaslangictakiAsama ??= await GirisiminAsamasiAsync(katilim.GirisimId);
         _db.ProgramKatilimlari.Add(katilim);
         await _db.SaveChangesAsync();
         return katilim;
@@ -99,6 +113,12 @@ public class ProgramService
         var katilim = await _db.ProgramKatilimlari.Include(k => k.Program).FirstOrDefaultAsync(k => k.Id == katilimId);
         if (katilim is null) return;
         katilim.Durum = durum;
+
+        // Program yolculuğu bittiğinde çıkış fotoğrafı çekilir: "hangi aşamada girdi, hangi
+        // aşamada çıktı" karşılaştırmasının ikinci ayağı budur.
+        if (durum is KatilimDurumu.Mezun or KatilimDurumu.Ayrildi)
+            katilim.BitistekiAsama ??= await GirisiminAsamasiAsync(katilim.GirisimId);
+
         katilim.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 

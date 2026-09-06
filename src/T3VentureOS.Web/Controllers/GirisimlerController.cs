@@ -25,11 +25,12 @@ public class GirisimlerController : ControllerBase
     private readonly GirisimAnalizService _analiz;
     private readonly YatirimciHazirligiService _hazirlik;
     private readonly SunumPaylasimService _paylasim;
+    private readonly AsamaService _asama;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim, AsamaService asama)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -43,6 +44,7 @@ public class GirisimlerController : ControllerBase
         _analiz = analiz;
         _hazirlik = hazirlik;
         _paylasim = paylasim;
+        _asama = asama;
     }
 
     [HttpGet]
@@ -491,6 +493,36 @@ public class GirisimlerController : ControllerBase
 
         return Ok(new YatirimciHazirligiDto(h.Yuzde, h.Durum,
             h.Kriterler.Select(k => new HazirlikKriteriDto(k.Anahtar, k.Baslik, k.NedenOnemli, k.Karsilandi, k.Ipucu)).ToList()));
+    }
+
+    /// <summary>Girişimin aşama geçmişi — en yeni geçiş en üstte.</summary>
+    [HttpGet("{id:guid}/asama-gecmisi")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> AsamaGecmisi(Guid id)
+    {
+        var gecmis = await _asama.GecmisAsync(id);
+        return Ok(gecmis.Select(g => new AsamaGecisiDto(
+            g.Id, g.OncekiAsama?.ToString(), g.YeniAsama.ToString(), g.Tarih, g.Aciklama, g.DegistirenAdSoyad)).ToList());
+    }
+
+    /// <summary>
+    /// Girişimin aşamasını değiştirir ve geçişi kayda geçirir. Geçmiş, "programa hangi aşamada
+    /// girdi" sorusunun tek dayanağıdır; bu yüzden aşama sessizce güncellenmez.
+    /// </summary>
+    [HttpPut("{id:guid}/asama")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> AsamaDegistir(Guid id, AsamaDegistirRequest request)
+    {
+        if (!Enum.TryParse<GirisimAsamasi>(request.Asama, ignoreCase: true, out var asama))
+            return BadRequest(new ErrorResponse("Geçersiz aşama."));
+
+        var (ok, hata) = await _asama.AsamaDegistirAsync(id, asama, request.Tarih, request.Aciklama, _currentUser.UserId!.Value);
+        if (!ok) return BadRequest(new ErrorResponse(hata!));
+
+        var full = await _girisimler.GetAsync(id);
+        return Ok(full!.ToDetailDto());
     }
 
     /// <summary>Girişimin künyesi için durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı.</summary>

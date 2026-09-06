@@ -44,6 +44,7 @@ builder.Services.AddScoped<EkosistemEtkiService>();
 builder.Services.AddScoped<ProgramKohortService>();
 builder.Services.AddScoped<YatirimciHazirligiService>();
 builder.Services.AddScoped<SunumPaylasimService>();
+builder.Services.AddScoped<AsamaService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();
@@ -99,6 +100,7 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedAsync(db);
     await DbInitializer.SeedDemoExtrasAsync(db);
     await DbInitializer.SeedIstihdamAsync(db);
+    await DbInitializer.SeedAsamaGecisleriAsync(db);
     await DbInitializer.PuanlariTazeleAsync(db);
 }
 

@@ -43,3 +43,10 @@ public enum AiAnalizTuru { Ekosistem, GirisimDurumu, GirisimGelisim }
 /// seviye de düşmez — güncellik ayrı bir işaret olarak taşınır, bkz. GirisimSaglik.Guncel.
 /// </summary>
 public enum GirisimSeviyesi { Bronz, Gumus, Altin, Platin }
+
+/// <summary>
+/// Girişimin ürün olgunluk aşaması. Puandan (veri kalitesi) tamamen ayrıdır: bu, girişimin
+/// gerçekte nerede olduğunu anlatır ve "programa hangi aşamada girdi, hangi aşamada çıktı"
+/// sorusunun ölçülebilir cevabıdır.
+/// </summary>
+public enum GirisimAsamasi { Fikir, Prototip, MVP, IlkMusteri, Olcekleme, Buyume }

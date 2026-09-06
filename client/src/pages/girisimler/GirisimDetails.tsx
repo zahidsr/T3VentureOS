@@ -10,6 +10,7 @@ import { BackLink } from "@/components/patterns/BackLink"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { GirisimKunyesi } from "@/components/patterns/GirisimKunyesi"
+import { AsamaCizelgesi } from "@/components/patterns/AsamaCizelgesi"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { StatusBadge } from "@/components/patterns/StatusBadge"
@@ -422,6 +423,7 @@ export default function GirisimDetailsPage() {
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="programlar">Program Geçmişi</TabsTrigger>
+          <TabsTrigger value="yolculuk">Yolculuk</TabsTrigger>
           <TabsTrigger value="gelisim">Gelişim Yolculuğu</TabsTrigger>
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
@@ -756,6 +758,10 @@ export default function GirisimDetailsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="yolculuk" className="mt-4">
+          <AsamaCizelgesi girisim={girisim} />
         </TabsContent>
 
         {/* Yöneticinin "bu girişim ne durumda" sorusuna AI okuması. */}

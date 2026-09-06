@@ -85,6 +85,8 @@ Tüm şifreler: `Passw0rd!`
 ## Özellikler
 
 - Girişim kartları ve detaylı profil yönetimi
+- Girişim aşaması (Fikir → Prototip → MVP → İlk Müşteri → Ölçekleme → Büyüme) ve aşama geçiş geçmişi; programa giriş/çıkış aşaması katılım anında dondurulur
+- Girişim yolculuğu zaman çizelgesi: aşama geçişleri, program katılımları, yatırım turları, başarılar ve gelişim adımları tek eksende
 - Girişim künyesi: yöneticiler girişim detayının üstünde durumu, iletişim muhatabını (tıklanabilir telefon/e-posta) ve sunumu tek bakışta görür
 - Hızlandırma programları ve programa katılım süreçleri
 - Program etkisi (kohort) panosu: bir programa katılan girişimlerin program başlangıcından bugüne ürettiği ciro, çektiği yatırım ve yarattığı istihdam

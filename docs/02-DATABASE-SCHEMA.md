@@ -170,6 +170,21 @@ User 1─< SilmeTalebi (UserId, ReviewedBy)
 
 > `Girisimler.Puan` (int, 0-100) türetilmiş bir değerdir ama sıralanabilmesi için tabloda tutulur. Hesap tek yerdedir (`GirisimSaglikService.PuanHesapla`); puanı etkileyen bir kayıt değiştiğinde `AppDbContext.SaveChangesAsync` ilgili girişimlerin puanını kendiliğinden tazeler, böylece uç noktalara tek tek "puanı güncelle" çağrısı serpiştirmek gerekmez.
 
+### Aşama Geçişleri (AsamaGecisi)
+> Girişimin ürün olgunluk aşamasının değiştiği anlar. Güncel aşama `Girisimler.Asama` alanındadır; asıl takip değeri buradaki geçmiştedir — geçmiş olmadan "programa hangi aşamada girdi" sorusu cevaplanamaz.
+
+| kolon | tip | not |
+|---|---|---|
+| Id | uniqueidentifier pk | |
+| GirisimId | uniqueidentifier fk→Girisimler | `Cascade`, (GirisimId, Tarih) index |
+| OncekiAsama | int (enum)? | ilk kayıtta null |
+| YeniAsama | int (enum) | Fikir, Prototip, MVP, IlkMusteri, Olcekleme, Buyume |
+| Tarih | datetime2 | geçişin gerçekleştiği tarih (kaydın girildiği tarihten farklı olabilir) |
+| Aciklama | nvarchar(500) | zaman çizelgesinde görünen not |
+| DegistirenId | uniqueidentifier fk→Users | `Restrict` |
+
+> `ProgramKatilimlari` tablosu ayrıca `BaslangictakiAsama` ve `BitistekiAsama` alanlarını taşır: girişimin programa girdiği ve çıktığı andaki aşama o an dondurulur, sonradan hesaplanmaz — aşama daha sonra değiştiğinde programın fotoğrafı bozulmasın.
+
 ### İstihdam Kayıtları (IstihdamKaydi)
 > Girişimin bir dönem sonundaki çalışan sayısı; ciro ve yatırım gibi onay akışından geçer. Profildeki `EkipBuyuklugu` tek bir anlık sayıdır ve geçmiş tutmaz — istihdamın zaman içindeki seyri ve ekosistem toplamı için döneme bağlı kayıt gerekir.
 
