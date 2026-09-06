@@ -25,15 +25,8 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-3">
-              {/* white plate behind the logo — its wordmark is dark and would vanish on this navy background */}
-              <div className="rounded-lg bg-white px-2.5 py-1.5 shadow-sm">
-                <img src="/logo.png" alt="T3 Girişim Merkezi" className="h-8 w-auto" />
-              </div>
-              <p className="text-[11px] font-semibold tracking-widest text-white/50">
-                Girişim Ekosistemi
-                <br />
-                Yönetim Sistemi
-              </p>
+              {/* Logonun beyaz yazılı sürümü; koyu alt bilgi zemininde doğrudan okunuyor. */}
+              <img src="/logo-tam.png" alt="TGM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="h-14 w-auto" />
             </div>
             <p className="mt-4 max-w-sm text-sm text-white/55 leading-relaxed">
               Programdan yatırıma, T3 girişimcilik ekosisteminin tek kurumsal hafızası ve karar

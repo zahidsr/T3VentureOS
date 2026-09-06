@@ -33,7 +33,7 @@ export function MobileSidebar() {
       <SheetContent side="left" className="w-72 border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex h-full flex-col gap-6 px-4 pt-6">
           <Link to="/" onClick={() => setOpen(false)} className="flex items-center">
-            <img src="/logo.png" alt="T3 Girişim Merkezi" className="h-9 w-auto" />
+            <img src="/logo-tam.png" alt="TGM VentureOS" className="h-9 w-auto" />
           </Link>
 
           <nav className="flex flex-col gap-1">

@@ -28,7 +28,7 @@ export function Topbar() {
       <div className="flex items-center gap-2 md:hidden">
         <MobileSidebar />
         <Link to="/" className="flex items-center">
-          <img src="/logo.png" alt="T3 Girişim Merkezi" className="h-8 w-auto" />
+          <img src="/logo-tam-koyu.png" alt="TGM VentureOS" className="h-9 w-auto" />
         </Link>
       </div>
 

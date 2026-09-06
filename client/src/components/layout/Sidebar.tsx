@@ -27,14 +27,13 @@ export function Sidebar() {
         collapsed ? "w-[68px]" : "w-60",
       )}
     >
-      <div className="flex h-16 items-center gap-2 px-4">
-        <img src="/logo.png" alt="T3 Girişim Merkezi" className="h-8 w-auto shrink-0" />
-        {!collapsed && (
-          <span className="truncate text-xs leading-tight font-semibold tracking-wide text-sidebar-foreground/70">
-            Ekosistemi
-            <br />
-            Yönetim Sistemi
-          </span>
+      <div className="flex items-center gap-2 px-4 py-5">
+        {/* Logonun yazısı beyaz olduğu için koyu sidebar'da tam sürümü kullanılır; daraltılmış
+            hâlde yatay logo sığmaz, yalnızca TGM işareti gösterilir. */}
+        {collapsed ? (
+          <img src="/logo-isaret.png" alt="TGM VentureOS" className="mx-auto h-9 w-auto shrink-0" />
+        ) : (
+          <img src="/logo-tam.png" alt="TGM VentureOS — Girişim Ekosistemi Yönetim Sistemi" className="w-full max-w-[196px]" />
         )}
       </div>
 
