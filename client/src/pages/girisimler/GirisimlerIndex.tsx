@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useSearchParams } from "react-router-dom"
-import { ArrowRight, Search, SlidersHorizontal } from "lucide-react"
-import { PageHeader } from "@/components/patterns/PageHeader"
+import { ArrowRight, Building2, Layers, Search, SlidersHorizontal } from "lucide-react"
+import { HeroMetrik, SayfaHero } from "@/components/patterns/SayfaHero"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Pagination } from "@/components/patterns/Pagination"
@@ -20,6 +20,7 @@ import { API_URL, api } from "@/lib/api-client"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import type { GirisimSummaryDto, PagedResultDto, ProgramSummaryDto } from "@/lib/types"
 import { SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
+import { AsamaRozeti } from "@/components/patterns/AsamaRozeti"
 
 const ALL_PROGRAMS = "__all__"
 
@@ -88,9 +89,13 @@ function GirisimCard({ g }: { g: GirisimSummaryDto }) {
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-role-accent">
-            {g.ad}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate font-heading text-base font-bold text-t3-navy transition-colors group-hover:text-role-accent">
+              {g.ad}
+            </p>
+            {/* Girişimin hangi olgunluk aşamasında olduğu, takip sisteminin ana bilgisi. */}
+            <AsamaRozeti asama={g.asama} />
+          </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {[g.sektor, g.kurulusYili ? `Kuruluş ${g.kurulusYili}` : null, g.ekipBuyuklugu ? `${g.ekipBuyuklugu} kişi` : null]
               .filter(Boolean)
@@ -159,22 +164,46 @@ export default function GirisimlerIndexPage() {
   })
 
   const girisimler = girisimlerQuery.data?.items ?? []
+  // Hero'daki sayı "kayıtlı girişim" mi yoksa "filtre sonucu" mu, etiketi buna göre değişsin.
+  const filtreliMi = Boolean(sektor || debouncedAra) || programId !== ALL_PROGRAMS
 
   return (
     <div>
-      <PageHeader
+      <SayfaHero
         eyebrow="Girişim Ekosistemi"
-        title="Girişimler"
-        subtitle="T3 ekosistemindeki girişimlerin profillerini görüntüleyin ve yönetin."
-        actions={
+        baslik="Girişimler"
+        aciklama="T3 ekosistemindeki girişimlerin profilleri, bulundukları aşama ve ürettikleri değer."
+        aksiyonlar={
           <>
-            <LinkButton to="/girisimler/karsilastirma" variant="outline">
-              Rakip Karşılaştır
-            </LinkButton>
-            <LinkButton to="/girisimler/yeni" className="bg-role-accent text-white hover:bg-role-accent-dark">
+            <LinkButton
+              to="/girisimler/yeni"
+              className="bg-white text-t3-navy hover:bg-white/90"
+            >
               + Yeni Girişim
             </LinkButton>
+            <LinkButton
+              to="/girisimler/karsilastirma"
+              variant="outline"
+              className="border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+            >
+              Rakip Karşılaştır
+            </LinkButton>
           </>
+        }
+        sag={
+          <div className="grid gap-3 sm:grid-cols-2">
+            <HeroMetrik
+              ikon={<Building2 className="size-5" />}
+              deger={girisimlerQuery.data?.totalCount ?? "—"}
+              etiket={filtreliMi ? "Filtreye uyan girişim" : "Kayıtlı girişim"}
+              vurgulu
+            />
+            <HeroMetrik
+              ikon={<Layers className="size-5" />}
+              deger={programsQuery.data?.totalCount ?? "—"}
+              etiket="Hızlandırma programı"
+            />
+          </div>
         }
       />
 

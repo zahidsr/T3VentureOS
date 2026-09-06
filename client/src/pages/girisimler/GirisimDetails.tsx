@@ -337,7 +337,11 @@ export default function GirisimDetailsPage() {
 
   // Sekme adreste tutulur: künyedeki "Sunumu görüntüle" bağlantısı doğrudan o sekmeyi açabilsin
   // ve yönetici bağlantıyı paylaştığında karşı taraf aynı yere düşsün.
-  const aktifSekme = searchParams.get("sekme") ?? "profil"
+  // "programlar" ve "gelisim" ayrı sekmelerdi; içerikleri Yolculuk'a taşındı. Eski bağlantılar
+  // ve yer imleri kırılmasın diye oraya yönlendiriliyor.
+  const ESKI_SEKMELER: Record<string, string> = { programlar: "yolculuk", gelisim: "yolculuk" }
+  const istenenSekme = searchParams.get("sekme") ?? "profil"
+  const aktifSekme = ESKI_SEKMELER[istenenSekme] ?? istenenSekme
   function setAktifSekme(sekme: string) {
     setSearchParams(
       (prev) => {
@@ -422,9 +426,7 @@ export default function GirisimDetailsPage() {
       <Tabs value={aktifSekme} onValueChange={setAktifSekme}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
-          <TabsTrigger value="programlar">Program Geçmişi</TabsTrigger>
           <TabsTrigger value="yolculuk">Yolculuk</TabsTrigger>
-          <TabsTrigger value="gelisim">Gelişim Yolculuğu</TabsTrigger>
           <TabsTrigger value="finansal">Satış &amp; Yatırım</TabsTrigger>
           <TabsTrigger value="basari-dokuman">Başarı &amp; Doküman</TabsTrigger>
           <TabsTrigger value="analiz">AI Analizi</TabsTrigger>
@@ -543,63 +545,6 @@ export default function GirisimDetailsPage() {
         </TabsContent>
 
         {/* --------------------------------------------------- Programlar */}
-        <TabsContent value="programlar" className="mt-4">
-          <Card>
-            <KartBasligi ikon={<Layers className="size-4" />} baslik="Program Geçmişi" ton="notr" />
-            <CardContent>
-              {girisim.programKatilimlari.length === 0 ? (
-                <EmptyState icon="📋" message="Bu girişim henüz bir programa katılmamış." />
-              ) : (
-                <div className="space-y-3">
-                  {girisim.programKatilimlari.map((k) => (
-                    <div
-                      key={k.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-t3-navy">{k.programAdi}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {k.donem ?? "Dönem belirtilmemiş"} · {formatDate(k.baslangicTarihi)} –{" "}
-                          {formatDate(k.bitisTarihi)}
-                        </p>
-                      </div>
-                      <Badge variant="outline">{katilimDurumuLabels[k.durum] ?? k.durum}</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ------------------------------------------------------ Gelişim */}
-        <TabsContent value="gelisim" className="mt-4">
-          <Card>
-            <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Gelişim Yolculuğu" ton="olumlu" />
-            <CardContent className="space-y-4">
-              {canEdit && <AddGelisimAdimiForm girisimId={girisim.id} onAdded={invalidate} />}
-
-              {girisim.gelisimAdimlari.length === 0 ? (
-                <EmptyState icon="🗺️" message="Henüz bir gelişim adımı eklenmemiş." />
-              ) : (
-                <ol className="space-y-4 border-l-2 border-t3-blue-light pl-4">
-                  {[...girisim.gelisimAdimlari]
-                    .sort((a, b) => new Date(b.tarih).getTime() - new Date(a.tarih).getTime())
-                    .map((g) => (
-                      <li key={g.id} className="relative">
-                        <span className="absolute -left-[21px] top-1 size-2.5 rounded-full bg-t3-blue" />
-                        <p className="text-xs font-medium text-muted-foreground">{formatDate(g.tarih)}</p>
-                        <p className="text-sm font-semibold text-t3-navy">{g.baslik}</p>
-                        {g.aciklama && <p className="mt-0.5 text-sm text-muted-foreground">{g.aciklama}</p>}
-                      </li>
-                    ))}
-                </ol>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* --------------------------------------------------- Finansal */}
         <TabsContent value="finansal" className="mt-4 space-y-4">
           <Card>
             <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Satış Kayıtları" ton="accent" />
@@ -772,6 +717,52 @@ export default function GirisimDetailsPage() {
               bosDurumMetni="Bu girişim için henüz program etkisi analizi üretilmedi."
             />
           )}
+
+          {/* Zaman çizelgesi katılımları tarih olarak gösterir; bu kart mezuniyet/devam
+              durumunu okunur biçimde verir. */}
+          <Card>
+            <KartBasligi ikon={<Layers className="size-4" />} baslik="Program Geçmişi" ton="notr" />
+            <CardContent>
+              {girisim.programKatilimlari.length === 0 ? (
+                <EmptyState icon="📋" message="Bu girişim henüz bir programa katılmamış." />
+              ) : (
+                <div className="space-y-3">
+                  {girisim.programKatilimlari.map((k) => (
+                    <div
+                      key={k.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-t3-navy">{k.programAdi}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {k.donem ?? "Dönem belirtilmemiş"} · {formatDate(k.baslangicTarihi)} –{" "}
+                          {formatDate(k.bitisTarihi)}
+                        </p>
+                      </div>
+                      <Badge variant="outline">{katilimDurumuLabels[k.durum] ?? k.durum}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Adımların kendisi yukarıdaki zaman çizelgesinde zaten var; burada listeyi tekrar
+              etmek yerine yalnızca ekleme formu duruyor. */}
+          {canEdit && (
+            <Card>
+              <KartBasligi
+                ikon={<TrendingUp className="size-4" />}
+                baslik="Gelişim Adımı Ekle"
+                ton="olumlu"
+                aciklama="Eklenen adım yukarıdaki yolculuk çizelgesine düşer."
+              />
+              <CardContent>
+                <AddGelisimAdimiForm girisimId={girisim.id} onAdded={invalidate} />
+              </CardContent>
+            </Card>
+          )}
+
         </TabsContent>
 
         {/* Yöneticinin "bu girişim ne durumda" sorusuna AI okuması. */}
