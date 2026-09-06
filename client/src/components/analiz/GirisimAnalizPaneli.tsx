@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { isAxiosError } from "axios"
 import { Sparkles } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, extractErrorMessage } from "@/lib/api-client"
@@ -62,15 +63,12 @@ export function GirisimAnalizPaneli({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="size-4 text-role-accent" />
-              {baslik}
-            </CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">{aciklama}</p>
-          </div>
+      <KartBasligi
+        ikon={<Sparkles className="size-4" />}
+        baslik={baslik}
+        aciklama={aciklama}
+        ton="mor"
+        sag={
           <Button
             size="sm"
             variant={analiz ? "outline" : "default"}
@@ -80,20 +78,37 @@ export function GirisimAnalizPaneli({
           >
             {uretMutation.isPending ? "Hazırlanıyor…" : analiz ? "Yeniden analiz et" : "Analiz et"}
           </Button>
-        </div>
-      </CardHeader>
+        }
+      />
       <CardContent>
         {analizQuery.isLoading ? (
           <Skeleton className="h-24 w-full" />
         ) : analiz ? (
           <div className="space-y-3">
+            {/* Düz madde listesi bir metin duvarı gibi okunuyordu; her bulgu numaralı kendi
+                kutusunda duruyor ve varsa "Başlık: açıklama" kalıbı başlık olarak ayrılıyor. */}
             <ul className="space-y-2">
-              {aiMaddeleriniAyir(analiz.metin).map((madde, i) => (
-                <li key={i} className="flex gap-2 text-sm leading-relaxed text-muted-foreground">
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-role-accent" />
-                  <span>{madde}</span>
-                </li>
-              ))}
+              {aiMaddeleriniAyir(analiz.metin).map((madde, i) => {
+                const ayrac = madde.indexOf(":")
+                const basligiVar = ayrac > 0 && ayrac < 60
+                return (
+                  <li key={i} className="flex gap-3 rounded-xl border bg-muted/30 p-3">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-role-accent-soft text-[11px] font-bold tabular-nums text-role-accent">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 text-sm leading-relaxed">
+                      {basligiVar ? (
+                        <>
+                          <span className="font-semibold text-foreground">{madde.slice(0, ayrac)}</span>
+                          <span className="text-muted-foreground">{madde.slice(ayrac + 1)}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">{madde}</span>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
             <p className="text-xs text-muted-foreground">
               {formatDateTime(analiz.createdAt)}

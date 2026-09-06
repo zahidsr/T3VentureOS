@@ -11,7 +11,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Banknote, Globe2, TrendingUp, Users } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import type { GirisimDetailDto } from "@/lib/types"
 
@@ -37,20 +39,21 @@ function GrafikKarti({
   aciklama,
   bosMesaj,
   veriVar,
+  ikon,
+  ton,
   children,
 }: {
   baslik: string
   aciklama: string
   bosMesaj: string
   veriVar: boolean
+  ikon: React.ReactNode
+  ton: "accent" | "notr" | "olumlu" | "mor"
   children: React.ReactNode
 }) {
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{baslik}</CardTitle>
-        <p className="text-xs text-muted-foreground">{aciklama}</p>
-      </CardHeader>
+      <KartBasligi ikon={ikon} baslik={baslik} aciklama={aciklama} ton={ton} />
       <CardContent>
         {veriVar ? (
           <ResponsiveContainer width="100%" height={220}>
@@ -94,6 +97,8 @@ export function VeriGrafikleri({ girisim }: { girisim: GirisimDetailDto }) {
     <div className="grid gap-4 lg:grid-cols-2">
       <GrafikKarti
         baslik="Ciro"
+        ikon={<TrendingUp className="size-4" />}
+        ton="accent"
         aciklama="Onaylı satış kayıtlarının dönem bazında seyri."
         bosMesaj="Onaylı satış kaydın yok."
         veriVar={ciro.length > 0}
@@ -109,6 +114,8 @@ export function VeriGrafikleri({ girisim }: { girisim: GirisimDetailDto }) {
 
       <GrafikKarti
         baslik="İhracat"
+        ikon={<Globe2 className="size-4" />}
+        ton="mor"
         aciklama="Satış kayıtlarında bildirilen ihracat tutarı."
         bosMesaj="Henüz ihracat bildirmedin."
         veriVar={ihracat.some((i) => i.deger > 0)}
@@ -124,6 +131,8 @@ export function VeriGrafikleri({ girisim }: { girisim: GirisimDetailDto }) {
 
       <GrafikKarti
         baslik="Yatırım"
+        ikon={<Banknote className="size-4" />}
+        ton="notr"
         aciklama="Onaylı yatırım turlarının zaman içindeki dağılımı."
         bosMesaj="Onaylı yatırım kaydın yok."
         veriVar={yatirim.length > 0}
@@ -140,6 +149,8 @@ export function VeriGrafikleri({ girisim }: { girisim: GirisimDetailDto }) {
 
       <GrafikKarti
         baslik="İstihdam"
+        ikon={<Users className="size-4" />}
+        ton="olumlu"
         aciklama="Dönem sonu çalışan sayısı; noktalar yeni işe alım yapılan dönemleri gösterir."
         bosMesaj="Henüz istihdam kaydın yok."
         veriVar={istihdam.length > 0}

@@ -267,7 +267,7 @@ export default function KullanicilarIndexPage() {
               <Upload className="size-4" />
               Toplu Davet Et (CSV)
             </Button>
-            <Button className="bg-t3-blue text-white hover:bg-t3-blue-dark" onClick={() => setDialogOpen(true)}>
+            <Button className="bg-role-accent text-white hover:bg-role-accent-dark" onClick={() => setDialogOpen(true)}>
               Kullanıcı Davet Et
             </Button>
           </>
@@ -510,7 +510,7 @@ export default function KullanicilarIndexPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                className="bg-role-accent text-white hover:bg-role-accent-dark"
                 disabled={isSubmitting || inviteMutation.isPending}
               >
                 {inviteMutation.isPending ? "Gönderiliyor…" : "Davet Gönder"}
@@ -570,7 +570,7 @@ export default function KullanicilarIndexPage() {
             </Button>
             <Button
               type="button"
-              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              className="bg-role-accent text-white hover:bg-role-accent-dark"
               disabled={bulkRows.length === 0 || bulkInviteMutation.isPending}
               onClick={() => bulkInviteMutation.mutate(bulkRows)}
             >

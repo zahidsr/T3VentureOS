@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
               ederse lütfen sistem yöneticinizle iletişime geçin.
             </p>
           </div>
-          <Button onClick={() => window.location.reload()} className="bg-t3-blue text-white hover:bg-t3-blue-dark">
+          <Button onClick={() => window.location.reload()} className="bg-role-accent text-white hover:bg-role-accent-dark">
             Sayfayı Yenile
           </Button>
         </div>

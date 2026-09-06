@@ -19,11 +19,12 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { PageHeader } from "@/components/patterns/PageHeader"
-import { StatGrid, StatTile } from "@/components/patterns/StatTile"
+import { HeroMetrik, SayfaHero } from "@/components/patterns/SayfaHero"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { AiMetni } from "@/components/patterns/AiMetni"
 import { aiMaddeleriniAyir } from "@/lib/ai-metni"
 import { YATIRIM_TUR_LABEL } from "@/lib/labels"
@@ -490,24 +491,37 @@ export default function RaporPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        eyebrow="T3 Girişim Ekosistemi"
-        title="Özet Rapor"
-        subtitle="Onaylı girişim verileri üzerinden program ve yatırım durumuna genel bakış."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="gap-1.5" onClick={() => downloadCsv(data)}>
+      <SayfaHero
+        eyebrow="Özet Rapor"
+        baslik="Ekosistem raporu"
+        aciklama="Onaylı girişim verileri üzerinden program ve yatırım durumuna genel bakış."
+        aksiyonlar={
+          <>
+            <Button variant="outline" className="gap-1.5 border-white/25 bg-white/5 text-white hover:bg-white/15" onClick={() => downloadCsv(data)}>
               <Download className="size-4" />
-              CSV İndir
+              CSV
             </Button>
-            <Button variant="outline" className="gap-1.5" onClick={handleExportXlsx} disabled={isExportingXlsx}>
+            <Button variant="outline" className="gap-1.5 border-white/25 bg-white/5 text-white hover:bg-white/15" onClick={handleExportXlsx} disabled={isExportingXlsx}>
               <Download className="size-4" />
-              {isExportingXlsx ? "Hazırlanıyor…" : "Excel İndir"}
+              {isExportingXlsx ? "Hazırlanıyor…" : "Excel"}
             </Button>
-            <Button variant="outline" className="gap-1.5" onClick={handleExportPdf} disabled={isExportingPdf}>
+            <Button className="gap-1.5 bg-white text-t3-navy hover:bg-white/90" onClick={handleExportPdf} disabled={isExportingPdf}>
               <Download className="size-4" />
-              {isExportingPdf ? "Hazırlanıyor…" : "PDF İndir"}
+              {isExportingPdf ? "Hazırlanıyor…" : "PDF"}
             </Button>
+          </>
+        }
+        sag={
+          <div className="grid gap-3 sm:grid-cols-2">
+            <HeroMetrik ikon={<Building2 className="size-5" />} deger={formatNumber(data.toplamGirisim)} etiket="Toplam Girişim" />
+            <HeroMetrik ikon={<Activity className="size-5" />} deger={formatNumber(data.aktifProgramSayisi)} etiket="Aktif Program" />
+            <HeroMetrik ikon={<TrendingUp className="size-5" />} deger={formatCurrency(data.toplamOnayliCiro)} etiket="Onaylı Ciro" />
+            <HeroMetrik
+              ikon={<Clock className="size-5" />}
+              deger={formatNumber(data.bekleyenOnaySayisi)}
+              etiket="Bekleyen Onay"
+              vurgulu={data.bekleyenOnaySayisi > 0}
+            />
           </div>
         }
       />
@@ -605,51 +619,15 @@ export default function RaporPage() {
         )}
       </div>
 
-      {/* ---------------------------------------------------- İstatistik Kartları */}
-      <div>
-        <p className="mb-3 text-xs font-bold tracking-widest text-muted-foreground uppercase">Genel Durum</p>
-        <StatGrid>
-          <StatTile
-            value={formatNumber(data.toplamGirisim)}
-            label="Toplam Girişim"
-            tone="info"
-            icon={<Building2 className="size-5" />}
-          />
-          <StatTile
-            value={formatNumber(data.aktifProgramSayisi)}
-            label="Aktif Program"
-            tone="success"
-            icon={<Activity className="size-5" />}
-          />
-          <StatTile
-            value={formatNumber(data.bekleyenOnaySayisi)}
-            label="Bekleyen Onay"
-            tone={data.bekleyenOnaySayisi > 0 ? "warning" : "neutral"}
-            icon={<Clock className="size-5" />}
-          />
-          <StatTile
-            value={formatCurrency(data.toplamOnayliYatirim)}
-            label="Onaylı Yatırım"
-            tone="success"
-            icon={<TrendingUp className="size-5" />}
-          />
-          <StatTile
-            value={formatCurrency(data.toplamOnayliCiro)}
-            label="Onaylı Ciro"
-            tone="info"
-            icon={<Banknote className="size-5" />}
-          />
-        </StatGrid>
-      </div>
 
       {/* ---------------------------------------------------- AI Analizi */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="size-4 text-role-accent" />
-              AI Analizi
-            </CardTitle>
+        <KartBasligi
+          ikon={<Sparkles className="size-4" />}
+          baslik="AI Analizi"
+          aciklama="Ekosistem verisinin yapay zekâ tarafından yazılmış okuması."
+          ton="mor"
+          sag={<>
             <Button
               size="sm"
               className="gap-1.5 bg-role-accent text-white hover:bg-role-accent-dark"
@@ -663,9 +641,9 @@ export default function RaporPage() {
                   ? "Yeniden Analiz Et"
                   : "Analiz Oluştur"}
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
+          </>}
+        />
+        <CardContent>
           {aiMutation.isPending ? (
             <div className="space-y-2">
               <Skeleton className="h-4 w-full" />
@@ -725,12 +703,7 @@ export default function RaporPage() {
       {/* ---------------------------------------------------- Aylık Trend + Yatırım Türü Dağılımı */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="overflow-hidden">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <LineChartIcon className="size-4 text-muted-foreground" />
-              Aylık Trend (Son 6 Ay)
-            </CardTitle>
-          </CardHeader>
+          <KartBasligi ikon={<LineChartIcon className="size-4" />} baslik="Aylık Trend (Son 6 Ay)" ton="notr" />
           <CardContent className="pt-6" ref={trendChartRef}>
             {data.aylikTrend.every((a) => a.ciro === 0 && a.yatirim === 0) ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
@@ -761,12 +734,7 @@ export default function RaporPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <PieChartIcon className="size-4 text-muted-foreground" />
-              Yatırım Türü Dağılımı
-            </CardTitle>
-          </CardHeader>
+          <KartBasligi ikon={<PieChartIcon className="size-4" />} baslik="Yatırım Türü Dağılımı" ton="notr" />
           <CardContent className="pt-6" ref={yatirimChartRef}>
             {data.yatirimTuruDagilimi.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
@@ -804,12 +772,7 @@ export default function RaporPage() {
 
       {/* ---------------------------------------------------- Sektör Dağılımı */}
       <Card className="overflow-hidden">
-        <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart2 className="size-4 text-muted-foreground" />
-              Sektör Dağılımı
-            </CardTitle>
-          </CardHeader>
+        <KartBasligi ikon={<BarChart2 className="size-4" />} baslik="Sektör Dağılımı" ton="notr" />
         <CardContent className="pt-6" ref={sektorChartRef}>
           {data.sektorDagilimi.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

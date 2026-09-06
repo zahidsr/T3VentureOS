@@ -105,7 +105,7 @@ export default function GirisimCreatePage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="submit" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={isSubmitting}>
+              <Button type="submit" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={isSubmitting}>
                 {isSubmitting ? "Kaydediliyor…" : "Girişimi Oluştur"}
               </Button>
             </div>

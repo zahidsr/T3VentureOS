@@ -76,7 +76,7 @@ export default function VerifyEmailPage() {
               {errors.token && <p className="text-xs text-red-600">{errors.token.message}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={isSubmitting}>
+              <Button type="submit" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={isSubmitting}>
                 {isSubmitting ? "Doğrulanıyor…" : "Doğrula"}
               </Button>
               <Button

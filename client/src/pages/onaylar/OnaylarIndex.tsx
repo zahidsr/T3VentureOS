@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { EmptyState } from "@/components/patterns/EmptyState"
+import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -128,6 +129,8 @@ function ItemCard({
             className="mt-1"
           />
         )}
+        {/* Panel listeleriyle aynı dil: girişim satırları baş harf rozetiyle tanınıyor. */}
+        <InitialsAvatar name={girisimAdi} />
         <div className="space-y-1.5">
           <Link
             to={`/girisimler/${girisimId}`}
@@ -188,7 +191,7 @@ function SelectionHeader({
           <span className="text-sm font-medium text-t3-navy">{count} kayıt seçildi</span>
           <Button
             size="sm"
-            className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+            className="bg-role-accent text-white hover:bg-role-accent-dark"
             disabled={isBulkPending}
             onClick={onBulkApprove}
           >
@@ -399,7 +402,7 @@ export default function OnaylarIndexPage() {
       <>
         <Button
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={kararMutation.isPending}
           onClick={() => handleApprove(kategori, id)}
         >
@@ -831,7 +834,7 @@ export default function OnaylarIndexPage() {
               Vazgeç
             </Button>
             <Button
-              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              className="bg-role-accent text-white hover:bg-role-accent-dark"
               disabled={oneriMutation.isPending}
               onClick={submitOneri}
             >

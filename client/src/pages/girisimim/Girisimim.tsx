@@ -5,12 +5,13 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Building2, Trash2 } from "lucide-react"
+import { Award, Banknote, Building2, Clock, FileText, History, Layers, Mail, MessageSquareWarning, Trash2, TrendingUp } from "lucide-react"
 import { PDF_FONT, createTurkishPdf } from "@/lib/pdf"
 import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
+import { StatGrid, StatTile } from "@/components/patterns/StatTile"
 import { VeriGrafikleri } from "@/components/patterns/VeriGrafikleri"
 import { YatirimciHazirligi } from "@/components/patterns/YatirimciHazirligi"
 import { aylikTrendOkumasi } from "@/lib/rapor-okumasi"
@@ -19,6 +20,7 @@ import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -235,7 +237,7 @@ function GuncellemeTalebiForm({
         </Button>
         <Button
           type="submit"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Onaya Gönder"}
@@ -372,7 +374,7 @@ function AddSatisForm({ girisimId, onAdded }: { girisimId: string; onAdded: () =
         <Button
           type="submit"
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Satış Kaydı Ekle"}
@@ -551,7 +553,7 @@ function AddYatirimForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
         <Button
           type="submit"
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Yatırım Kaydı Ekle"}
@@ -648,7 +650,7 @@ function AddBasariForm({ girisimId, onAdded }: { girisimId: string; onAdded: () 
         <Button
           type="submit"
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Başarı Ekle"}
@@ -720,7 +722,7 @@ function AddGelisimAdimiForm({ girisimId, onAdded }: { girisimId: string; onAdde
         <Button
           type="submit"
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={isSubmitting || mutation.isPending}
         >
           {mutation.isPending ? "Gönderiliyor…" : "Gelişim Adımı Ekle"}
@@ -852,7 +854,7 @@ function GirisimContactForm({
         <Input id="contact-linkedin" value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} />
       </div>
       <div className="sm:col-span-2 flex justify-end">
-        <Button type="submit" size="sm" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={contactMutation.isPending}>
+        <Button type="submit" size="sm" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={contactMutation.isPending}>
           {contactMutation.isPending ? "Kaydediliyor…" : "Kaydet"}
         </Button>
       </div>
@@ -946,7 +948,7 @@ function AddDokumanForm({ girisimId, onAdded }: { girisimId: string; onAdded: ()
         <Button
           type="submit"
           size="sm"
-          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+          className="bg-role-accent text-white hover:bg-role-accent-dark"
           disabled={uploading}
         >
           {uploading ? "Yükleniyor…" : "Doküman Yükle"}
@@ -1359,9 +1361,7 @@ export default function GirisimimPage() {
         {bolum === "profil" && (
           <div>
           <Card>
-            <CardHeader>
-              <CardTitle>Profil Bilgileri</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Building2 className="size-4" />} baslik="Profil Bilgileri" ton="accent" />
             <CardContent>
               <LogoUploadSection girisim={girisim} onUpdated={invalidate} />
               <dl className="grid gap-4 sm:grid-cols-2">
@@ -1413,18 +1413,14 @@ export default function GirisimimPage() {
           </Card>
 
           <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>İletişim / Muhatap</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Mail className="size-4" />} baslik="İletişim / Muhatap" ton="accent" />
             <CardContent>
               <GirisimContactForm girisimId={girisim.id} contact={girisim.contact} onSaved={invalidate} />
             </CardContent>
           </Card>
 
           <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Güncelleme Talebi Geçmişi</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<History className="size-4" />} baslik="Güncelleme Talebi Geçmişi" ton="notr" />
             <CardContent>
               {!guncellemeTalepleriQuery.data || guncellemeTalepleriQuery.data.length === 0 ? (
                 <EmptyState icon="📝" message="Henüz bir güncelleme talebi göndermediniz." />
@@ -1533,9 +1529,7 @@ export default function GirisimimPage() {
         {bolum === "programlar" && (
           <div>
           <Card>
-            <CardHeader>
-              <CardTitle>Program Geçmişi</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Layers className="size-4" />} baslik="Program Geçmişi" ton="notr" />
             <CardContent>
               {girisim.programKatilimlari.length === 0 ? (
                 <EmptyState icon="📋" message="Bu girişim henüz bir programa katılmamış." />
@@ -1569,9 +1563,7 @@ export default function GirisimimPage() {
         {bolum === "gelisim" && (
           <div>
           <Card>
-            <CardHeader>
-              <CardTitle>Gelişim Yolculuğu</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Gelişim Yolculuğu" ton="olumlu" />
             <CardContent className="space-y-4">
               <AddGelisimAdimiForm girisimId={girisim.id} onAdded={invalidate} />
 
@@ -1600,9 +1592,7 @@ export default function GirisimimPage() {
         {bolum === "finansal" && (
           <div className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Satış Kayıtları</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Satış Kayıtları" ton="accent" />
             <CardContent className="space-y-4">
               <AddSatisForm girisimId={girisim.id} onAdded={invalidate} />
 
@@ -1661,9 +1651,7 @@ export default function GirisimimPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Yatırım Kayıtları</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Banknote className="size-4" />} baslik="Yatırım Kayıtları" ton="notr" />
             <CardContent className="space-y-4">
               <AddYatirimForm girisimId={girisim.id} onAdded={invalidate} />
 
@@ -1735,9 +1723,7 @@ export default function GirisimimPage() {
         {bolum === "basari-dokuman" && (
           <div className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Başarılar</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Award className="size-4" />} baslik="Başarılar" ton="uyari" />
             <CardContent className="space-y-4">
               <AddBasariForm girisimId={girisim.id} onAdded={invalidate} />
 
@@ -1798,9 +1784,7 @@ export default function GirisimimPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Dokümanlar</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<FileText className="size-4" />} baslik="Dokümanlar" ton="notr" />
             <CardContent className="space-y-4">
               <AddDokumanForm girisimId={girisim.id} onAdded={invalidate} />
 
@@ -1883,9 +1867,7 @@ export default function GirisimimPage() {
         {bolum === "itirazlarim" && (
           <div>
           <Card>
-            <CardHeader>
-              <CardTitle>İtiraz Geçmişi</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<MessageSquareWarning className="size-4" />} baslik="İtiraz Geçmişi" ton="uyari" />
             <CardContent>
               {!itirazlarQuery.data || itirazlarQuery.data.length === 0 ? (
                 <EmptyState icon="⚖️" message="Henüz bir itiraz göndermediniz." />
@@ -1963,30 +1945,27 @@ export default function GirisimimPage() {
             <Skeleton className="h-52 rounded-2xl" />
           ) : raporQuery.data ? (
             <>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Onaylı Ciro</p>
-                    <p className="mt-1 text-2xl font-bold text-t3-navy">
-                      {formatCurrency(raporQuery.data.toplamOnayliCiro, "TRY")}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Onaylı Yatırım</p>
-                    <p className="mt-1 text-2xl font-bold text-t3-navy">
-                      {formatCurrency(raporQuery.data.toplamOnayliYatirim, "TRY")}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Bekleyen Onay</p>
-                    <p className="mt-1 text-2xl font-bold text-t3-navy">{raporQuery.data.bekleyenOnaySayisi}</p>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Panel ve etki sayfalarıyla aynı sayı kartı dili. */}
+              <StatGrid>
+                <StatTile
+                  value={formatCurrency(raporQuery.data.toplamOnayliCiro, "TRY")}
+                  label="Onaylı Ciro"
+                  tone="info"
+                  icon={<TrendingUp className="size-4" />}
+                />
+                <StatTile
+                  value={formatCurrency(raporQuery.data.toplamOnayliYatirim, "TRY")}
+                  label="Onaylı Yatırım"
+                  tone="success"
+                  icon={<Banknote className="size-4" />}
+                />
+                <StatTile
+                  value={raporQuery.data.bekleyenOnaySayisi}
+                  label="Bekleyen Onay"
+                  tone={raporQuery.data.bekleyenOnaySayisi > 0 ? "warning" : "neutral"}
+                  icon={<Clock className="size-4" />}
+                />
+              </StatGrid>
 
               {/* Birleşik ciro/yatırım grafiği kaldırıldı: aynı veriyi tek eksende ezmek yerine
                   aşağıda her biri kendi grafiğinde gösteriliyor. Trendin okuması korundu. */}
@@ -2080,7 +2059,7 @@ export default function GirisimimPage() {
               Vazgeç
             </Button>
             <Button
-              className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+              className="bg-role-accent text-white hover:bg-role-accent-dark"
               disabled={submitItirazMutation.isPending}
               onClick={confirmItiraz}
             >

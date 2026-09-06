@@ -13,10 +13,10 @@ import {
   YAxis,
 } from "recharts"
 import { Banknote, Globe2, TrendingUp, Users } from "lucide-react"
-import { PageHeader } from "@/components/patterns/PageHeader"
-import { StatGrid, StatTile } from "@/components/patterns/StatTile"
+import { HeroMetrik, SayfaHero } from "@/components/patterns/SayfaHero"
 import { EmptyState } from "@/components/patterns/EmptyState"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api } from "@/lib/api-client"
 import type { EkosistemEtkisiDto } from "@/lib/types"
@@ -42,18 +42,19 @@ function paraEtiketi(value: number) {
 function EtkiGrafigi({
   baslik,
   aciklama,
+  ikon,
+  ton,
   children,
 }: {
   baslik: string
   aciklama: string
+  ikon: React.ReactNode
+  ton: "accent" | "notr" | "olumlu" | "mor"
   children: React.ReactNode
 }) {
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{baslik}</CardTitle>
-        <p className="text-xs text-muted-foreground">{aciklama}</p>
-      </CardHeader>
+      <KartBasligi ikon={ikon} baslik={baslik} aciklama={aciklama} ton={ton} />
       <CardContent>
         <ResponsiveContainer width="100%" height={240}>
           {children as React.ReactElement}
@@ -91,42 +92,46 @@ export default function EkosistemEtkisiPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
+      <SayfaHero
         eyebrow="Ekosistem Etkisi"
-        title="Ekosistem Etkisi"
-        subtitle="Girişimlerin girdiği tüm sayısal verilerin toplamı: üretilen ciro, ihracat, çekilen yatırım ve yaratılan istihdam."
+        baslik="T3 ekosistemi ne üretti?"
+        aciklama="Girişimlerin girdiği tüm sayısal verilerin toplamı: üretilen ciro, ihracat, çekilen yatırım ve yaratılan istihdam."
+        sag={
+          <div className="grid gap-3 sm:grid-cols-2">
+            <HeroMetrik ikon={<TrendingUp className="size-5" />} deger={paraEtiketi(data.toplamCiro)} etiket="Toplam Ciro" />
+            <HeroMetrik ikon={<Globe2 className="size-5" />} deger={paraEtiketi(data.toplamIhracat)} etiket="Toplam İhracat" />
+            <HeroMetrik ikon={<Banknote className="size-5" />} deger={paraEtiketi(data.toplamYatirim)} etiket="Çekilen Yatırım" />
+            <HeroMetrik
+              ikon={<Users className="size-5" />}
+              deger={`${data.guncelIstihdam.toLocaleString("tr-TR")} kişi`}
+              etiket="Güncel İstihdam"
+              vurgulu
+            />
+          </div>
+        }
       />
 
-      <StatGrid>
-        <StatTile value={paraEtiketi(data.toplamCiro)} label="Toplam Ciro" tone="info" icon={<TrendingUp className="size-4" />} />
-        <StatTile value={paraEtiketi(data.toplamIhracat)} label="Toplam İhracat" tone="neutral" icon={<Globe2 className="size-4" />} />
-        <StatTile value={paraEtiketi(data.toplamYatirim)} label="Çekilen Yatırım" tone="success" icon={<Banknote className="size-4" />} />
-        <StatTile
-          value={`${data.guncelIstihdam.toLocaleString("tr-TR")} kişi`}
-          label="Güncel İstihdam"
-          tone="success"
-          icon={<Users className="size-4" />}
-        />
-        <StatTile
-          value={`${data.veriGirenGirisimSayisi}/${data.toplamGirisimSayisi}`}
-          label="Veri Giren Girişim"
-          tone={data.veriGirenGirisimSayisi < data.toplamGirisimSayisi ? "warning" : "success"}
-        />
-      </StatGrid>
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-4 text-sm">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-role-accent-soft text-role-accent">
+          <Users className="size-4" />
+        </span>
+        <p className="min-w-0 flex-1 text-muted-foreground">
+          Ekosistem, verinin başladığı dönemden bugüne{" "}
+          <span className="font-semibold text-foreground">{data.istihdamArtisi.toLocaleString("tr-TR")} kişilik</span>{" "}
+          net istihdam artışı ve <span className="font-semibold text-foreground">{paraEtiketi(data.toplamIhracat)}</span>{" "}
+          ihracat üretti.
+        </p>
+        <span className="shrink-0 rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
+          {data.veriGirenGirisimSayisi}/{data.toplamGirisimSayisi} girişim veri girdi
+        </span>
+      </div>
 
       {veriYok ? (
         <EmptyState icon="📊" message="Henüz onaylanmış veri yok." />
       ) : (
         <>
-          <p className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-            Ekosistem, verinin başladığı dönemden bugüne{" "}
-            <span className="font-semibold text-foreground">{data.istihdamArtisi.toLocaleString("tr-TR")} kişilik</span> net
-            istihdam artışı ve{" "}
-            <span className="font-semibold text-foreground">{paraEtiketi(data.toplamIhracat)}</span> ihracat üretti.
-          </p>
-
           <div className="grid gap-4 lg:grid-cols-2">
-            <EtkiGrafigi baslik="Ciro" aciklama="Tüm girişimlerin dönemsel onaylı cirosu.">
+            <EtkiGrafigi baslik="Ciro" aciklama="Tüm girişimlerin dönemsel onaylı cirosu." ikon={<TrendingUp className="size-4" />} ton="accent">
               <BarChart data={data.donemler} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-30" />
                 <XAxis dataKey="donem" tick={{ fontSize: 12 }} />
@@ -136,7 +141,7 @@ export default function EkosistemEtkisiPage() {
               </BarChart>
             </EtkiGrafigi>
 
-            <EtkiGrafigi baslik="İhracat" aciklama="Dönemsel toplam ihracat.">
+            <EtkiGrafigi baslik="İhracat" aciklama="Dönemsel toplam ihracat." ikon={<Globe2 className="size-4" />} ton="mor">
               <AreaChart data={data.donemler} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-30" />
                 <XAxis dataKey="donem" tick={{ fontSize: 12 }} />
@@ -146,7 +151,7 @@ export default function EkosistemEtkisiPage() {
               </AreaChart>
             </EtkiGrafigi>
 
-            <EtkiGrafigi baslik="Çekilen Yatırım" aciklama="Yatırım turlarının gerçekleştiği dönemler.">
+            <EtkiGrafigi baslik="Çekilen Yatırım" aciklama="Yatırım turlarının gerçekleştiği dönemler." ikon={<Banknote className="size-4" />} ton="notr">
               <BarChart data={data.donemler} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-30" />
                 <XAxis dataKey="donem" tick={{ fontSize: 12 }} />
@@ -159,6 +164,8 @@ export default function EkosistemEtkisiPage() {
             <EtkiGrafigi
               baslik="İstihdam"
               aciklama="Ekosistemdeki toplam çalışan sayısı. O dönem kayıt girmemiş girişimlerin son bilinen sayısı taşınır."
+              ikon={<Users className="size-4" />}
+              ton="olumlu"
             >
               <LineChart data={data.donemler} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-30" />

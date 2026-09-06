@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Banknote,
   Building2,
-  CheckSquare2,
   Clock,
   Layers,
   Mail,
@@ -14,8 +13,9 @@ import {
   Trophy,
   TrendingUp,
 } from "lucide-react"
-import { PageHeader } from "@/components/patterns/PageHeader"
-import { StatGrid, StatTile } from "@/components/patterns/StatTile"
+import { HeroMetrik, SayfaHero } from "@/components/patterns/SayfaHero"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
+import { LinkButton } from "@/components/patterns/LinkButton"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { InitialsAvatar } from "@/components/patterns/InitialsAvatar"
 import { GuncellikRozeti, SeviyeRozeti } from "@/components/patterns/SeviyeRozeti"
@@ -23,7 +23,6 @@ import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { LinkButton } from "@/components/patterns/LinkButton"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
@@ -146,44 +145,43 @@ export default function PanelPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader
+      <SayfaHero
         eyebrow="Genel Bakış"
-        title={user?.fullName ? `Merhaba, ${user.fullName}` : "Genel Bakış"}
-        subtitle="Ekosistemin güncel durumu ve bugün ilgilenmen gereken kayıtlar."
+        baslik={user?.fullName ? `Merhaba, ${user.fullName}` : "Genel Bakış"}
+        aciklama="Ekosistemin güncel durumu ve bugün ilgilenmen gereken kayıtlar."
+        aksiyonlar={
+          data.bekleyenOnaySayisi > 0 ? (
+            <LinkButton to="/onaylar" className="bg-white text-t3-navy hover:bg-white/90">
+              {data.bekleyenOnaySayisi} kayıt onay bekliyor
+            </LinkButton>
+          ) : undefined
+        }
+        sag={
+          <div className="grid gap-3 sm:grid-cols-2">
+            <HeroMetrik ikon={<Building2 className="size-5" />} deger={data.toplamGirisim} etiket="Girişim" />
+            <HeroMetrik ikon={<Layers className="size-5" />} deger={data.aktifProgramSayisi} etiket="Aktif Program" />
+            <HeroMetrik
+              ikon={<TrendingUp className="size-5" />}
+              deger={formatCompactCurrency(data.toplamOnayliCiro)}
+              etiket="Onaylı Ciro"
+            />
+            <HeroMetrik
+              ikon={<Banknote className="size-5" />}
+              deger={formatCompactCurrency(data.toplamOnayliYatirim)}
+              etiket="Onaylı Yatırım"
+            />
+          </div>
+        }
       />
-
-      <StatGrid>
-        <StatTile value={data.toplamGirisim} label="Girişim" tone="info" icon={<Building2 className="size-4" />} />
-        <StatTile value={data.aktifProgramSayisi} label="Aktif Program" tone="neutral" icon={<Layers className="size-4" />} />
-        <StatTile
-          value={data.bekleyenOnaySayisi}
-          label="Bekleyen Onay"
-          tone={bekleyenUyari ? "warning" : "success"}
-          icon={<CheckSquare2 className="size-4" />}
-        />
-        <StatTile
-          value={formatCompactCurrency(data.toplamOnayliCiro)}
-          label="Onaylı Ciro"
-          tone="success"
-          icon={<TrendingUp className="size-4" />}
-        />
-        <StatTile
-          value={formatCompactCurrency(data.toplamOnayliYatirim)}
-          label="Onaylı Yatırım"
-          tone="success"
-          icon={<Banknote className="size-4" />}
-        />
-      </StatGrid>
 
       {/* Sayılar durumu anlatır ama iş çıkarmaz; asıl değer bu üç listede. */}
       <div className="grid items-start gap-5 lg:grid-cols-3">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-amber-500" />
-              Onay Bekleyenler
-            </CardTitle>
-          </CardHeader>
+          <KartBasligi
+            ikon={<AlertTriangle className="size-4" />}
+            baslik="Onay Bekleyenler"
+            ton={bekleyenUyari ? "uyari" : "olumlu"}
+          />
           <CardContent className="space-y-3">
             {data.bekleyenOnaySayisi === 0 ? (
               <p className="text-sm text-muted-foreground">Kuyruk temiz, bekleyen kayıt yok.</p>
@@ -203,12 +201,11 @@ export default function PanelPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="size-4 text-muted-foreground" />
-              Uzun Süredir Güncellenmeyenler
-            </CardTitle>
-          </CardHeader>
+          <KartBasligi
+            ikon={<Clock className="size-4" />}
+            baslik="Uzun Süredir Güncellenmeyenler"
+            ton={bayatSayisi > 0 ? "uyari" : "notr"}
+          />
           <CardContent>
             {bayatSayisi === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -233,12 +230,7 @@ export default function PanelPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="size-4 text-muted-foreground" />
-              Profili Eksik Girişimler
-            </CardTitle>
-          </CardHeader>
+          <KartBasligi ikon={<Building2 className="size-4" />} baslik="Profili Eksik Girişimler" ton="notr" />
           <CardContent className="space-y-3">
             {data.profiliEksikOlanlar.length === 0 ? (
               <p className="text-sm text-muted-foreground">Tüm profiller tamam.</p>
@@ -255,7 +247,7 @@ export default function PanelPage() {
                   </Badge>
                 </div>
                 <div className="-mx-2 space-y-0.5">
-                  {data.profiliEksikOlanlar.map((g) => (
+                  {data.profiliEksikOlanlar.slice(0, 3).map((g) => (
                     <GirisimSatiri
                       key={g.girisimId}
                       girisim={g}
@@ -263,6 +255,11 @@ export default function PanelPage() {
                     />
                   ))}
                 </div>
+                {data.profiliEksikOlanlar.length > 3 && (
+                  <p className="text-xs text-muted-foreground">
+                    ve {data.profiliEksikOlanlar.length - 3} girişim daha
+                  </p>
+                )}
               </>
             )}
           </CardContent>
@@ -271,18 +268,13 @@ export default function PanelPage() {
 
       {/* Yüksek puanın karşılığı: burada görünmek. */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Trophy className="size-4 text-amber-500" />
-            Öne Çıkan Girişimler
-          </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs text-muted-foreground">
-              Profilini en eksiksiz tutan ve en çok veri giren girişimler.
-            </p>
-            <SeviyeAciklamasi rol={user?.role} />
-          </div>
-        </CardHeader>
+        <KartBasligi
+          ikon={<Trophy className="size-4" />}
+          baslik="Öne Çıkan Girişimler"
+          aciklama="Profilini en eksiksiz tutan ve en çok veri giren girişimler."
+          ton="uyari"
+          sag={<SeviyeAciklamasi rol={user?.role} />}
+        />
         <CardContent>
           <div className="-mx-2 space-y-0.5">
             {data.oneCikanlar.map((g, i) => (

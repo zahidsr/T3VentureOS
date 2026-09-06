@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Building2 } from "lucide-react"
+import { Award, Banknote, Building2, FileText, Layers, Mail, TrendingUp } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
 import { LinkButton } from "@/components/patterns/LinkButton"
 import { PageHeader } from "@/components/patterns/PageHeader"
@@ -16,7 +16,8 @@ import { StatusBadge } from "@/components/patterns/StatusBadge"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -186,7 +187,7 @@ function ProfileEditForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Vazgeç
         </Button>
-        <Button type="submit" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={isSubmitting}>
+        <Button type="submit" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={isSubmitting}>
           {isSubmitting ? "Kaydediliyor…" : "Kaydet"}
         </Button>
       </div>
@@ -247,7 +248,7 @@ function AddGelisimAdimiForm({ girisimId, onAdded }: { girisimId: string; onAdde
         <Textarea id="aciklama" rows={2} {...register("aciklama")} />
       </div>
       <div className="flex justify-end">
-        <Button type="submit" size="sm" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={isSubmitting}>
+        <Button type="submit" size="sm" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={isSubmitting}>
           {isSubmitting ? "Ekleniyor…" : "Gelişim Adımı Ekle"}
         </Button>
       </div>
@@ -431,9 +432,7 @@ export default function GirisimDetailsPage() {
         {/* -------------------------------------------------------- Profil */}
         <TabsContent value="profil" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Profil Bilgileri</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Building2 className="size-4" />} baslik="Profil Bilgileri" ton="accent" />
             <CardContent>
               <LogoUploadSection girisim={girisim} canEdit={canEdit} onUpdated={invalidate} />
               {isEditing ? (
@@ -496,9 +495,7 @@ export default function GirisimDetailsPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>İletişim / Muhatap</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Mail className="size-4" />} baslik="İletişim / Muhatap" ton="accent" />
             <CardContent>
               {girisim.contact ? (
                 <dl className="grid gap-4 sm:grid-cols-2">
@@ -546,9 +543,7 @@ export default function GirisimDetailsPage() {
         {/* --------------------------------------------------- Programlar */}
         <TabsContent value="programlar" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Program Geçmişi</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Layers className="size-4" />} baslik="Program Geçmişi" ton="notr" />
             <CardContent>
               {girisim.programKatilimlari.length === 0 ? (
                 <EmptyState icon="📋" message="Bu girişim henüz bir programa katılmamış." />
@@ -578,9 +573,7 @@ export default function GirisimDetailsPage() {
         {/* ------------------------------------------------------ Gelişim */}
         <TabsContent value="gelisim" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Gelişim Yolculuğu</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Gelişim Yolculuğu" ton="olumlu" />
             <CardContent className="space-y-4">
               {canEdit && <AddGelisimAdimiForm girisimId={girisim.id} onAdded={invalidate} />}
 
@@ -607,9 +600,7 @@ export default function GirisimDetailsPage() {
         {/* --------------------------------------------------- Finansal */}
         <TabsContent value="finansal" className="mt-4 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Satış Kayıtları</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<TrendingUp className="size-4" />} baslik="Satış Kayıtları" ton="accent" />
             <CardContent>
               {girisim.satisKayitlari.length === 0 ? (
                 <EmptyState icon="💰" message="Satış kaydı bulunmuyor." />
@@ -643,9 +634,7 @@ export default function GirisimDetailsPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Yatırım Kayıtları</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Banknote className="size-4" />} baslik="Yatırım Kayıtları" ton="notr" />
             <CardContent>
               {girisim.yatirimKayitlari.length === 0 ? (
                 <EmptyState icon="📈" message="Yatırım kaydı bulunmuyor." />
@@ -686,9 +675,7 @@ export default function GirisimDetailsPage() {
         {/* --------------------------------------------- Başarı & Doküman */}
         <TabsContent value="basari-dokuman" className="mt-4 space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Başarılar</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Award className="size-4" />} baslik="Başarılar" ton="uyari" />
             <CardContent>
               {girisim.basarilar.length === 0 ? (
                 <EmptyState icon="🏆" message="Başarı kaydı bulunmuyor." />
@@ -724,9 +711,7 @@ export default function GirisimDetailsPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Dokümanlar</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<FileText className="size-4" />} baslik="Dokümanlar" ton="notr" />
             <CardContent>
               {girisim.dokumanlar.length === 0 ? (
                 <EmptyState icon="📄" message="Doküman bulunmuyor." />

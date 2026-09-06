@@ -71,7 +71,7 @@ export default function ChangePasswordPage() {
               <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
               {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>}
             </div>
-            <Button type="submit" className="bg-t3-blue text-white hover:bg-t3-blue-dark" disabled={isSubmitting}>
+            <Button type="submit" className="bg-role-accent text-white hover:bg-role-accent-dark" disabled={isSubmitting}>
               {isSubmitting ? "Güncelleniyor…" : "Parolayı Güncelle"}
             </Button>
           </form>

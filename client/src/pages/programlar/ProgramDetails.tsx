@@ -5,13 +5,14 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { ImagePlus } from "lucide-react"
+import { ImagePlus, Layers, Users } from "lucide-react"
 import { BackLink } from "@/components/patterns/BackLink"
 import { PageHeader } from "@/components/patterns/PageHeader"
 import { ProgramKohortu } from "@/components/patterns/ProgramKohortu"
 import { EmptyState } from "@/components/patterns/EmptyState"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { KartBasligi } from "@/components/patterns/KartBasligi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -375,7 +376,7 @@ export default function ProgramDetailsPage() {
               </Badge>
             ) : canApply ? (
               <Button
-                className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                className="bg-role-accent text-white hover:bg-role-accent-dark"
                 onClick={() => basvuruMutation.mutate()}
                 disabled={basvuruMutation.isPending}
               >
@@ -391,9 +392,7 @@ export default function ProgramDetailsPage() {
         {canWrite && <ProgramKohortu programId={program.id} />}
 
         <Card>
-          <CardHeader>
-            <CardTitle>Program Bilgileri</CardTitle>
-          </CardHeader>
+          <KartBasligi ikon={<Layers className="size-4" />} baslik="Program Bilgileri" ton="accent" />
           <CardContent>
             {isEditing ? (
               <form onSubmit={handleEditSubmit(onEditSubmit)} className="space-y-4">
@@ -444,7 +443,7 @@ export default function ProgramDetailsPage() {
                 <div className="flex gap-2">
                   <Button
                     type="submit"
-                    className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                    className="bg-role-accent text-white hover:bg-role-accent-dark"
                     disabled={updateMutation.isPending}
                   >
                     {updateMutation.isPending ? "Kaydediliyor…" : "Kaydet"}
@@ -532,7 +531,7 @@ export default function ProgramDetailsPage() {
                         </Select>
                         <Button
                           size="sm"
-                          className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                          className="bg-role-accent text-white hover:bg-role-accent-dark"
                           disabled={bulkKatilimDurumMutation.isPending}
                           onClick={() =>
                             bulkKatilimDurumMutation.mutate({
@@ -613,9 +612,7 @@ export default function ProgramDetailsPage() {
 
         {canWrite && (
           <Card>
-            <CardHeader>
-              <CardTitle>Katılımcı Ekle</CardTitle>
-            </CardHeader>
+            <KartBasligi ikon={<Users className="size-4" />} baslik="Katılımcı Ekle" ton="accent" />
             <CardContent>
               <form onSubmit={handleAddSubmit} className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
                 <div className="space-y-1.5">
@@ -662,7 +659,7 @@ export default function ProgramDetailsPage() {
 
                 <Button
                   type="submit"
-                  className="bg-t3-blue text-white hover:bg-t3-blue-dark"
+                  className="bg-role-accent text-white hover:bg-role-accent-dark"
                   disabled={addKatilimMutation.isPending}
                 >
                   {addKatilimMutation.isPending ? "Ekleniyor…" : "Ekle"}

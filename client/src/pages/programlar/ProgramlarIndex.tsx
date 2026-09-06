@@ -140,7 +140,7 @@ export default function ProgramlarIndexPage() {
         subtitle="T3 Vakfı'nın girişimcilik programlarını görüntüleyin ve yönetin."
         actions={
           canCreate ? (
-            <LinkButton to="/programlar/yeni" className="bg-t3-blue text-white hover:bg-t3-blue-dark">
+            <LinkButton to="/programlar/yeni" className="bg-role-accent text-white hover:bg-role-accent-dark">
               Yeni Program
             </LinkButton>
           ) : undefined

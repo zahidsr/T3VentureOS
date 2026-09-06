@@ -171,7 +171,7 @@ export default function GirisimlerIndexPage() {
             <LinkButton to="/girisimler/karsilastirma" variant="outline">
               Rakip Karşılaştır
             </LinkButton>
-            <LinkButton to="/girisimler/yeni" className="bg-t3-blue text-white hover:bg-t3-blue-dark">
+            <LinkButton to="/girisimler/yeni" className="bg-role-accent text-white hover:bg-role-accent-dark">
               + Yeni Girişim
             </LinkButton>
           </>

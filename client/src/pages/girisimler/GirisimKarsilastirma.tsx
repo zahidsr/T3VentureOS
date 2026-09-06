@@ -697,7 +697,7 @@ export default function GirisimKarsilastirmaPage() {
                 </div>
                 <Button
                   size="sm"
-                  className="gap-1.5 bg-t3-blue text-white hover:bg-t3-blue-dark"
+                  className="gap-1.5 bg-role-accent text-white hover:bg-role-accent-dark"
                   disabled={aiAnaliziMutation.isPending || selected.length < 2}
                   onClick={() => aiAnaliziMutation.mutate(selected.map((g) => g.id))}
                 >
