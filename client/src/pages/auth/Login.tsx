@@ -46,7 +46,8 @@ export default function LoginPage() {
       const loggedInUser = await login(values.email, values.password)
       toast.success("Giriş başarılı.")
       // Startup kullanıcısının tek bir "evi" var — nereden geldiğine bakılmaksızın hep Girişimim'e düşer.
-      if (loggedInUser.role === "StartupKullanicisi") {
+      // SuperAdmin için de aynısı geçerli: girişte her zaman doğrudan genel bakış paneline düşer.
+      if (loggedInUser.role === "StartupKullanicisi" || loggedInUser.role === "SuperAdmin") {
         navigate(roleHomePath(loggedInUser.role), { replace: true })
         return
       }
