@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   AlertTriangle,
   Banknote,
@@ -9,6 +10,7 @@ import {
   Layers,
   Mail,
   Presentation,
+  BellRing,
   Search,
   Trophy,
   TrendingUp,
@@ -23,8 +25,9 @@ import { SeviyeAciklamasi } from "@/components/patterns/SeviyeAciklamasi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { api } from "@/lib/api-client"
+import { api, extractErrorMessage } from "@/lib/api-client"
 import { useAuth } from "@/lib/auth-context"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import type { GirisimSaglikDto, PanelOzetiDto } from "@/lib/types"
@@ -97,6 +100,12 @@ export default function PanelPage() {
   const [arama, setArama] = useState("")
   const [siralama, setSiralama] = useState<"puan" | "ad" | "guncellik">("puan")
   const aramaDebounced = useDebouncedValue(arama, 200)
+
+  const hatirlatmaMutation = useMutation({
+    mutationFn: async () => (await api.post<{ message: string }>("/dashboard/donem-hatirlatmasi")).data,
+    onSuccess: (data) => toast.success(data.message),
+    onError: (error) => toast.error(extractErrorMessage(error, "Hatırlatma gönderilemedi.")),
+  })
 
   const panelQuery = useQuery({
     queryKey: ["panel"],
@@ -205,6 +214,18 @@ export default function PanelPage() {
             ikon={<Clock className="size-4" />}
             baslik="Uzun Süredir Güncellenmeyenler"
             ton={bayatSayisi > 0 ? "uyari" : "notr"}
+            sag={
+              // Listeyi görmek yetmiyor; yöneticinin tek tek peşine düşmemesi için eylem burada.
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={hatirlatmaMutation.isPending}
+                onClick={() => hatirlatmaMutation.mutate()}
+              >
+                <BellRing className="mr-1.5 size-3.5" />
+                {hatirlatmaMutation.isPending ? "Gönderiliyor…" : "Hatırlat"}
+              </Button>
+            }
           />
           <CardContent>
             {bayatSayisi === 0 ? (

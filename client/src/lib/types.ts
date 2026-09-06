@@ -767,3 +767,18 @@ export interface PaylasilanSunumDto {
   bolumler: PitchDeckBolumuDto[]
   sunumTarihi: string
 }
+
+export interface EksikDonemDto {
+  donem: string
+  ciroEksik: boolean
+  istihdamEksik: boolean
+}
+
+/** Dönem girişinden sonra girişimciye gösterilen karşılık. */
+export interface DonemGirisiSonucuDto {
+  donem: string
+  oncekiPuan: number
+  yeniPuan: number
+  eklenenKayitSayisi: number
+  kazanimlar: string[]
+}

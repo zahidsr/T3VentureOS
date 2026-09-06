@@ -109,3 +109,13 @@ public record AsamaGecisiDto(
     Guid Id, string? OncekiAsama, string YeniAsama, DateTime Tarih, string? Aciklama, string DegistirenAdSoyad);
 
 public record AsamaDegistirRequest(string Asama, DateTime? Tarih, string? Aciklama);
+
+public record EksikDonemDto(string Donem, bool CiroEksik, bool IstihdamEksik);
+
+public record DonemGirisiRequest(
+    string Donem, decimal? Ciro, decimal? Ihracat, int? CalisanSayisi, int? YeniIseAlim,
+    string? YatirimTuru, decimal? YatirimTutari, DateTime? YatirimTarihi, string? YatirimciAdi);
+
+/// <summary>Dönem girişinden sonra girişimciye gösterilen karşılık.</summary>
+public record DonemGirisiSonucuDto(
+    string Donem, int OncekiPuan, int YeniPuan, int EklenenKayitSayisi, List<string> Kazanimlar);

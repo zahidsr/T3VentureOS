@@ -45,6 +45,7 @@ builder.Services.AddScoped<ProgramKohortService>();
 builder.Services.AddScoped<YatirimciHazirligiService>();
 builder.Services.AddScoped<SunumPaylasimService>();
 builder.Services.AddScoped<AsamaService>();
+builder.Services.AddScoped<DonemGirisiService>();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<IEmailSender, LoggingEmailSender>();
 builder.Services.AddScoped<JwtTokenService>();

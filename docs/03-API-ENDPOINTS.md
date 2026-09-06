@@ -54,6 +54,8 @@
 | GET | `/girisimler/{id}/ai-analiz/{tur}` | auth (kendi girişimi) | girişim bazlı son AI analizi. `tur`: `durum` (tarafsız okuma) veya `gelisim` (geliştirme önerileri) |
 | POST | `/girisimler/{id}/ai-analiz/{tur}` | auth (kendi girişimi) | girişimin verisinden yeni AI analizi üretir ve saklar |
 | GET | `/girisimler/{id}/yatirimci-hazirligi` | auth (kendi girişimi) | "yatırımcıya hazır mıyım" değerlendirmesi: dokuz ölçüt, karşılanma durumu ve eksikler için ipuçları |
+| GET | `/girisimler/{id}/eksik-donemler` | auth (kendi girişimi) | son dört kapanmış çeyrekten hangilerinde ciro/istihdam verisi eksik |
+| POST | `/girisimler/{id}/donem-girisi` | auth (kendi girişimi) | bir çeyreğin ciro, ihracat, istihdam ve yatırım verisini tek çağrıda kaydeder; boş alanlar atlanır |
 | GET | `/girisimler/{id}/asama-gecmisi` | auth (kendi girişimi) | girişimin aşama geçiş geçmişi, en yeni üstte |
 | PUT | `/girisimler/{id}/asama` | auth (kendi girişimi) | aşamayı değiştirir ve geçişi kayda geçirir (geçmiş tarih kabul edilir, gelecek reddedilir) |
 | GET | `/girisimler/{id}/durum` | auth (kendi girişimi) | girişim künyesinin durum kartı: profil tamlığı, son veri girişi, bekleyen kayıt sayısı |

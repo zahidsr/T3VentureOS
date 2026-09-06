@@ -11,6 +11,7 @@ import { SunumPaneli } from "@/components/sunum/SunumPaneli"
 import { OkumaKutusu } from "@/components/patterns/OkumaKutusu"
 import { GirisimAnalizPaneli } from "@/components/analiz/GirisimAnalizPaneli"
 import { PuanKarti } from "@/components/patterns/PuanKarti"
+import { DonemGirisi } from "@/components/patterns/DonemGirisi"
 import { AsamaGuncelle } from "@/components/patterns/AsamaGuncelle"
 import { AsamaCizelgesi } from "@/components/patterns/AsamaCizelgesi"
 import { StatGrid, StatTile } from "@/components/patterns/StatTile"
@@ -1354,7 +1355,10 @@ export default function GirisimimPage() {
       )}
 
       {/* Girişimciyi sisteme geri getiren kanca: puanı ve onu yükselten somut adımlar. */}
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
+        {/* Veri girişi en görünür yerde: girişimci sisteme girdiğinde ilk gördüğü şey ne
+            yapması gerektiği olsun. */}
+        <DonemGirisi girisimId={girisim.id} />
         <PuanKarti girisimId={girisim.id} />
       </div>
       <div className="space-y-4">

@@ -26,11 +26,12 @@ public class GirisimlerController : ControllerBase
     private readonly YatirimciHazirligiService _hazirlik;
     private readonly SunumPaylasimService _paylasim;
     private readonly AsamaService _asama;
+    private readonly DonemGirisiService _donemGirisi;
 
     public GirisimlerController(
         GirisimService girisimler, ICurrentUserService currentUser, FileStorageService files,
         ItirazService itirazlar, OnboardingService onboarding, DashboardService dashboard, IAiService ai,
-        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim, AsamaService asama)
+        PitchDeckService pitchDeck, GirisimSaglikService saglik, GirisimAnalizService analiz, YatirimciHazirligiService hazirlik, SunumPaylasimService paylasim, AsamaService asama, DonemGirisiService donemGirisi)
     {
         _girisimler = girisimler;
         _currentUser = currentUser;
@@ -45,6 +46,7 @@ public class GirisimlerController : ControllerBase
         _hazirlik = hazirlik;
         _paylasim = paylasim;
         _asama = asama;
+        _donemGirisi = donemGirisi;
     }
 
     [HttpGet]
@@ -493,6 +495,35 @@ public class GirisimlerController : ControllerBase
 
         return Ok(new YatirimciHazirligiDto(h.Yuzde, h.Durum,
             h.Kriterler.Select(k => new HazirlikKriteriDto(k.Anahtar, k.Baslik, k.NedenOnemli, k.Karsilandi, k.Ipucu)).ToList()));
+    }
+
+    /// <summary>Son kapanmış çeyreklerden hangilerinde veri eksik.</summary>
+    [HttpGet("{id:guid}/eksik-donemler")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> EksikDonemler(Guid id)
+    {
+        var eksikler = await _donemGirisi.EksikDonemlerAsync(id);
+        return Ok(eksikler.Select(e => new EksikDonemDto(e.Donem, e.CiroEksik, e.IstihdamEksik)).ToList());
+    }
+
+    /// <summary>
+    /// Bir çeyreğin tüm sayısal verisini tek çağrıda kaydeder. Ciro, istihdam ve yatırım ayrı ayrı
+    /// formlardan giriliyordu; girişimcinin bunu her çeyrek yapması gerçekçi değildi.
+    /// </summary>
+    [HttpPost("{id:guid}/donem-girisi")]
+    [Authorize(Policy = AuthorizationPolicies.GirisimVeriGirisiErisimi)]
+    [GirisimErisim]
+    public async Task<IActionResult> DonemGirisi(Guid id, DonemGirisiRequest request)
+    {
+        var (ok, sonuc, hata) = await _donemGirisi.KaydetAsync(
+            id, _currentUser.UserId!.Value, request.Donem, request.Ciro, request.Ihracat,
+            request.CalisanSayisi, request.YeniIseAlim,
+            request.YatirimTuru, request.YatirimTutari, request.YatirimTarihi, request.YatirimciAdi);
+
+        if (!ok) return BadRequest(new ErrorResponse(hata!));
+        return Ok(new DonemGirisiSonucuDto(
+            sonuc!.Donem, sonuc.OncekiPuan, sonuc.YeniPuan, sonuc.EklenenKayitSayisi, sonuc.Kazanimlar));
     }
 
     /// <summary>Girişimin aşama geçmişi — en yeni geçiş en üstte.</summary>

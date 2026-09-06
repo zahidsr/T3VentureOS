@@ -15,14 +15,16 @@ public class DashboardController : ControllerBase
     private readonly IAiService _ai;
     private readonly GirisimSaglikService _saglik;
     private readonly EkosistemEtkiService _etki;
+    private readonly DonemGirisiService _donemGirisi;
     private readonly ICurrentUserService _currentUser;
 
-    public DashboardController(DashboardService dashboard, IAiService ai, GirisimSaglikService saglik, EkosistemEtkiService etki, ICurrentUserService currentUser)
+    public DashboardController(DashboardService dashboard, IAiService ai, GirisimSaglikService saglik, EkosistemEtkiService etki, DonemGirisiService donemGirisi, ICurrentUserService currentUser)
     {
         _dashboard = dashboard;
         _ai = ai;
         _saglik = saglik;
         _etki = etki;
+        _donemGirisi = donemGirisi;
         _currentUser = currentUser;
     }
 
@@ -65,6 +67,20 @@ public class DashboardController : ControllerBase
             ozet.ProfiliEksikOlanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
             ozet.OneCikanlar.Select(GirisimSaglikMapper.ToDto).ToList(),
             ozet.TumGirisimler.Select(GirisimSaglikMapper.ToDto).ToList()));
+    }
+
+    /// <summary>
+    /// Son kapanmış çeyreğin verisini girmemiş girişimlerin temsilcilerine toplu hatırlatma
+    /// gönderir. Panelin "veri girmeyenler" listesinin eylem karşılığıdır.
+    /// </summary>
+    [HttpPost("donem-hatirlatmasi")]
+    [Authorize(Policy = AuthorizationPolicies.YoneticiErisimi)]
+    public async Task<IActionResult> DonemHatirlatmasi()
+    {
+        var (gonderilen, donem) = await _donemGirisi.HatirlatmaGonderAsync();
+        return Ok(new MessageResponse(gonderilen == 0
+            ? $"{donem} verisini girmemiş girişim yok."
+            : $"{donem} için {gonderilen} girişime hatırlatma gönderildi."));
     }
 
     /// <summary>Ekosistemin toplam etkisi: ciro, ihracat, yatırım ve istihdamın dönem bazında birleşimi.</summary>
