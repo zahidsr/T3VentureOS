@@ -15,6 +15,7 @@ import {
   Rocket,
   TrendingUp,
   Users,
+  Wrench,
 } from "lucide-react"
 import type { UserRole } from "@/lib/types"
 
@@ -42,6 +43,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/girisimim/sunum", label: "Sunum", icon: Presentation, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/rapor", label: "Rapor", icon: FileText, roles: ["StartupKullanicisi"] },
   { to: "/girisimim/itirazlarim", label: "İtirazlarım", icon: MessageSquareWarning, roles: ["StartupKullanicisi"] },
+  // Nakit ömrü + haftalık hedefler artık profilin üstünde otomatik değil, kendi bölümünde.
+  { to: "/girisimim/araclar", label: "Araçlar", icon: Wrench, roles: ["StartupKullanicisi"] },
   { to: "/etki", label: "Ekosistem Etkisi", icon: Globe2, roles: ["SuperAdmin", "ProgramYoneticisi"] },
   { to: "/girisimler", label: "Girişimler", icon: Building2, roles: ["SuperAdmin", "ProgramYoneticisi"], end: true },
   { to: "/girisimler/karsilastirma", label: "Rakip Karşılaştırma", icon: GitCompareArrows, roles: ["SuperAdmin", "ProgramYoneticisi"] },

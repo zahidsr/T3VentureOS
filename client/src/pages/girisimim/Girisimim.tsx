@@ -1079,6 +1079,7 @@ const BOLUMLER = [
   "itirazlarim",
   "sunum",
   "rapor",
+  "araclar",
 ]
 
 export default function GirisimimPage() {
@@ -1297,8 +1298,6 @@ export default function GirisimimPage() {
           />
         </div>
       )}
-
-      {bolum === "profil" && <GirisimAraclari girisimId={girisim.id} />}
 
       {/* Girişimciyi sisteme geri getiren kanca: puanı ve onu yükselten somut adımlar. */}
       <div className="mb-6 space-y-4">
@@ -1851,6 +1850,13 @@ export default function GirisimimPage() {
               )}
             </CardContent>
           </Card>
+          </div>
+        )}
+
+        {/* -------------------------------------------------------- Araçlar */}
+        {bolum === "araclar" && (
+          <div>
+          <GirisimAraclari girisimId={girisim.id} />
           </div>
         )}
 
