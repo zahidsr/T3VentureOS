@@ -6,8 +6,6 @@
   <img src="client/public/logo-tam-koyu.png" alt="T3VentureOS" width="320">
 </picture>
 
-# T3VentureOS
-
 ### T3 Vakfı girişimcilik ekosistemi için uçtan uca değerlendirme, onay ve raporlama platformu
 
 <p>
